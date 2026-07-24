@@ -4,13 +4,14 @@ import TopBar from '../TopBar';
 import Badge from '../Badge';
 import AuditCaseSelectionView from '../views/AuditCaseSelectionView';
 import AuditCaseTypesConfigView from '../views/AuditCaseTypesConfigView';
+import StoredCasesView from '../views/StoredCasesView';
 
 /**
  * ProcessOwnerView
  * Main view for Process Owner role
  * - View and select audit cases from Risk Engine
  * - Configure and manage audit case types
- * - Define scope, coverage, duration parameters
+ * - View stored cases for audit execution
  */
 
 function ProcessOwnerView() {
@@ -22,6 +23,8 @@ function ProcessOwnerView() {
         return <AuditCaseSelectionView />;
       case 'case-types':
         return <AuditCaseTypesConfigView />;
+      case 'stored-cases':
+        return <StoredCasesView />;
       default:
         return <AuditCaseSelectionView />;
     }
@@ -64,6 +67,24 @@ function ProcessOwnerView() {
           </button>
 
           <button
+            onClick={() => setCurrentView('stored-cases')}
+            style={{
+              flex: 1,
+              padding: '16px 20px',
+              background: currentView === 'stored-cases' ? '#0f1419' : 'transparent',
+              color: currentView === 'stored-cases' ? '#4a8fd9' : '#8b949e',
+              border: 'none',
+              borderBottom: currentView === 'stored-cases' ? '3px solid #4a8fd9' : 'none',
+              fontSize: '13px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+          >
+            <i className="fas fa-folder-open"></i> Stored Cases
+          </button>
+
+          <button
             onClick={() => setCurrentView('case-types')}
             style={{
               flex: 1,
@@ -98,6 +119,7 @@ function ProcessOwnerView() {
 function getViewTitle(view) {
   const titles = {
     'cases': 'Audit Case Selection - Risk Engine Cases',
+    'stored-cases': 'Stored Cases - Ready for Audit Execution',
     'case-types': 'Audit Case Types Configuration',
   };
   return titles[view] || 'Process Owner Dashboard';

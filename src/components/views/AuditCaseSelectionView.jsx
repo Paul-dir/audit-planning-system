@@ -173,25 +173,71 @@ function AuditCaseSelectionView() {
       return;
     }
 
+    console.log('=== STORE CASES START ===');
+    console.log('Selected case IDs:', Array.from(selectedCases));
+
     const data = loadData();
+    
+    // Initialize stored cases array if not exists
     if (!data.storedAuditCases) {
       data.storedAuditCases = [];
+      console.log('Created new storedAuditCases array');
     }
 
+    console.log('Current stored cases count:', data.storedAuditCases.length);
+
+    // Map selected IDs to case objects
     const casesToStore = Array.from(selectedCases).map(caseId => {
       const auditCase = allCases.find(c => c.id === caseId);
-      return {
+      
+      if (!auditCase) {
+        console.warn('Case not found:', caseId);
+        return null;
+      }
+
+      const storedCase = {
         ...auditCase,
+        storedId: `STORED-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         storedDate: new Date().toISOString(),
         storedBy: userInfo?.fullName || 'Process Owner',
-        status: 'STORED'
+        storageStatus: 'STORED'
       };
-    });
 
+      console.log('Case to store:', {
+        caseId: storedCase.id,
+        taxpayer: storedCase.taxpayerName,
+        storedId: storedCase.storedId,
+        status: storedCase.storageStatus
+      });
+
+      return storedCase;
+    }).filter(c => c !== null);
+
+    console.log(`Preparing to store ${casesToStore.length} cases`);
+
+    // Add to stored cases
     data.storedAuditCases = [...data.storedAuditCases, ...casesToStore];
+
+    console.log('Total stored cases after adding:', data.storedAuditCases.length);
+
+    // Save to localStorage
     saveData(data);
 
-    alert(`✓ Stored ${selectedCases.size} cases for audit execution`);
+    // Verify saved
+    console.log('=== VERIFY SAVED ===');
+    const verifyData = loadData();
+    console.log('Verification - Total stored:', verifyData.storedAuditCases?.length || 0);
+    console.log('Verification - Last 3 stored:', verifyData.storedAuditCases?.slice(-3).map(c => ({ 
+      id: c.id, 
+      taxpayer: c.taxpayerName,
+      storedId: c.storedId 
+    })));
+
+    console.log('=== STORE CASES END ===');
+
+    // Show success message with details
+    alert(`✅ Successfully stored ${casesToStore.length} cases for audit execution\n\nTotal stored cases in system: ${verifyData.storedAuditCases?.length || 0}`);
+    
     setSelectedCases(new Set());
     loadCases();
   };
