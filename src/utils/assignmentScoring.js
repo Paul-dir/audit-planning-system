@@ -283,9 +283,7 @@ export function getScoreColor(score) {
  * @param {object} caseData
  * @returns {object} {canTake: boolean, reason: string}
  */
-export function validateAuditorCanTakeCa
-
-se(auditor = {}, caseData = {}) {
+export function validateAuditorCanTakeCase(auditor = {}, caseData = {}) {
   const checks = [];
   
   // Check availability

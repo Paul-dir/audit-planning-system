@@ -6,6 +6,7 @@ import AuditCaseSelectionView from '../views/AuditCaseSelectionView';
 import AuditCaseTypesConfigView from '../views/AuditCaseTypesConfigView';
 import StoredCasesView from '../views/StoredCasesView';
 import RequestForAuditView from '../views/RequestForAuditView';
+import CaseAssignmentView from '../views/CaseAssignmentView';
 
 /**
  * ProcessOwnerView
@@ -28,6 +29,8 @@ function ProcessOwnerView() {
         return <StoredCasesView />;
       case 'case-types':
         return <AuditCaseTypesConfigView />;
+      case 'case-assignment':
+        return <CaseAssignmentView />;
       default:
         return <AuditCaseSelectionView />;
     }
@@ -122,6 +125,24 @@ function ProcessOwnerView() {
           >
             <i className="fas fa-cogs"></i> Case Types Config
           </button>
+
+          <button
+            onClick={() => setCurrentView('case-assignment')}
+            style={{
+              flex: 1,
+              padding: '16px 20px',
+              background: currentView === 'case-assignment' ? '#0f1419' : 'transparent',
+              color: currentView === 'case-assignment' ? '#4a8fd9' : '#8b949e',
+              border: 'none',
+              borderBottom: currentView === 'case-assignment' ? '3px solid #4a8fd9' : 'none',
+              fontSize: '13px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+          >
+            <i className="fas fa-tasks"></i> Case Assignment
+          </button>
         </div>
 
         {/* Content Area */}
@@ -143,6 +164,7 @@ function getViewTitle(view) {
     'requests': 'Requests for Audit - Directorates & External Stakeholders',
     'stored-cases': 'Stored Cases - Ready for Audit Execution',
     'case-types': 'Audit Case Types Configuration',
+    'case-assignment': 'Case Assignment & Workflow Management'
   };
   return titles[view] || 'Process Owner Dashboard';
 }
