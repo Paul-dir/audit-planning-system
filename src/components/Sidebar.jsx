@@ -175,6 +175,13 @@ function Sidebar({ currentRole, currentView, onNavigate }) {
     return Object.entries(groups).filter(([_, items]) => items.length > 0);
   };
 
+  const menuItems = getMenuItems();
+
+  // Filter menu items by permission (show if no permission required, or user has permission)
+  const visibleItems = menuItems.filter(item => 
+    !item.permission || (userInfo && userInfo.permissions && userInfo.permissions.includes(item.permission))
+  );
+
   const groupedItems = groupMenuItems(visibleItems);
 
   return (
