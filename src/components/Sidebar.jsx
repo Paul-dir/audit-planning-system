@@ -1,10 +1,26 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getUserBreadcrumb } from '../utils/dataFiltering';
+import { loadData } from '../utils/data';
 
 function Sidebar({ currentRole, currentView, onNavigate }) {
   const { getUserInfo } = useAuth();
   const userInfo = getUserInfo();
+  const [stats, setStats] = useState({ cases: 0, plans: 0, assignments: 0 });
+
+  useEffect(() => {
+    // Calculate quick stats from data
+    const data = loadData();
+    const caseCount = (data.auditCases || []).length;
+    const planCount = (data.auditPlans || []).length;
+    const assignmentCount = (data.assignments || []).length;
+    
+    setStats({
+      cases: caseCount,
+      plans: planCount,
+      assignments: assignmentCount
+    });
+  }, []);
 
   // Define menu items per role
   const getMenuItems = () => {
@@ -140,73 +156,224 @@ function Sidebar({ currentRole, currentView, onNavigate }) {
     }
   };
 
-  const menuItems = getMenuItems();
+  // Group menu items by category
+  const groupMenuItems = (items) => {
+    const groups = {
+      'Primary': [],
+      'Management': [],
+      'Analysis': [],
+      'Configuration': []
+    };
 
-  // Filter menu items by permission (show if no permission required, or user has permission)
-  const visibleItems = menuItems.filter(item => 
-    !item.permission || (userInfo && userInfo.permissions && userInfo.permissions.includes(item.permission))
-  );
+    items.forEach(item => {
+      if (item.id === 'dashboard') groups['Primary'].push(item);
+      else if (['create-plan', 'my-plans', 'review-queue', 'approve', 'allocation', 'accept', 'cascade', 'assign', 'case-assignment', 'team-cases', 'team-progress', 'my-cases', 'case-execution', 'cases', 'requests', 'stored-cases', 'pending', 'approved', 'rejected'].some(term => item.id.includes(term))) groups['Management'].push(item);
+      else if (['risk-engine', 'feedback', 'reports', 'audit-cases', 'execution-reports'].some(term => item.id.includes(term))) groups['Analysis'].push(item);
+      else groups['Configuration'].push(item);
+    });
+
+    return Object.entries(groups).filter(([_, items]) => items.length > 0);
+  };
+
+  const groupedItems = groupMenuItems(visibleItems);
 
   return (
-    <div className="sidebar">
-      <div className="logo">
-        <img src="/mor-logo.jpeg" alt="Ministry of Revenues" style={{ width: '32px', height: '32px', marginRight: '10px', borderRadius: '3px', objectFit: 'cover' }} />
-        <span>Audit System</span>
+    <div className="sidebar" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/* Header */}
+      <div style={{
+        padding: '12px',
+        borderBottom: '1px solid #30363d'
+      }}>
+        <div className="logo" style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+          <img src="/favicon-32x32.jpeg" alt="Ministry of Revenues" style={{ width: '32px', height: '32px', marginRight: '10px', borderRadius: '3px', objectFit: 'cover' }} />
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span style={{ fontSize: '13px', fontWeight: '700', color: '#f0f6fc' }}>Audit System</span>
+            <span style={{ fontSize: '9px', color: '#8b949e' }}>v2.0</span>
+          </div>
+        </div>
       </div>
 
-      {/* User Context Info */}
+      {/* User Profile Card */}
       {userInfo && (
         <div style={{
           padding: '12px',
-          background: '#0f1419',
+          background: 'linear-gradient(135deg, #1c2128 0%, #0f1419 100%)',
           border: '1px solid #30363d',
           borderRadius: '6px',
           margin: '12px',
           fontSize: '11px',
-          color: '#8b949e'
+          borderLeft: '3px solid #4a8fd9'
         }}>
-          <div style={{ fontWeight: '600', color: '#f0f6fc', marginBottom: '6px' }}>
+          <div style={{ fontWeight: '700', color: '#4a8fd9', marginBottom: '8px', display: 'flex', alignItems: 'center' }}>
+            <i className="fas fa-user-circle" style={{ marginRight: '6px' }}></i>
             {userInfo.fullName}
           </div>
-          <div style={{ fontSize: '10px', marginBottom: '4px' }}>
-            Role: <strong>{userInfo.role.replace(/_/g, ' ')}</strong>
-          </div>
-          {userInfo.orgContext?.assignedRegion && (
-            <div style={{ fontSize: '10px', marginBottom: '4px' }}>
-              Region: <strong>{userInfo.orgContext.assignedRegion}</strong>
-            </div>
-          )}
-          {userInfo.orgContext?.assignedTaxCenter && (
-            <div style={{ fontSize: '10px', marginBottom: '4px' }}>
-              Tax Center: <strong>{userInfo.orgContext.assignedTaxCenter}</strong>
-            </div>
-          )}
-          {userInfo.orgContext?.auditType && (
+          
+          <div style={{ 
+            background: '#0f1419', 
+            padding: '8px', 
+            borderRadius: '4px',
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '8px',
+            marginBottom: '8px'
+          }}>
             <div style={{ fontSize: '10px' }}>
-              Audit Type: <strong>{userInfo.orgContext.auditType}</strong>
+              <span style={{ color: '#8b949e' }}>Role</span>
+              <div style={{ color: '#4caf50', fontWeight: '600', fontSize: '9px', marginTop: '2px' }}>
+                {userInfo.role.replace(/_/g, ' ')}
+              </div>
+            </div>
+            
+            {userInfo.orgContext?.assignedRegion && (
+              <div style={{ fontSize: '10px' }}>
+                <span style={{ color: '#8b949e' }}>Region</span>
+                <div style={{ color: '#4caf50', fontWeight: '600', fontSize: '9px', marginTop: '2px' }}>
+                  {userInfo.orgContext.assignedRegion.substring(0, 8)}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {userInfo.orgContext?.assignedTaxCenter && (
+            <div style={{ fontSize: '10px', padding: '6px', background: '#1c2128', borderRadius: '3px' }}>
+              <span style={{ color: '#8b949e' }}>Tax Center</span>
+              <div style={{ color: '#f0f6fc', fontWeight: '600', fontSize: '9px', marginTop: '2px' }}>
+                {userInfo.orgContext.assignedTaxCenter}
+              </div>
             </div>
           )}
         </div>
       )}
 
-      <nav>
-        {visibleItems.map(item => (
-          <a
-            key={item.id}
-            href="#"
-            className={currentView === item.id ? 'active' : ''}
-            onClick={(e) => {
-              e.preventDefault();
-              onNavigate(item.id);
-            }}
-            title={item.label}
-          >
-            <i className={item.icon}></i>
-            <span>{item.label}</span>
-          </a>
+      {/* Quick Stats */}
+      <div style={{
+        padding: '12px',
+        borderBottom: '1px solid #30363d',
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr 1fr',
+        gap: '8px'
+      }}>
+        <div style={{
+          background: '#1c2128',
+          border: '1px solid #30363d',
+          borderRadius: '4px',
+          padding: '8px',
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: '12px', fontWeight: '700', color: '#4a8fd9' }}>{stats.cases}</div>
+          <div style={{ fontSize: '9px', color: '#8b949e', marginTop: '2px' }}>Cases</div>
+        </div>
+        <div style={{
+          background: '#1c2128',
+          border: '1px solid #30363d',
+          borderRadius: '4px',
+          padding: '8px',
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: '12px', fontWeight: '700', color: '#ffc107' }}>{stats.plans}</div>
+          <div style={{ fontSize: '9px', color: '#8b949e', marginTop: '2px' }}>Plans</div>
+        </div>
+        <div style={{
+          background: '#1c2128',
+          border: '1px solid #30363d',
+          borderRadius: '4px',
+          padding: '8px',
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: '12px', fontWeight: '700', color: '#4caf50' }}>{stats.assignments}</div>
+          <div style={{ fontSize: '9px', color: '#8b949e', marginTop: '2px' }}>Assigned</div>
+        </div>
+      </div>
+
+      {/* Navigation Menu */}
+      <nav style={{
+        flex: 1,
+        overflowY: 'auto',
+        padding: '12px 0',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
+        {groupedItems.map(([groupName, items], groupIdx) => (
+          <div key={groupName}>
+            {groupIdx > 0 && <div style={{ height: '1px', background: '#30363d', margin: '8px 0' }}></div>}
+            
+            {groupName !== 'Primary' && (
+              <div style={{
+                padding: '8px 16px',
+                fontSize: '10px',
+                fontWeight: '700',
+                color: '#8b949e',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                margin: '8px 0 4px 0'
+              }}>
+                {groupName}
+              </div>
+            )}
+            
+            {items.map(item => (
+              <a
+                key={item.id}
+                href="#"
+                className={currentView === item.id ? 'active' : ''}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onNavigate(item.id);
+                }}
+                title={item.label}
+                style={{
+                  padding: '10px 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  color: currentView === item.id ? '#4a8fd9' : '#8b949e',
+                  textDecoration: 'none',
+                  fontSize: '12px',
+                  fontWeight: currentView === item.id ? '600' : '400',
+                  background: currentView === item.id ? '#1c212833' : 'transparent',
+                  borderLeft: currentView === item.id ? '3px solid #4a8fd9' : '3px solid transparent',
+                  transition: 'all 0.2s',
+                  cursor: 'pointer'
+                }}
+                onMouseEnter={(e) => {
+                  if (currentView !== item.id) {
+                    e.currentTarget.style.background = '#1c212822';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (currentView !== item.id) {
+                    e.currentTarget.style.background = 'transparent';
+                  }
+                }}
+              >
+                <i className={item.icon} style={{ width: '16px', textAlign: 'center' }}></i>
+                <span>{item.label}</span>
+              </a>
+            ))}
+          </div>
         ))}
       </nav>
-      <div className="footer">Audit Planning System · v2.0</div>
+
+      {/* Footer */}
+      <div style={{
+        padding: '12px',
+        background: '#0f1419',
+        border: '1px solid #30363d',
+        borderRadius: '6px',
+        margin: '12px',
+        textAlign: 'center',
+        fontSize: '9px',
+        color: '#8b949e'
+      }}>
+        <div style={{ marginBottom: '6px' }}>
+          <i className="fas fa-server" style={{ marginRight: '4px' }}></i>
+          Audit Planning System
+        </div>
+        <div style={{ fontSize: '8px', opacity: 0.7 }}>
+          Ministry of Revenues © 2024
+        </div>
+      </div>
     </div>
   );
 }
