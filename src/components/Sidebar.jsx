@@ -126,7 +126,8 @@ function Sidebar({ currentRole, currentView, onNavigate }) {
   return (
     <div className="sidebar">
       <div className="logo">
-        <i className="fas fa-chart-line"></i> <span>Audit System</span>
+        <img src="/mor-logo.svg" alt="Ministry of Revenues" style={{ width: '28px', height: '28px', marginRight: '8px' }} />
+        <span>Audit System</span>
       </div>
 
       {/* User Context Info */}
