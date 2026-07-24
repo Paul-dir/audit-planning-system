@@ -112,6 +112,24 @@ function Sidebar({ currentRole, currentView, onNavigate }) {
           { id: 'configuration', icon: 'fas fa-sliders-h', label: 'Configuration', permission: null }
         ];
       
+      case 'directorate_requester':
+        return [
+          { id: 'dashboard', icon: 'fas fa-tachometer-alt', label: 'Dashboard', permission: 'view_audit_metrics' },
+          { id: 'submit-request', icon: 'fas fa-plus-circle', label: 'Submit Audit Request', permission: 'submit_audit_requests' },
+          { id: 'my-requests', icon: 'fas fa-list', label: 'My Requests', permission: 'view_own_requests' },
+          { id: 'risk-engine', icon: 'fas fa-globe', label: 'Risk Engine Analysis', permission: 'view_audit_metrics' },
+          { id: 'configuration', icon: 'fas fa-cogs', label: 'Configuration', permission: null }
+        ];
+
+      case 'external_stakeholder':
+        return [
+          { id: 'dashboard', icon: 'fas fa-tachometer-alt', label: 'Dashboard', permission: 'view_audit_metrics' },
+          { id: 'submit-request', icon: 'fas fa-plus-circle', label: 'Submit Audit Request', permission: 'submit_audit_requests' },
+          { id: 'my-requests', icon: 'fas fa-list', label: 'My Requests', permission: 'view_own_requests' },
+          { id: 'risk-engine', icon: 'fas fa-globe', label: 'Risk Engine Analysis', permission: 'view_audit_metrics' },
+          { id: 'configuration', icon: 'fas fa-cogs', label: 'Configuration', permission: null }
+        ];
+      
       default:
         return [];
     }

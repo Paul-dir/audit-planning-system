@@ -12,6 +12,7 @@ import AuditorView from './components/roleViews/AuditorView';
 import SeniorManagementView from './components/roleViews/SeniorManagementView';
 import CascadeTeamView from './components/roleViews/CascadeTeamView';
 import ProcessOwnerView from './components/roleViews/ProcessOwnerView';
+import RequesterDashboardView from './components/roleViews/RequesterDashboardView';
 
 function AppContent() {
   const { isAuthenticated, authContext } = useAuth();
@@ -44,6 +45,10 @@ function AppContent() {
         return <CascadeTeamView />;
       case 'process_owner':
         return <ProcessOwnerView />;
+      case 'directorate_requester':
+        return <RequesterDashboardView userRole="directorate_requester" />;
+      case 'external_stakeholder':
+        return <RequesterDashboardView userRole="external_stakeholder" />;
       default:
         return <AuditTeamView />;
     }

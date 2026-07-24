@@ -50,6 +50,16 @@ const ROLE_PERMISSIONS = {
     'approve_plans',
     'view_all_regions',
     'view_audit_metrics',
+  ],
+  directorate_requester: [
+    'submit_audit_requests',
+    'view_audit_metrics',
+    'view_own_requests'
+  ],
+  external_stakeholder: [
+    'submit_audit_requests',
+    'view_audit_metrics',
+    'view_own_requests'
   ]
 };
 
