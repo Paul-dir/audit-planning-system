@@ -14,27 +14,42 @@ export function getDefaultData() {
       'Addis Ababa': {
         'desk_audit': 50,
         'field_audit': 30,
-        'joint_audit': 20
+        'joint_audit': 20,
+        'transfer_pricing': 10,
+        'comprehensive': 15,
+        'issue_audit': 5
       },
       'Amhara': {
         'desk_audit': 40,
         'field_audit': 25,
-        'joint_audit': 15
+        'joint_audit': 15,
+        'transfer_pricing': 8,
+        'comprehensive': 12,
+        'issue_audit': 4
       },
       'Oromia': {
         'desk_audit': 60,
         'field_audit': 40,
-        'joint_audit': 25
+        'joint_audit': 25,
+        'transfer_pricing': 12,
+        'comprehensive': 18,
+        'issue_audit': 6
       },
       'SNNPR': {
         'desk_audit': 35,
         'field_audit': 20,
-        'joint_audit': 15
+        'joint_audit': 15,
+        'transfer_pricing': 7,
+        'comprehensive': 10,
+        'issue_audit': 3
       },
       'Somali': {
         'desk_audit': 25,
         'field_audit': 15,
-        'joint_audit': 10
+        'joint_audit': 10,
+        'transfer_pricing': 5,
+        'comprehensive': 8,
+        'issue_audit': 2
       }
     },
     // NEW: Unified allocation status tracking
@@ -139,85 +154,130 @@ export function getDefaultData() {
         'Addis Ababa TC1': {
           'desk_audit': 20,
           'field_audit': 12,
-          'joint_audit': 8
+          'joint_audit': 8,
+          'transfer_pricing': 4,
+          'comprehensive': 6,
+          'issue_audit': 2
         },
         'Addis Ababa TC2': {
           'desk_audit': 18,
           'field_audit': 10,
-          'joint_audit': 7
+          'joint_audit': 7,
+          'transfer_pricing': 3,
+          'comprehensive': 5,
+          'issue_audit': 2
         },
         'Addis Ababa TC3': {
           'desk_audit': 12,
           'field_audit': 8,
-          'joint_audit': 5
+          'joint_audit': 5,
+          'transfer_pricing': 3,
+          'comprehensive': 4,
+          'issue_audit': 1
         }
       },
       'Amhara': {
         'Amhara TC1': {
           'desk_audit': 15,
           'field_audit': 10,
-          'joint_audit': 6
+          'joint_audit': 6,
+          'transfer_pricing': 3,
+          'comprehensive': 4,
+          'issue_audit': 1
         },
         'Amhara TC2': {
           'desk_audit': 14,
           'field_audit': 9,
-          'joint_audit': 5
+          'joint_audit': 5,
+          'transfer_pricing': 2,
+          'comprehensive': 4,
+          'issue_audit': 1
         },
         'Amhara TC3': {
           'desk_audit': 11,
           'field_audit': 6,
-          'joint_audit': 4
+          'joint_audit': 4,
+          'transfer_pricing': 3,
+          'comprehensive': 4,
+          'issue_audit': 2
         }
       },
       'Oromia': {
         'Oromia TC1': {
           'desk_audit': 25,
           'field_audit': 16,
-          'joint_audit': 10
+          'joint_audit': 10,
+          'transfer_pricing': 4,
+          'comprehensive': 6,
+          'issue_audit': 2
         },
         'Oromia TC2': {
           'desk_audit': 22,
           'field_audit': 14,
-          'joint_audit': 9
+          'joint_audit': 9,
+          'transfer_pricing': 4,
+          'comprehensive': 6,
+          'issue_audit': 2
         },
         'Oromia TC3': {
           'desk_audit': 13,
           'field_audit': 10,
-          'joint_audit': 6
+          'joint_audit': 6,
+          'transfer_pricing': 4,
+          'comprehensive': 6,
+          'issue_audit': 2
         }
       },
       'SNNPR': {
         'SNNPR TC1': {
           'desk_audit': 14,
           'field_audit': 8,
-          'joint_audit': 6
+          'joint_audit': 6,
+          'transfer_pricing': 2,
+          'comprehensive': 3,
+          'issue_audit': 1
         },
         'SNNPR TC2': {
           'desk_audit': 12,
           'field_audit': 7,
-          'joint_audit': 5
+          'joint_audit': 5,
+          'transfer_pricing': 2,
+          'comprehensive': 3,
+          'issue_audit': 1
         },
         'SNNPR TC3': {
           'desk_audit': 9,
           'field_audit': 5,
-          'joint_audit': 4
+          'joint_audit': 4,
+          'transfer_pricing': 3,
+          'comprehensive': 4,
+          'issue_audit': 1
         }
       },
       'Somali': {
         'Somali TC1': {
           'desk_audit': 10,
           'field_audit': 6,
-          'joint_audit': 4
+          'joint_audit': 4,
+          'transfer_pricing': 2,
+          'comprehensive': 3,
+          'issue_audit': 1
         },
         'Somali TC2': {
           'desk_audit': 9,
           'field_audit': 5,
-          'joint_audit': 4
+          'joint_audit': 4,
+          'transfer_pricing': 2,
+          'comprehensive': 3,
+          'issue_audit': 1
         },
         'Somali TC3': {
           'desk_audit': 6,
           'field_audit': 4,
-          'joint_audit': 2
+          'joint_audit': 2,
+          'transfer_pricing': 1,
+          'comprehensive': 2,
+          'issue_audit': 0
         }
       }
     },
@@ -335,27 +395,42 @@ export function getDefaultData() {
       'Addis Ababa': {
         'desk_audit': 45,
         'field_audit': 28,
-        'joint_audit': 18
+        'joint_audit': 18,
+        'transfer_pricing': 9,
+        'comprehensive': 14,
+        'issue_audit': 4
       },
       'Amhara': {
         'desk_audit': 38,
         'field_audit': 23,
-        'joint_audit': 14
+        'joint_audit': 14,
+        'transfer_pricing': 7,
+        'comprehensive': 11,
+        'issue_audit': 3
       },
       'Oromia': {
         'desk_audit': 55,
         'field_audit': 38,
-        'joint_audit': 22
+        'joint_audit': 22,
+        'transfer_pricing': 11,
+        'comprehensive': 17,
+        'issue_audit': 5
       },
       'SNNPR': {
         'desk_audit': 32,
         'field_audit': 18,
-        'joint_audit': 12
+        'joint_audit': 12,
+        'transfer_pricing': 6,
+        'comprehensive': 9,
+        'issue_audit': 3
       },
       'Somali': {
         'desk_audit': 22,
         'field_audit': 13,
-        'joint_audit': 8
+        'joint_audit': 8,
+        'transfer_pricing': 4,
+        'comprehensive': 6,
+        'issue_audit': 2
       }
     },
     allocationStatus: {
@@ -450,100 +525,130 @@ export function getDefaultData() {
         'Addis Ababa TC1': {
           'desk_audit': 18,
           'field_audit': 11,
-          'joint_audit': 7
+          'joint_audit': 7,
+          'transfer_pricing': 3,
+          'comprehensive': 5,
+          'issue_audit': 1
         },
         'Addis Ababa TC2': {
           'desk_audit': 16,
           'field_audit': 9,
-          'joint_audit': 6
+          'joint_audit': 6,
+          'transfer_pricing': 3,
+          'comprehensive': 5,
+          'issue_audit': 1
         },
         'Addis Ababa TC3': {
           'desk_audit': 11,
           'field_audit': 8,
-          'joint_audit': 5
-        },
-        'Addis Ababa TC1': {
-          'desk_audit': 18,
-          'field_audit': 11,
-          'joint_audit': 7
-        },
-        'Addis Ababa TC2': {
-          'desk_audit': 16,
-          'field_audit': 9,
-          'joint_audit': 6
-        },
-        'Addis Ababa TC3': {
-          'desk_audit': 11,
-          'field_audit': 8,
-          'joint_audit': 5
+          'joint_audit': 5,
+          'transfer_pricing': 3,
+          'comprehensive': 4,
+          'issue_audit': 2
         }
       },
       'Amhara': {
         'Amhara TC1': {
           'desk_audit': 14,
           'field_audit': 9,
-          'joint_audit': 5
+          'joint_audit': 5,
+          'transfer_pricing': 2,
+          'comprehensive': 4,
+          'issue_audit': 1
         },
         'Amhara TC2': {
           'desk_audit': 13,
           'field_audit': 8,
-          'joint_audit': 5
+          'joint_audit': 5,
+          'transfer_pricing': 2,
+          'comprehensive': 4,
+          'issue_audit': 1
         },
         'Amhara TC3': {
           'desk_audit': 11,
           'field_audit': 6,
-          'joint_audit': 4
+          'joint_audit': 4,
+          'transfer_pricing': 3,
+          'comprehensive': 3,
+          'issue_audit': 1
         }
       },
       'Oromia': {
         'Oromia TC1': {
           'desk_audit': 22,
           'field_audit': 15,
-          'joint_audit': 9
+          'joint_audit': 9,
+          'transfer_pricing': 4,
+          'comprehensive': 6,
+          'issue_audit': 2
         },
         'Oromia TC2': {
           'desk_audit': 18,
           'field_audit': 12,
-          'joint_audit': 7
+          'joint_audit': 7,
+          'transfer_pricing': 3,
+          'comprehensive': 5,
+          'issue_audit': 1
         },
         'Oromia TC3': {
           'desk_audit': 15,
           'field_audit': 11,
-          'joint_audit': 6
+          'joint_audit': 6,
+          'transfer_pricing': 4,
+          'comprehensive': 6,
+          'issue_audit': 2
         }
       },
       'SNNPR': {
         'SNNPR TC1': {
           'desk_audit': 11,
           'field_audit': 6,
-          'joint_audit': 4
+          'joint_audit': 4,
+          'transfer_pricing': 2,
+          'comprehensive': 3,
+          'issue_audit': 1
         },
         'SNNPR TC2': {
           'desk_audit': 11,
           'field_audit': 6,
-          'joint_audit': 4
+          'joint_audit': 4,
+          'transfer_pricing': 2,
+          'comprehensive': 3,
+          'issue_audit': 1
         },
         'SNNPR TC3': {
           'desk_audit': 10,
           'field_audit': 6,
-          'joint_audit': 4
+          'joint_audit': 4,
+          'transfer_pricing': 2,
+          'comprehensive': 3,
+          'issue_audit': 1
         }
       },
       'Somali': {
         'Somali TC1': {
           'desk_audit': 8,
           'field_audit': 5,
-          'joint_audit': 3
+          'joint_audit': 3,
+          'transfer_pricing': 1,
+          'comprehensive': 2,
+          'issue_audit': 1
         },
         'Somali TC2': {
           'desk_audit': 8,
           'field_audit': 4,
-          'joint_audit': 2
+          'joint_audit': 2,
+          'transfer_pricing': 1,
+          'comprehensive': 2,
+          'issue_audit': 1
         },
         'Somali TC3': {
           'desk_audit': 6,
           'field_audit': 4,
-          'joint_audit': 3
+          'joint_audit': 3,
+          'transfer_pricing': 2,
+          'comprehensive': 2,
+          'issue_audit': 0
         }
       }
     },

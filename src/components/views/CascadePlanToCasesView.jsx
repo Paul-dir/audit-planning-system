@@ -40,7 +40,7 @@ function CascadePlanToCasesView() {
   const [remainingAllocations, setRemainingAllocations] = useState({});
   const itemsPerPage = 15;
 
-  // Load approved plans - APPROVED plans that have been accepted by tax center
+  // Load approved plans - APPROVED plans that have allocations for cascade
   useEffect(() => {
     const data = loadData();
     // Load APPROVED plans that have allocations for cascade
@@ -49,20 +49,18 @@ function CascadePlanToCasesView() {
     const cases = data.auditCases || [];
     setCascadedCases(cases);
     
-    // Auto-select first plan if available and not already selected
-    if (plans.length > 0 && !selectedPlan) {
-      setSelectedPlan(plans[0].id);
-      console.log('🔄 Auto-selected first plan:', plans[0].id);
-    }
-    
-    // Debug: Log what plans are available for cascade
-    console.log('🔍 Cascade View - Plans loaded:', {
-      total: plans.length,
+    // DEBUG: No auto-select - let user choose from dropdown
+    console.log('🔍 CASCADE VIEW - Plans Available:', {
+      totalPlans: plans.length,
+      userRegion,
+      userTaxCenter,
       plans: plans.map(p => ({
         id: p.id,
         status: p.status,
-        hasAllocations: !!p.taxCenterAllocations,
-        allocatedRegions: p.taxCenterAllocations ? Object.keys(p.taxCenterAllocations) : []
+        hasRegionalAllocation: !!p.regionalAllocation,
+        hasTaxCenterAllocations: !!p.taxCenterAllocations,
+        allocatedRegions: p.taxCenterAllocations ? Object.keys(p.taxCenterAllocations) : [],
+        taxCenterAllocationKeys: p.taxCenterAllocations ? Object.entries(p.taxCenterAllocations).map(([region, tcs]) => ({ region, taxCenters: Object.keys(tcs) })) : []
       }))
     });
   }, []);
@@ -109,7 +107,28 @@ function CascadePlanToCasesView() {
       if (plan) {
         setApprovedPlan(plan);
         
-        // Try both naming formats: "Tax Center 1" and "Addis Ababa-tc1"
+        console.log('=== ALLOCATION LOOKUP START ===');
+        console.log('Plan structure:', {
+          planId: plan.id,
+          hasRegionalAllocation: !!plan.regionalAllocation,
+          regionalAllocationKeys: plan.regionalAllocation ? Object.keys(plan.regionalAllocation) : [],
+          hasTaxCenterAllocations: !!plan.taxCenterAllocations,
+          taxCenterAllocationKeys: plan.taxCenterAllocations ? Object.keys(plan.taxCenterAllocations) : [],
+          selectedRegion,
+          selectedTaxCenter
+        });
+
+        // CRITICAL: Look for allocation in regionalAllocation (regional view format)
+        // This is the allocation sent from Director to Regional Director
+        const regionalAlloc = plan.regionalAllocation?.[selectedRegion];
+        
+        console.log('Regional allocation lookup:', {
+          path: `plan.regionalAllocation['${selectedRegion}']`,
+          found: !!regionalAlloc,
+          value: regionalAlloc
+        });
+
+        // FALLBACK: Look in taxCenterAllocations (old format)
         let taxCenterKey = selectedTaxCenter;
         let allocation = plan.taxCenterAllocations?.[selectedRegion]?.[selectedTaxCenter];
         
@@ -120,25 +139,34 @@ function CascadePlanToCasesView() {
           taxCenterKey = `${selectedRegion}-tc${tcNum}`;
           allocation = plan.taxCenterAllocations?.[selectedRegion]?.[taxCenterKey];
         }
+
+        console.log('Tax center allocation lookup:', {
+          path: `plan.taxCenterAllocations['${selectedRegion}']['${taxCenterKey}']`,
+          found: !!allocation,
+          value: allocation
+        });
+
+        console.log('=== ALLOCATION LOOKUP END ===');
         
-        setTaxCenterAllocation(allocation);
+        // IMPORTANT: Use whichever one is found - prefer taxCenterAllocations if available
+        // but accept regionalAllocation as fallback
+        const finalAllocation = allocation || regionalAlloc;
+        setTaxCenterAllocation(finalAllocation);
         
         // Debug: Log allocation info
-        console.log('📋 Allocation loaded:', {
+        console.log('📋 Final Allocation loaded:', {
           plan: selectedPlan,
           region: selectedRegion,
           taxCenter: selectedTaxCenter,
-          taxCenterKey: taxCenterKey,
-          allocationPath: `plan.taxCenterAllocations['${selectedRegion}']['${taxCenterKey}']`,
-          found: !!allocation,
-          allocation: allocation
+          allocationType: allocation ? 'taxCenterAllocations' : (regionalAlloc ? 'regionalAllocation' : 'NONE'),
+          allocation: finalAllocation
         });
         
         // Calculate remaining allocations - per THIS specific tax center
         const remaining = {};
         const auditTypes = ['desk_audit', 'field_audit', 'joint_audit', 'transfer_pricing', 'comprehensive', 'issue_audit'];
         auditTypes.forEach(type => {
-          const total = allocation?.[type] || 0;
+          const total = finalAllocation?.[type] || 0;
           // Count cascaded cases ONLY for this tax center
           const cascaded = cascadedCases.filter(c => 
             c.taxCenter === selectedTaxCenter && 
@@ -400,7 +428,7 @@ function CascadePlanToCasesView() {
   const totalAllocated = Object.values(remainingAllocations).reduce((a, b) => a + b, 0);
   
   // Selection screen
-  if (!selectedPlan) {
+  if (!selectedPlan || allPlans.length === 0) {
     return (
       <div style={{ padding: '24px' }}>
         <h2 style={{ marginBottom: '24px' }}><i className="fas fa-tasks"></i> Cascade Plan to Audit Cases</h2>
@@ -422,30 +450,35 @@ function CascadePlanToCasesView() {
           </div>
         )}
         
-        {/* Plan selector */}
-        <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-          <div style={{ flex: 1, minWidth: '200px' }}>
-            <label style={{ fontSize: '12px', color: '#8b949e', fontWeight: 'bold', display: 'block', marginBottom: '6px' }}>SELECT APPROVED PLAN</label>
+        {/* Plan selector - SHOW ALL PLANS */}
+        <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+          <div style={{ flex: 1, minWidth: '250px' }}>
+            <label style={{ fontSize: '12px', color: '#8b949e', fontWeight: 'bold', display: 'block', marginBottom: '8px' }}>SELECT APPROVED PLAN TO CASCADE</label>
             <select value={selectedPlan || ''} onChange={(e) => setSelectedPlan(e.target.value || null)}
-              style={{ width: '100%', padding: '8px 12px', border: '1px solid #30363d', borderRadius: '8px', background: '#1c2128', color: '#f0f6fc', fontSize: '13px' }}>
-              <option value="">-- Select Plan --</option>
+              style={{ width: '100%', padding: '10px 12px', border: '2px solid #4a8fd9', borderRadius: '8px', background: '#1c2128', color: '#f0f6fc', fontSize: '13px', fontWeight: '500' }}>
+              <option value="">-- Choose a Plan to Start --</option>
               {allPlans.map(plan => (
-                <option key={plan.id} value={plan.id}>{plan.id} ({plan.fiscalYear})</option>
+                <option key={plan.id} value={plan.id}>
+                  {plan.id} (FY {plan.fiscalYear}) - {plan.name || 'Annual Plan'}
+                </option>
               ))}
             </select>
+            <p style={{ fontSize: '11px', color: '#8b949e', marginTop: '6px', margin: '6px 0 0 0' }}>
+              {allPlans.length} approved plan(s) available
+            </p>
           </div>
-          
-          {allPlans.length === 0 && (
-            <div style={{ flex: 1, background: '#2a1a1a', border: '1px solid #ff7b7b', borderRadius: '6px', padding: '12px' }}>
-              <p style={{ fontSize: '12px', color: '#ff7b7b', margin: 0, fontWeight: 'bold' }}>
-                ⚠️ No APPROVED plans available
-              </p>
-              <p style={{ fontSize: '11px', color: '#8b949e', margin: '4px 0 0 0' }}>
-                Ask your Regional Director to approve plans
-              </p>
-            </div>
-          )}
         </div>
+
+        {allPlans.length === 0 && (
+          <div style={{ background: '#2a1a1a', border: '1px solid #ff7b7b', borderRadius: '6px', padding: '16px' }}>
+            <p style={{ fontSize: '13px', color: '#ff7b7b', margin: 0, fontWeight: 'bold' }}>
+              ⚠️ No APPROVED plans available
+            </p>
+            <p style={{ fontSize: '12px', color: '#8b949e', margin: '6px 0 0 0' }}>
+              Ask your Regional Director to approve plans first
+            </p>
+          </div>
+        )}
       </div>
     );
   }
@@ -454,6 +487,47 @@ function CascadePlanToCasesView() {
   return (
     <div style={{ padding: '24px' }}>
       <h2 style={{ marginBottom: '24px' }}><i className="fas fa-tasks"></i> Cascade to Audit Cases</h2>
+
+      {/* Plan Switcher - PROMINENT at top */}
+      {allPlans.length > 0 && (
+        <div style={{
+          background: '#0f1419', color: '#f0f6fc',
+          padding: '16px',
+          borderRadius: '8px',
+          marginBottom: '24px',
+          border: '2px solid #4a8fd9',
+          display: 'flex',
+          gap: '16px',
+          alignItems: 'center',
+          flexWrap: 'wrap'
+        }}>
+          <label style={{ fontSize: '13px', fontWeight: '700', color: '#4a8fd9', whiteSpace: 'nowrap' }}>
+            <i className="fas fa-file-alt"></i> CURRENT PLAN:
+          </label>
+          <select value={selectedPlan || ''} onChange={(e) => setSelectedPlan(e.target.value || null)}
+            style={{
+              padding: '10px 14px',
+              borderRadius: '6px',
+              border: '2px solid #4a8fd9',
+              fontSize: '13px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              background: '#1c2128',
+              color: '#f0f6fc',
+              minWidth: '220px'
+            }}>
+            <option value="">-- Select a Plan --</option>
+            {allPlans.map(plan => (
+              <option key={plan.id} value={plan.id}>
+                {plan.id} (FY {plan.fiscalYear})
+              </option>
+            ))}
+          </select>
+          <div style={{ fontSize: '12px', color: '#a0aec0', marginLeft: 'auto' }}>
+            {allPlans.length} total plan(s) available
+          </div>
+        </div>
+      )}
 
       {/* Selection & Plan Overview */}
       <div style={{ background: '#1c2128', padding: '16px', borderRadius: '8px', marginBottom: '24px', border: '1px solid #30363d' }}>
