@@ -150,7 +150,7 @@ function Sidebar({ currentRole, currentView, onNavigate }) {
   return (
     <div className="sidebar">
       <div className="logo">
-        <img src="/mor-logo.svg" alt="Ministry of Revenues" style={{ width: '28px', height: '28px', marginRight: '8px' }} />
+        <img src="/mor-logo.jpeg" alt="Ministry of Revenues" style={{ width: '40px', height: '40px', marginRight: '12px', borderRadius: '4px', objectFit: 'cover' }} />
         <span>Audit System</span>
       </div>
 
