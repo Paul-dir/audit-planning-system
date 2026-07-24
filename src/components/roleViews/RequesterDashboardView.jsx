@@ -117,7 +117,7 @@ function RequesterDashboardView({ userRole }) {
   return (
     <div style={{ display: 'flex', height: '100vh' }}>
       {/* Sidebar */}
-      <Sidebar currentView={currentView} onViewChange={setCurrentView} currentRole={userRole} />
+      <Sidebar currentView={currentView} onNavigate={setCurrentView} currentRole={userRole} />
 
       {/* Main Content */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#0f1419' }}>

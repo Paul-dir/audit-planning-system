@@ -39,7 +39,7 @@ function ProcessOwnerView() {
   return (
     <div style={{ display: 'flex', height: '100vh' }}>
       {/* Sidebar */}
-      <Sidebar currentView={currentView} onViewChange={setCurrentView} userRole="process_owner" />
+      <Sidebar currentView={currentView} onNavigate={setCurrentView} userRole="process_owner" />
 
       {/* Main Content */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#0f1419' }}>

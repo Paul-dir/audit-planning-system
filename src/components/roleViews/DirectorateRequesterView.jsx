@@ -168,7 +168,7 @@ function DirectorateRequesterView() {
   if (showForm) {
     return (
       <div style={{ display: 'flex', height: '100vh' }}>
-        <Sidebar currentView={currentView} onViewChange={setCurrentView} userRole="directorate_requester" />
+        <Sidebar currentView={currentView} onNavigate={setCurrentView} userRole="directorate_requester" />
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#0f1419' }}>
           <TopBar title="Submit Audit Request" />
           
@@ -391,7 +391,7 @@ function DirectorateRequesterView() {
 
   return (
     <div style={{ display: 'flex', height: '100vh' }}>
-      <Sidebar currentView={currentView} onViewChange={setCurrentView} userRole="directorate_requester" />
+      <Sidebar currentView={currentView} onNavigate={setCurrentView} userRole="directorate_requester" />
       
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#0f1419' }}>
         <TopBar title="Directorate Audit Request Management" />
