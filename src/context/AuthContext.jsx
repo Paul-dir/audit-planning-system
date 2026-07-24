@@ -26,6 +26,8 @@ const ROLE_PERMISSIONS = {
     'view_audit_metrics',
     'manage_case_prioritization',
     'attach_treatment_plans',
+    'assign_cases_to_team_leaders',
+    'view_assignment_status',
   ],
   cascade_audit_team: [
     'cascade_plan_to_cases',
@@ -34,11 +36,16 @@ const ROLE_PERMISSIONS = {
     'view_audit_metrics',
     'manage_case_prioritization',
     'attach_treatment_plans',
+    'view_assignment_status',
   ],
   process_owner: [
     'manage_processes',
     'view_audit_metrics',
     'cascade_plan_to_cases',
+    'assign_cases_to_team_leaders',
+    'reallocate_cases',  // ONLY Process Owner has this permission
+    'view_assignment_status',
+    'view_audit_trail',
   ],
   team_leader: [
     'assign_cases_to_auditors',
