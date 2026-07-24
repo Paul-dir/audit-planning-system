@@ -24,12 +24,16 @@ const ROLE_PERMISSIONS = {
     'cascade_plan_to_cases',
     'view_audit_cases',
     'view_audit_metrics',
+    'manage_case_prioritization',
+    'attach_treatment_plans',
   ],
   cascade_audit_team: [
     'cascade_plan_to_cases',
     'view_audit_cases',
     'assign_cases_to_auditors',
     'view_audit_metrics',
+    'manage_case_prioritization',
+    'attach_treatment_plans',
   ],
   process_owner: [
     'manage_processes',

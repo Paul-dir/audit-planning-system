@@ -56,6 +56,7 @@ function Sidebar({ currentRole, currentView, onNavigate }) {
           { id: 'tax-center-feedback', icon: 'fas fa-comments', label: 'View Allocation & Feedback', permission: 'cascade_plan_to_cases' },
           { id: 'accept-approved-plan', icon: 'fas fa-handshake', label: 'Accept Approved Plan', permission: 'cascade_plan_to_cases' },
           { id: 'cascade-plan-cases', icon: 'fas fa-arrow-right', label: 'Cascade Plan to Cases', permission: 'cascade_plan_to_cases' },
+          { id: 'case-prioritization', icon: 'fas fa-sort-amount-down', label: 'Case Prioritization', permission: 'manage_case_prioritization' },
           { id: 'audit-cases', icon: 'fas fa-briefcase', label: 'Audit Cases', permission: 'view_audit_cases' },
           { id: 'risk-engine', icon: 'fas fa-globe', label: 'Risk Engine Analysis', permission: 'view_audit_metrics' },
           { id: 'capacity-status', icon: 'fas fa-tasks', label: 'Team Capacity', permission: 'view_audit_cases' },
@@ -66,6 +67,7 @@ function Sidebar({ currentRole, currentView, onNavigate }) {
       case 'cascade_audit_team':
         return [
           { id: 'cascade-plan-cases', icon: 'fas fa-arrow-right', label: 'Cascade Plan to Cases', permission: 'cascade_plan_to_cases' },
+          { id: 'case-prioritization', icon: 'fas fa-sort-amount-down', label: 'Case Prioritization', permission: 'manage_case_prioritization' },
           { id: 'audit-cases', icon: 'fas fa-briefcase', label: 'Audit Cases', permission: 'view_audit_cases' },
           { id: 'risk-engine', icon: 'fas fa-globe', label: 'Risk Engine Analysis', permission: 'view_audit_metrics' },
           { id: 'configuration', icon: 'fas fa-cogs', label: 'Configuration & Standards', permission: null },

@@ -8,6 +8,7 @@ import AuditCasesListView from '../views/AuditCasesListView';
 import TaxCenterFeedbackView from '../views/TaxCenterFeedbackView';
 import TaxCenterAcceptancePlanView from '../views/TaxCenterAcceptancePlanView';
 import ConfigurationView from '../views/ConfigurationView';
+import CasePrioritizationView from '../views/CasePrioritizationView';
 
 function TaxCenterManagerView() {
   const [currentView, setCurrentView] = useState('dashboard');
@@ -24,6 +25,8 @@ function TaxCenterManagerView() {
         return <CascadePlanToCasesView />;
       case 'audit-cases':
         return <AuditCasesListView />;
+      case 'case-prioritization':
+        return <CasePrioritizationView />;
       case 'capacity-status':
       case 'execution-reports':
         return <TaxCenterView currentView={currentView} />;

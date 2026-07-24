@@ -5,6 +5,7 @@ import CascadeTeamDashboard from '../dashboards/CascadeTeamDashboard';
 import CascadePlanToCasesView from '../views/CascadePlanToCasesView';
 import AuditCasesListView from '../views/AuditCasesListView';
 import ConfigurationView from '../views/ConfigurationView';
+import CasePrioritizationView from '../views/CasePrioritizationView';
 
 function CascadeTeamView() {
   const [currentView, setCurrentView] = useState('dashboard');
@@ -17,6 +18,8 @@ function CascadeTeamView() {
         return <CascadePlanToCasesView />;
       case 'audit-cases':
         return <AuditCasesListView />;
+      case 'case-prioritization':
+        return <CasePrioritizationView />;
       case 'configuration':
         return <ConfigurationView />;
       default:
