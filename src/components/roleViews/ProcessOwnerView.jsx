@@ -1,84 +1,106 @@
 import React, { useState } from 'react';
-import ProtectedRoute from '../ProtectedRoute';
-import RoleLayout from '../layouts/RoleLayout';
-import Card from '../Card';
+import Sidebar from '../Sidebar';
+import TopBar from '../TopBar';
 import Badge from '../Badge';
-import { useAuth } from '../../context/AuthContext';
+import AuditCaseSelectionView from '../views/AuditCaseSelectionView';
+import AuditCaseTypesConfigView from '../views/AuditCaseTypesConfigView';
 
 /**
- * Process Owner Dashboard and View
- * Manages processes at tax center level
+ * ProcessOwnerView
+ * Main view for Process Owner role
+ * - View and select audit cases from Risk Engine
+ * - Configure and manage audit case types
+ * - Define scope, coverage, duration parameters
  */
-function ProcessOwnerDashboard() {
-  const { getUserInfo } = useAuth();
-  const userInfo = getUserInfo();
-
-  return (
-    <div className="dashboard-container">
-      <div style={{ marginBottom: '24px' }}>
-        <h2 style={{ margin: '0 0 8px 0', color: '#f0f6fc' }}>
-          ⚡ Process Management Dashboard
-        </h2>
-        <p style={{ color: '#0c4a6e', margin: 0, fontSize: '13px', color: '#8b949e' }}>
-          Manage processes for {userInfo?.orgContext?.assignedTaxCenter}
-        </p>
-      </div>
-
-      <div className="dashboard-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-        <Card>
-          <div style={{ fontSize: '24px', fontWeight: '600', color: '#2196f3' }}>3</div>
-          <div style={{ fontSize: '12px', color: '#8b949e', marginTop: '4px' }}>Audit Types Managed</div>
-        </Card>
-        <Card>
-          <div style={{ fontSize: '24px', fontWeight: '600', color: '#4caf50' }}>100%</div>
-          <div style={{ fontSize: '12px', color: '#8b949e', marginTop: '4px' }}>Process Coverage</div>
-        </Card>
-        <Card>
-          <div style={{ fontSize: '24px', fontWeight: '600', color: '#9c27b0' }}>12</div>
-          <div style={{ fontSize: '12px', color: '#8b949e', marginTop: '4px' }}>Active Processes</div>
-        </Card>
-      </div>
-
-      <Card style={{ padding: '24px' }}>
-        <h3 style={{ margin: '0 0 12px 0', color: '#f0f6fc', fontSize: '16px' }}>
-          <i className="fas fa-info-circle"></i> Role Overview
-        </h3>
-        <p style={{ color: '#0c4a6e', margin: '0 0 8px 0', fontSize: '12px', color: '#8b949e' }}>
-          <strong>Process Owner</strong> manages operational processes for {userInfo?.orgContext?.assignedTaxCenter}.
-        </p>
-        <ul style={{ margin: '12px 0 0 0', paddingLeft: '20px', fontSize: '12px', color: '#8b949e' }}>
-          <li>Manage audit processes for all audit types</li>
-          <li>Define standard operating procedures</li>
-          <li>Monitor process compliance</li>
-          <li>Coordinate with cascade team</li>
-          <li>Support team leaders</li>
-        </ul>
-      </Card>
-    </div>
-  );
-}
 
 function ProcessOwnerView() {
-  const [currentView, setCurrentView] = useState('dashboard');
+  const [currentView, setCurrentView] = useState('cases');
 
   const renderContent = () => {
     switch (currentView) {
-      case 'dashboard':
-        return <ProcessOwnerDashboard />;
-      case 'configuration':
-        return <div style={{ padding: '20px' }}>Configuration View</div>;
+      case 'cases':
+        return <AuditCaseSelectionView />;
+      case 'case-types':
+        return <AuditCaseTypesConfigView />;
       default:
-        return <ProcessOwnerDashboard />;
+        return <AuditCaseSelectionView />;
     }
   };
 
   return (
-    <ProtectedRoute requiredRoles={['process_owner']}>
-      <RoleLayout currentView={currentView} onNavigate={setCurrentView}>
-        {renderContent()}
-      </RoleLayout>
-    </ProtectedRoute>
+    <div style={{ display: 'flex', height: '100vh' }}>
+      {/* Sidebar */}
+      <Sidebar currentView={currentView} onViewChange={setCurrentView} userRole="process_owner" />
+
+      {/* Main Content */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#0f1419' }}>
+        {/* Top Bar */}
+        <TopBar title={getViewTitle(currentView)} />
+
+        {/* Navigation Tabs */}
+        <div style={{
+          background: '#1c2128',
+          borderBottom: '1px solid #30363d',
+          padding: '0',
+          display: 'flex',
+          gap: '0'
+        }}>
+          <button
+            onClick={() => setCurrentView('cases')}
+            style={{
+              flex: 1,
+              padding: '16px 20px',
+              background: currentView === 'cases' ? '#0f1419' : 'transparent',
+              color: currentView === 'cases' ? '#4a8fd9' : '#8b949e',
+              border: 'none',
+              borderBottom: currentView === 'cases' ? '3px solid #4a8fd9' : 'none',
+              fontSize: '13px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+          >
+            <i className="fas fa-list-check"></i> Audit Case Selection
+          </button>
+
+          <button
+            onClick={() => setCurrentView('case-types')}
+            style={{
+              flex: 1,
+              padding: '16px 20px',
+              background: currentView === 'case-types' ? '#0f1419' : 'transparent',
+              color: currentView === 'case-types' ? '#4a8fd9' : '#8b949e',
+              border: 'none',
+              borderBottom: currentView === 'case-types' ? '3px solid #4a8fd9' : 'none',
+              fontSize: '13px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+          >
+            <i className="fas fa-cogs"></i> Case Types Config
+          </button>
+        </div>
+
+        {/* Content Area */}
+        <div style={{
+          flex: 1,
+          overflowY: 'auto',
+          background: '#0f1419'
+        }}>
+          {renderContent()}
+        </div>
+      </div>
+    </div>
   );
+}
+
+function getViewTitle(view) {
+  const titles = {
+    'cases': 'Audit Case Selection - Risk Engine Cases',
+    'case-types': 'Audit Case Types Configuration',
+  };
+  return titles[view] || 'Process Owner Dashboard';
 }
 
 export default ProcessOwnerView;

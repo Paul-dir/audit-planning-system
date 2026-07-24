@@ -100,6 +100,16 @@ function Sidebar({ currentRole, currentView, onNavigate }) {
           { id: 'rejected-plans', icon: 'fas fa-times-circle', label: 'Rejected Plans', permission: 'approve_plans' },
           { id: 'configuration', icon: 'fas fa-cogs', label: 'Configuration & Standards', permission: null }
         ];
+
+      case 'process_owner':
+        return [
+          { id: 'dashboard', icon: 'fas fa-tachometer-alt', label: 'Dashboard', permission: 'view_audit_metrics' },
+          { id: 'cases', icon: 'fas fa-list-check', label: 'Audit Case Selection', permission: 'view_audit_cases' },
+          { id: 'case-types', icon: 'fas fa-cogs', label: 'Case Types Configuration', permission: 'manage_processes' },
+          { id: 'risk-engine', icon: 'fas fa-globe', label: 'Risk Engine Analysis', permission: 'view_audit_metrics' },
+          { id: 'stored-cases', icon: 'fas fa-folder-open', label: 'Stored Cases', permission: 'view_audit_cases' },
+          { id: 'configuration', icon: 'fas fa-sliders-h', label: 'Configuration', permission: null }
+        ];
       
       default:
         return [];
