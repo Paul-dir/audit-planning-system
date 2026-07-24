@@ -23,6 +23,7 @@ function AuditCaseSelectionView() {
   const [filterSegment, setFilterSegment] = useState('All');
   const [filterAuditType, setFilterAuditType] = useState('All');
   const [filterRiskLevel, setFilterRiskLevel] = useState('All');
+  const [filterSource, setFilterSource] = useState('All'); // All, Risk Engine, Audit Requests
   const [searchTerm, setSearchTerm] = useState('');
   
   // Sorting & Pagination
@@ -38,14 +39,24 @@ function AuditCaseSelectionView() {
 
   const loadCases = () => {
     const data = loadData();
-    const cases = data.auditCases || [];
+    
+    // Load risk engine cases
+    const riskEngineCases = (data.auditCases || []).filter(c => !c.createdFrom || c.createdFrom !== 'AUDIT_REQUEST');
+    
+    // Load request-based cases (approved requests that created cases)
+    const requestCases = (data.auditCases || []).filter(c => c.createdFrom === 'AUDIT_REQUEST');
+    
+    // Combine all cases
+    const allCombinedCases = [...riskEngineCases, ...requestCases];
     
     console.log('📊 AuditCaseSelectionView - Cases loaded:', {
-      total: cases.length,
-      cases: cases.map(c => ({ id: c.id, risk: c.riskLevel, type: c.auditType }))
+      total: allCombinedCases.length,
+      riskEngine: riskEngineCases.length,
+      requests: requestCases.length,
+      cases: allCombinedCases.map(c => ({ id: c.id, risk: c.riskLevel, type: c.auditType, source: c.createdFrom || 'RISK_ENGINE' }))
     });
     
-    setAllCases(cases);
+    setAllCases(allCombinedCases);
   };
 
   // Apply filters
@@ -66,6 +77,14 @@ function AuditCaseSelectionView() {
 
     if (filterRiskLevel !== 'All') {
       filtered = filtered.filter(c => c.riskLevel === filterRiskLevel);
+    }
+
+    if (filterSource !== 'All') {
+      if (filterSource === 'Risk Engine') {
+        filtered = filtered.filter(c => !c.createdFrom || c.createdFrom !== 'AUDIT_REQUEST');
+      } else if (filterSource === 'Audit Requests') {
+        filtered = filtered.filter(c => c.createdFrom === 'AUDIT_REQUEST');
+      }
     }
 
     if (searchTerm) {
@@ -101,13 +120,14 @@ function AuditCaseSelectionView() {
 
     setFilteredCases(sorted);
     setCurrentPage(1);
-  }, [allCases, filterBranch, filterSegment, filterAuditType, filterRiskLevel, searchTerm, sortBy, sortOrder]);
+  }, [allCases, filterBranch, filterSegment, filterAuditType, filterRiskLevel, filterSource, searchTerm, sortBy, sortOrder]);
 
   // Get unique filter options
   const getBranches = () => ['All', ...new Set(allCases.map(c => c.region))];
   const getSegments = () => ['All', 'Large Taxpayer', 'Medium Taxpayer', 'Small Taxpayer', 'Micro Taxpayer'];
   const getAuditTypes = () => ['All', ...new Set(allCases.map(c => c.auditType))];
   const getRiskLevels = () => ['All', 'Critical', 'High', 'Medium', 'Low'];
+  const getSources = () => ['All', 'Risk Engine', 'Audit Requests'];
 
   // Calculate statistics
   const getStats = () => {
@@ -266,10 +286,12 @@ function AuditCaseSelectionView() {
 
       {/* Summary Info */}
       <div style={{ background: '#e3f2fd', color: '#0c4a6e', padding: '16px', borderRadius: '8px', marginBottom: '24px', border: '1px solid #1976d2' }}>
-        <strong style={{ color: '#0c4a6e' }}><i className="fas fa-info-circle"></i> Audit Cases from Risk Engine</strong>
+        <strong style={{ color: '#0c4a6e' }}><i className="fas fa-info-circle"></i> Audit Cases - Multiple Sources</strong>
         <p style={{ color: '#0c4a6e', margin: '8px 0 0 0', fontSize: '13px', lineHeight: '1.6' }}>
-          View and select audit cases identified by the Risk Directorate based on risk ranking and other parameters.
-          Total cases available: <strong>{allCases.length}</strong> | Selected: <strong>{selectedCases.size}</strong>
+          View and select audit cases from both Risk Engine and approved audit requests. Total cases available: <strong>{allCases.length}</strong> | 
+          Risk Engine: <strong>{allCases.filter(c => !c.createdFrom || c.createdFrom !== 'AUDIT_REQUEST').length}</strong> | 
+          Audit Requests: <strong>{allCases.filter(c => c.createdFrom === 'AUDIT_REQUEST').length}</strong> | 
+          Selected: <strong>{selectedCases.size}</strong>
         </p>
       </div>
 
@@ -351,6 +373,20 @@ function AuditCaseSelectionView() {
           ))}
         </select>
 
+        <select value={filterSource} onChange={(e) => setFilterSource(e.target.value)}
+          style={{
+            padding: '8px 12px',
+            border: '1px solid #30363d',
+            borderRadius: '6px',
+            background: '#0f1419',
+            color: '#f0f6fc',
+            fontSize: '12px'
+          }}>
+          {getSources().map(source => (
+            <option key={source} value={source}>{source}</option>
+          ))}
+        </select>
+
         <button
           onClick={() => {
             setSearchTerm('');
@@ -358,6 +394,7 @@ function AuditCaseSelectionView() {
             setFilterSegment('All');
             setFilterAuditType('All');
             setFilterRiskLevel('All');
+            setFilterSource('All');
           }}
           style={{
             padding: '8px 12px',
@@ -497,6 +534,7 @@ function AuditCaseSelectionView() {
               <th>BRANCH</th>
               <th>AUDIT TYPE</th>
               <th>RISK</th>
+              <th>SOURCE</th>
               <th>REVENUE</th>
               <th>EST. HOURS</th>
               <th>STATUS</th>
@@ -527,6 +565,18 @@ function AuditCaseSelectionView() {
                     fontWeight: 'bold'
                   }}>
                     {auditCase.riskLevel}
+                  </span>
+                </td>
+                <td>
+                  <span style={{
+                    background: auditCase.createdFrom === 'AUDIT_REQUEST' ? '#ff9800' : '#4a8fd9',
+                    color: '#fff',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    fontSize: '11px',
+                    fontWeight: 'bold'
+                  }}>
+                    {auditCase.createdFrom === 'AUDIT_REQUEST' ? '🔔 Request' : '⚙️ Risk Engine'}
                   </span>
                 </td>
                 <td>{(auditCase.revenueAtRisk / 1000000).toFixed(1)}M</td>

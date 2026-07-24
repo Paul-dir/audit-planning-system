@@ -5,6 +5,7 @@ import Badge from '../Badge';
 import AuditCaseSelectionView from '../views/AuditCaseSelectionView';
 import AuditCaseTypesConfigView from '../views/AuditCaseTypesConfigView';
 import StoredCasesView from '../views/StoredCasesView';
+import RequestForAuditView from '../views/RequestForAuditView';
 
 /**
  * ProcessOwnerView
@@ -21,10 +22,12 @@ function ProcessOwnerView() {
     switch (currentView) {
       case 'cases':
         return <AuditCaseSelectionView />;
-      case 'case-types':
-        return <AuditCaseTypesConfigView />;
+      case 'requests':
+        return <RequestForAuditView />;
       case 'stored-cases':
         return <StoredCasesView />;
+      case 'case-types':
+        return <AuditCaseTypesConfigView />;
       default:
         return <AuditCaseSelectionView />;
     }
@@ -64,6 +67,24 @@ function ProcessOwnerView() {
             }}
           >
             <i className="fas fa-list-check"></i> Audit Case Selection
+          </button>
+
+          <button
+            onClick={() => setCurrentView('requests')}
+            style={{
+              flex: 1,
+              padding: '16px 20px',
+              background: currentView === 'requests' ? '#0f1419' : 'transparent',
+              color: currentView === 'requests' ? '#4a8fd9' : '#8b949e',
+              border: 'none',
+              borderBottom: currentView === 'requests' ? '3px solid #4a8fd9' : 'none',
+              fontSize: '13px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+          >
+            <i className="fas fa-inbox"></i> Requests for Audit
           </button>
 
           <button
@@ -119,6 +140,7 @@ function ProcessOwnerView() {
 function getViewTitle(view) {
   const titles = {
     'cases': 'Audit Case Selection - Risk Engine Cases',
+    'requests': 'Requests for Audit - Directorates & External Stakeholders',
     'stored-cases': 'Stored Cases - Ready for Audit Execution',
     'case-types': 'Audit Case Types Configuration',
   };
