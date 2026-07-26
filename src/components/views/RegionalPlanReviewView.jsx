@@ -5,8 +5,12 @@ import { loadData } from '../../utils/data';
 import { useRegional } from '../../context/RegionalContext';
 
 /**
- * RegionalPlanReviewView - SIMPLIFIED
+ * RegionalPlanReviewView - Plan Review Interface (Simplified)
  * Only shows plan review, no allocation workflow here.
+ * Displays plans sent from director for feedback and regional allocation details.
+ * 
+ * @component
+ * @returns {React.ReactElement} Plan review interface
  */
 function RegionalPlanReviewView({ currentView }) {
   const { assignedRegion, selectedRegion: contextSelectedRegion } = useRegional();
@@ -72,13 +76,13 @@ function RegionalPlanReviewView({ currentView }) {
   // Show error if no region assigned
   if (!selectedRegion) {
     return (
-      <div style={{ padding: '24px' }}>
-        <div className="detail-header">
-          <h2><i className="fas fa-exclamation-circle"></i> No Region Assigned</h2>
+      <div className="min-h-screen bg-ink dark:bg-ink p-8">
+        <div className="flex items-center gap-3 pl-4 border-l-4 border-gold dark:border-gold mb-6">
+          <h2 className="text-2xl font-bold"><i className="fas fa-exclamation-circle"></i> No Region Assigned</h2>
         </div>
-        <div style={{ background: '#3a1a1a', padding: '16px', borderRadius: '8px', border: '1px solid #ff5252' }}>
-          <strong style={{ color: '#c62828' }}>⚠️ Error: No Region Assigned</strong>
-          <p style={{ color: '#0c4a6e', margin: '8px 0 0 0', fontSize: '13px', color: '#ff5252' }}>
+        <div className="bg-red-900 dark:bg-red-900 p-4 rounded-lg border border-coral dark:border-coral">
+          <strong className="text-coral dark:text-coral">⚠️ Error: No Region Assigned</strong>
+          <p className="text-coral dark:text-coral mt-2 mb-0 text-xs">
             You are not assigned to any region. Contact your system administrator.
           </p>
         </div>
@@ -89,33 +93,33 @@ function RegionalPlanReviewView({ currentView }) {
   // Show plan list if no plan selected
   if (!selectedPlan && plans.length > 0) {
     return (
-      <div style={{ padding: '24px' }}>
-        <div className="detail-header">
-          <h2><i className="fas fa-inbox"></i> Plans Sent from Director - {selectedRegion}</h2>
+      <div className="min-h-screen bg-ink dark:bg-ink p-8">
+        <div className="flex items-center gap-3 pl-4 border-l-4 border-gold dark:border-gold mb-6">
+          <h2 className="text-2xl font-bold"><i className="fas fa-inbox"></i> Plans Sent from Director - {selectedRegion}</h2>
           <Badge status={`${plans.length} plans`} className="director-approved" />
         </div>
 
-        <div className="table-container">
-          <table>
+        <div className="table-container w-full overflow-x-auto">
+          <table className="w-full text-sm">
             <thead>
-              <tr>
-                <th>Plan ID</th>
-                <th>Fiscal Year</th>
-                <th>Total Cases</th>
-                <th>Status</th>
-                <th>Created Date</th>
-                <th>Action</th>
+              <tr className="bg-panel dark:bg-panel border-b border-border dark:border-border">
+                <th className="text-left p-3 text-text-mid dark:text-text-mid">Plan ID</th>
+                <th className="text-left p-3 text-text-mid dark:text-text-mid">Fiscal Year</th>
+                <th className="text-left p-3 text-text-mid dark:text-text-mid">Total Cases</th>
+                <th className="text-left p-3 text-text-mid dark:text-text-mid">Status</th>
+                <th className="text-left p-3 text-text-mid dark:text-text-mid">Created Date</th>
+                <th className="text-left p-3 text-text-mid dark:text-text-mid">Action</th>
               </tr>
             </thead>
             <tbody>
               {plans.map(p => (
-                <tr key={p.id}>
-                  <td><strong>{p.id}</strong></td>
-                  <td>{p.fiscalYear}</td>
-                  <td>{p.totalCases || p.totalVolume || '-'}</td>
-                  <td><Badge status={p.status} className={p.status === 'FEEDBACK_COLLECTED' ? 'director-approved' : 'feedback'} /></td>
-                  <td>{p.createdDate?.split('T')[0] || '-'}</td>
-                  <td>
+                <tr key={p.id} className="border-b border-border dark:border-border hover:bg-panel dark:hover:bg-panel">
+                  <td className="p-3"><strong className="text-text-hi dark:text-text-hi">{p.id}</strong></td>
+                  <td className="p-3 text-text-mid dark:text-text-mid">{p.fiscalYear}</td>
+                  <td className="p-3 text-text-mid dark:text-text-mid">{p.totalCases || p.totalVolume || '-'}</td>
+                  <td className="p-3"><Badge status={p.status} className={p.status === 'FEEDBACK_COLLECTED' ? 'director-approved' : 'feedback'} /></td>
+                  <td className="p-3 text-text-mid dark:text-text-mid">{p.createdDate?.split('T')[0] || '-'}</td>
+                  <td className="p-3">
                     <button 
                       className="btn btn-sm btn-primary"
                       onClick={() => {
@@ -138,13 +142,13 @@ function RegionalPlanReviewView({ currentView }) {
   // Show no plans message
   if (!selectedPlan || !regionAllocation) {
     return (
-      <div style={{ padding: '24px' }}>
-        <div className="detail-header">
-          <h2><i className="fas fa-inbox"></i> Plan Review - {selectedRegion}</h2>
+      <div className="min-h-screen bg-ink dark:bg-ink p-8">
+        <div className="flex items-center gap-3 pl-4 border-l-4 border-gold dark:border-gold mb-6">
+          <h2 className="text-2xl font-bold"><i className="fas fa-inbox"></i> Plan Review - {selectedRegion}</h2>
         </div>
-        <div style={{ background: '#1a2332', padding: '16px', borderRadius: '8px', border: '1px solid #4a8fd9', marginTop: '24px' }}>
-          <strong style={{ color: '#4a8fd9' }}><i className="fas fa-info-circle"></i> No Plan</strong>
-          <p style={{ color: '#0c4a6e', margin: '8px 0 0 0', fontSize: '13px', color: '#2d3d4d' }}>
+        <div className="bg-blue-900 dark:bg-blue-900 p-4 rounded-lg border border-blue dark:border-blue mt-6">
+          <strong className="text-blue dark:text-blue"><i className="fas fa-info-circle"></i> No Plan</strong>
+          <p className="text-text-mid dark:text-text-mid mt-2 mb-0 text-xs">
             No approved plan has been received yet.
           </p>
         </div>
@@ -163,8 +167,8 @@ function RegionalPlanReviewView({ currentView }) {
   };
 
   return (
-    <div style={{ padding: '24px' }}>
-      <div className="action-bar" style={{ marginBottom: '24px' }}>
+    <div className="min-h-screen bg-ink dark:bg-ink p-8">
+      <div className="action-bar mb-6">
         <button 
           className="btn btn-outline"
           onClick={() => setSelectedPlan(null)}
@@ -173,21 +177,21 @@ function RegionalPlanReviewView({ currentView }) {
         </button>
       </div>
 
-      <div className="detail-header">
-        <h2><i className="fas fa-tasks"></i> Review Plan from Director - {selectedRegion}</h2>
+      <div className="flex items-center gap-3 pl-4 border-l-4 border-gold dark:border-gold mb-6">
+        <h2 className="text-2xl font-bold"><i className="fas fa-tasks"></i> Review Plan from Director - {selectedRegion}</h2>
         <Badge status="Review" className="director-approved" />
       </div>
 
       {/* Step 1: Review Plan */}
-      <div style={{ background: '#1a3a1a', padding: '16px', borderRadius: '8px', marginBottom: '24px', border: '1px solid #388e3c' }}>
-        <strong><i className="fas fa-check-circle"></i> Step 1: Review Plan from Director</strong>
-        <p style={{ color: '#0c4a6e', margin: '8px 0 0 0', fontSize: '13px', lineHeight: '1.6' }}>
+      <div className="bg-green-900 dark:bg-green-900 p-4 rounded-lg mb-6 border border-teal dark:border-teal">
+        <strong className="text-teal dark:text-teal"><i className="fas fa-check-circle"></i> Step 1: Review Plan from Director</strong>
+        <p className="text-text-mid dark:text-text-mid mt-2 mb-0 text-xs leading-relaxed">
           You have received the {selectedPlan.name || 'Annual Audit Plan'} for {selectedRegion} region. Total cases: <strong>{regionAllocation.totalCases}</strong>
         </p>
       </div>
 
       {/* Plan Details Cards */}
-      <div className="cards">
+      <div className="cards mb-6">
         <Card title="Plan ID" number={selectedPlan.id} icon="fas fa-id-badge" />
         <Card title="Version" number={selectedPlan.version} icon="fas fa-code-branch" />
         <Card title="Total Cases" number={regionAllocation.totalCases} icon="fas fa-tasks" />
@@ -195,31 +199,31 @@ function RegionalPlanReviewView({ currentView }) {
       </div>
 
       {/* Plan Details Section */}
-      <div style={{ marginTop: '24px', background: '#f8f9fc', color: '#0c4a6e', padding: '16px', borderRadius: '8px', border: '1px solid #2d3d4d' }}>
-        <h3><i className="fas fa-info-circle"></i> Plan Details</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '12px' }}>
+      <div className="mt-6 bg-panel dark:bg-panel text-text-hi dark:text-text-hi p-4 rounded-lg border border-border dark:border-border mb-6">
+        <h3 className="text-text-hi dark:text-text-hi"><i className="fas fa-info-circle"></i> Plan Details</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
           <div>
-            <p style={{ fontSize: '12px', color: '#a0aec0', margin: 0 }}>Planning Tactics</p>
-            <p style={{ fontSize: '13px', margin: '4px 0 0 0' }}>{selectedPlan.strategy || 'Risk-based approach'}</p>
+            <p className="text-xs text-text-mid dark:text-text-mid m-0">Planning Tactics</p>
+            <p className="text-sm m-1">{selectedPlan.strategy || 'Risk-based approach'}</p>
           </div>
           <div>
-            <p style={{ fontSize: '12px', color: '#a0aec0', margin: 0 }}>Planning Period</p>
-            <p style={{ fontSize: '13px', margin: '4px 0 0 0' }}>{selectedPlan.startDate?.split('T')[0]} to {selectedPlan.endDate?.split('T')[0]}</p>
+            <p className="text-xs text-text-mid dark:text-text-mid m-0">Planning Period</p>
+            <p className="text-sm m-1">{selectedPlan.startDate?.split('T')[0]} to {selectedPlan.endDate?.split('T')[0]}</p>
           </div>
         </div>
       </div>
 
       {/* Audit Type Breakdown */}
-      <div className="section-title" style={{ marginTop: '24px', marginBottom: '12px' }}>
+      <div className="section-title mt-6 mb-3">
         <i className="fas fa-chart-pie"></i> Audit Type Breakdown for {selectedRegion}
       </div>
-      <div className="table-container" style={{ marginBottom: '24px' }}>
-        <table>
+      <div className="table-container mb-6 w-full overflow-x-auto">
+        <table className="w-full text-sm">
           <thead>
-            <tr style={{ background: '#1e2a3a', borderBottom: '2px solid #2d3d4d' }}>
-              <th style={{ textAlign: 'left', color: '#4a8fd9' }}>AUDIT TYPE</th>
-              <th style={{ textAlign: 'center', color: '#4a8fd9' }}>CASES</th>
-              <th style={{ textAlign: 'center', color: '#4a8fd9' }}>% OF TOTAL</th>
+            <tr className="bg-panel dark:bg-panel border-b-2 border-border dark:border-border">
+              <th className="text-left p-3 text-text-mid dark:text-text-mid">AUDIT TYPE</th>
+              <th className="text-center p-3 text-text-mid dark:text-text-mid">CASES</th>
+              <th className="text-center p-3 text-text-mid dark:text-text-mid">% OF TOTAL</th>
             </tr>
           </thead>
           <tbody>
@@ -227,26 +231,26 @@ function RegionalPlanReviewView({ currentView }) {
               const cases = regionAllocation.breakdown?.[auditType] || 0;
               const percentage = ((cases / regionAllocation.totalCases) * 100).toFixed(1);
               return (
-                <tr key={idx}>
-                  <td><strong>{auditTypeLabels[auditType]}</strong></td>
-                  <td style={{ textAlign: 'center' }}>{cases}</td>
-                  <td style={{ textAlign: 'center' }}>{percentage}%</td>
+                <tr key={idx} className="border-b border-border dark:border-border hover:bg-panel dark:hover:bg-panel">
+                  <td className="p-3"><strong className="text-text-hi dark:text-text-hi">{auditTypeLabels[auditType]}</strong></td>
+                  <td className="text-center p-3 text-text-mid dark:text-text-mid">{cases}</td>
+                  <td className="text-center p-3 text-text-mid dark:text-text-mid">{percentage}%</td>
                 </tr>
               );
             })}
-            <tr style={{ background: '#0f1419', fontWeight: 'bold' }}>
-              <td>TOTAL</td>
-              <td style={{ textAlign: 'center' }}>{regionAllocation.totalCases}</td>
-              <td style={{ textAlign: 'center' }}>100%</td>
+            <tr className="bg-ink dark:bg-ink font-bold border-t-2 border-border dark:border-border">
+              <td className="p-3 text-text-hi dark:text-text-hi">TOTAL</td>
+              <td className="text-center p-3 text-text-hi dark:text-text-hi">{regionAllocation.totalCases}</td>
+              <td className="text-center p-3 text-text-hi dark:text-text-hi">100%</td>
             </tr>
           </tbody>
         </table>
       </div>
 
       {/* Info Box */}
-      <div style={{ background: '#e3f2fd', color: '#0c4a6e', padding: '16px', borderRadius: '8px', border: '1px solid #1976d2', marginTop: '24px' }}>
+      <div className="bg-blue-50 dark:bg-blue-900 text-text-hi dark:text-text-hi p-4 rounded-lg border border-blue dark:border-blue mt-6">
         <strong><i className="fas fa-info-circle"></i> Next Step</strong>
-        <p style={{ color: '#0c4a6e', margin: '8px 0 0 0', fontSize: '13px', lineHeight: '1.6' }}>
+        <p className="text-text-mid dark:text-text-mid mt-2 mb-0 text-xs leading-relaxed">
           Click "Allocate to Tax Centers" from the sidebar to distribute these audit types to your 3 tax centers.
         </p>
       </div>

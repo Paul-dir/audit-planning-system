@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from 'react';
 
+/**
+ * ThemeToggle Component - Toggle between light and dark modes
+ * 
+ * Features:
+ * - Persists theme preference to localStorage
+ * - Respects system preference as fallback
+ * - Applies 'dark' class to HTML element for Tailwind
+ * - Preserves CSS variables for backward compatibility
+ */
 export default function ThemeToggle() {
   const [isDark, setIsDark] = useState(false); // Light mode is default
 
@@ -48,39 +57,16 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      style={{
-        background: 'var(--card)',
-        border: '1px solid var(--border)',
-        color: 'var(--text-primary)',
-        width: '38px',
-        height: '38px',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        transition: 'all 0.2s ease',
-        fontSize: '14px',
-        fontWeight: '500',
-      }}
-      onMouseEnter={(e) => {
-        e.target.style.borderColor = 'var(--primary)';
-        e.target.style.boxShadow = '0 2px 8px rgba(59, 130, 246, 0.2)';
-        e.target.style.transform = 'translateY(-2px)';
-      }}
-      onMouseLeave={(e) => {
-        e.target.style.borderColor = 'var(--border)';
-        e.target.style.boxShadow = 'none';
-        e.target.style.transform = 'translateY(0)';
-      }}
+      className="w-10 h-10 flex items-center justify-center bg-card border border-border rounded-md text-text-primary hover:border-primary hover:shadow-md active:scale-95 transition-all duration-200 cursor-pointer"
       title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
       aria-label="Toggle theme"
     >
       {isDark ? (
-        <i className="fas fa-sun" style={{ fontSize: '14px' }}></i>
+        <i className="fas fa-sun text-sm"></i>
       ) : (
-        <i className="fas fa-moon" style={{ fontSize: '14px' }}></i>
+        <i className="fas fa-moon text-sm"></i>
       )}
     </button>
   );
 }
+

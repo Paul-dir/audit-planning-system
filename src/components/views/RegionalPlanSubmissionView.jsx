@@ -5,8 +5,12 @@ import { loadData, saveData } from '../../utils/data';
 import { useRegional } from '../../context/RegionalContext';
 
 /**
- * RegionalPlanSubmissionView - Regional Director submits finalized plans to tax centers
- * Formal handoff from regional to tax center level
+ * RegionalPlanSubmissionView - Regional Plan Submission Workflow
+ * Regional Director submits finalized plans to tax centers for formal acceptance.
+ * This represents the formal handoff from regional to tax center level.
+ * 
+ * @component
+ * @returns {React.ReactElement} Plan submission interface
  */
 function RegionalPlanSubmissionView() {
   const { assignedRegion } = useRegional();
@@ -142,22 +146,22 @@ function RegionalPlanSubmissionView() {
   }
 
   return (
-    <div style={{ padding: '24px' }}>
-      <div className="detail-header">
-        <h2><i className="fas fa-share-alt"></i> Submit Approved Plan to Tax Centers</h2>
+    <div className="min-h-screen bg-ink dark:bg-ink p-8">
+      <div className="flex items-center gap-3 pl-4 border-l-4 border-gold dark:border-gold mb-6">
+        <h2 className="text-2xl font-bold"><i className="fas fa-share-alt"></i> Submit Approved Plan to Tax Centers</h2>
         <Badge status={`${plans.length} Plans Ready`} className="director-approved" />
       </div>
 
-      <div style={{ background: '#e3f2fd', color: '#0c4a6e', padding: '16px', borderRadius: '8px', marginBottom: '24px', border: '1px solid #1976d2', color: '#0c4a6e' }}>
+      <div className="bg-blue-50 dark:bg-blue-900 text-text-hi dark:text-text-hi p-4 rounded-lg mb-6 border border-blue dark:border-blue">
         <strong><i className="fas fa-info-circle"></i> Regional Director - Formal Submission</strong>
-        <p style={{ color: '#0c4a6e', margin: '8px 0 0 0', fontSize: '13px', lineHeight: '1.6' }}>
+        <p className="text-text-mid dark:text-text-mid mt-2 mb-0 text-xs leading-relaxed">
           Submit finalized plans you've acknowledged to your 3 tax centers. Tax centers will receive the plan and can formally accept it for implementation. This creates an official handoff.
         </p>
       </div>
 
       {/* Region Selector */}
-      <div style={{ marginBottom: '24px', display: 'flex', gap: '12px', alignItems: 'center' }}>
-        <label style={{ fontWeight: '600', fontSize: '13px' }}>Select Region:</label>
+      <div className="mb-6 flex gap-3 items-center">
+        <label className="font-semibold text-xs">Select Region:</label>
         <select 
           value={selectedRegion}
           onChange={(e) => {
@@ -165,16 +169,7 @@ function RegionalPlanSubmissionView() {
             setSelectedPlan(null);
             setPlanDetails(null);
           }}
-          style={{
-            padding: '8px 12px',
-            border: '1px solid #30363d',
-            borderRadius: '8px',
-            background: '#1c2128',
-            color: '#f0f6fc',
-            fontSize: '13px',
-            fontWeight: '500',
-            cursor: 'pointer'
-          }}
+          className="px-3 py-2 border border-border dark:border-border rounded-lg bg-panel dark:bg-panel text-text-hi dark:text-text-hi text-xs font-medium cursor-pointer"
         >
           {allRegions.map(region => (
             <option key={region} value={region}>{region}</option>
@@ -183,42 +178,35 @@ function RegionalPlanSubmissionView() {
       </div>
 
       {/* Approved Plans for this Region */}
-      <div className="section-title" style={{ marginBottom: '12px' }}>
+      <div className="section-title mb-3">
         <i className="fas fa-check-circle"></i> Approved Plans for {selectedRegion}
       </div>
       {approvedPlans.length === 0 ? (
-        <div style={{
-          background: '#0f1419', color: '#f0f6fc',
-          padding: '16px',
-          borderRadius: '8px',
-          marginBottom: '24px',
-          border: '1px solid #ffb74d',
-          textAlign: 'center'
-        }}>
-          <p style={{ color: '#f57f17', fontSize: '13px', margin: 0 }}>No approved plans available yet</p>
+        <div className="bg-ink dark:bg-ink text-text-hi dark:text-text-hi p-4 rounded-lg mb-6 border border-gold dark:border-gold text-center">
+          <p className="text-gold dark:text-gold text-xs m-0">No approved plans available yet</p>
         </div>
       ) : (
-        <div className="table-container" style={{ marginBottom: '24px' }}>
-          <table>
+        <div className="table-container mb-6 w-full overflow-x-auto">
+          <table className="w-full text-sm">
             <thead>
-              <tr>
-                <th>PLAN ID</th>
-                <th>FISCAL YEAR</th>
-                <th>VERSION</th>
-                <th>STATUS</th>
-                <th style={{ width: '120px' }}>ACTION</th>
+              <tr className="bg-panel dark:bg-panel border-b border-border dark:border-border">
+                <th className="text-left p-3 text-text-mid dark:text-text-mid">PLAN ID</th>
+                <th className="text-left p-3 text-text-mid dark:text-text-mid">FISCAL YEAR</th>
+                <th className="text-left p-3 text-text-mid dark:text-text-mid">VERSION</th>
+                <th className="text-left p-3 text-text-mid dark:text-text-mid">STATUS</th>
+                <th className="text-left p-3 text-text-mid dark:text-text-mid w-32">ACTION</th>
               </tr>
             </thead>
             <tbody>
               {approvedPlans.map(plan => (
-                <tr key={plan.id}>
-                  <td><strong>{plan.id}</strong></td>
-                  <td>{plan.fiscalYear}</td>
-                  <td>v{plan.version}</td>
-                  <td>
+                <tr key={plan.id} className="border-b border-border dark:border-border hover:bg-panel dark:hover:bg-panel">
+                  <td className="p-3"><strong className="text-text-hi dark:text-text-hi">{plan.id}</strong></td>
+                  <td className="p-3 text-text-mid dark:text-text-mid">{plan.fiscalYear}</td>
+                  <td className="p-3 text-text-mid dark:text-text-mid">v{plan.version}</td>
+                  <td className="p-3">
                     <Badge status="Approved" className="senior-approved" />
                   </td>
-                  <td>
+                  <td className="p-3">
                     <button
                       className={`btn btn-sm ${selectedPlan === plan.id ? 'btn-primary' : 'btn-outline'}`}
                       onClick={() => {
@@ -244,53 +232,46 @@ function RegionalPlanSubmissionView() {
       </div>
 
       {plans.length === 0 ? (
-        <div style={{
-          background: '#0f1419', color: '#f0f6fc',
-          padding: '20px',
-          borderRadius: '8px',
-          border: '2px solid #ffb74d',
-          textAlign: 'center',
-          marginBottom: '24px'
-        }}>
-          <i className="fas fa-info-circle" style={{ fontSize: '24px', color: '#4a8fd9', marginBottom: '12px', display: 'block' }}></i>
-          <h3 style={{ margin: '8px 0', color: '#f57f17' }}>No Plans Ready for Submission</h3>
-          <p style={{ color: '#0c4a6e', margin: '8px 0', fontSize: '13px', color: '#f57f17' }}>
+        <div className="bg-ink dark:bg-ink text-text-hi dark:text-text-hi p-5 rounded-lg border-2 border-gold dark:border-gold text-center mb-6">
+          <i className="fas fa-info-circle text-2xl text-blue dark:text-blue mb-3 block"></i>
+          <h3 className="m-2 text-gold dark:text-gold">No Plans Ready for Submission</h3>
+          <p className="text-gold dark:text-gold m-2 text-xs">
             First acknowledge finalized plans using the "Acknowledge Finalized Plans" page, then come here to formally submit them to tax centers.
           </p>
         </div>
       ) : (
         <>
           {/* Plan Selection */}
-          <div className="section-title" style={{ marginBottom: '12px' }}>
+          <div className="section-title mb-3">
             <i className="fas fa-file-alt"></i> Select Plan to Submit
           </div>
-          <div className="table-container" style={{ marginBottom: '24px' }}>
-            <table>
+          <div className="table-container mb-6 w-full overflow-x-auto">
+            <table className="w-full text-sm">
               <thead>
-                <tr>
-                  <th>PLAN ID</th>
-                  <th>FISCAL YEAR</th>
-                  <th>VERSION</th>
-                  <th>TOTAL CASES</th>
-                  <th>STATUS</th>
-                  <th style={{ width: '150px' }}>ACTION</th>
+                <tr className="bg-panel dark:bg-panel border-b border-border dark:border-border">
+                  <th className="text-left p-3 text-text-mid dark:text-text-mid">PLAN ID</th>
+                  <th className="text-left p-3 text-text-mid dark:text-text-mid">FISCAL YEAR</th>
+                  <th className="text-left p-3 text-text-mid dark:text-text-mid">VERSION</th>
+                  <th className="text-left p-3 text-text-mid dark:text-text-mid">TOTAL CASES</th>
+                  <th className="text-left p-3 text-text-mid dark:text-text-mid">STATUS</th>
+                  <th className="text-left p-3 text-text-mid dark:text-text-mid w-40">ACTION</th>
                 </tr>
               </thead>
               <tbody>
                 {plans.map(plan => (
-                  <tr key={plan.id} style={{ background: selectedPlan === plan.id ? '#0f14193e0' : '' }}>
-                    <td><strong>{plan.id}</strong></td>
-                    <td>{plan.fiscalYear}</td>
-                    <td>{plan.version}</td>
-                    <td>{plan.totalCases || 0}</td>
-                    <td>
+                  <tr key={plan.id} className="border-b border-border dark:border-border hover:bg-panel dark:hover:bg-panel" style={{ background: selectedPlan === plan.id ? 'rgba(15, 20, 25, 0.5)' : '' }}>
+                    <td className="p-3"><strong className="text-text-hi dark:text-text-hi">{plan.id}</strong></td>
+                    <td className="p-3 text-text-mid dark:text-text-mid">{plan.fiscalYear}</td>
+                    <td className="p-3 text-text-mid dark:text-text-mid">{plan.version}</td>
+                    <td className="p-3 text-text-mid dark:text-text-mid">{plan.totalCases || 0}</td>
+                    <td className="p-3">
                       {submitted[plan.id] ? (
                         <Badge status="Submitted" className="senior-approved" />
                       ) : (
                         <Badge status="Ready" className="pending" />
                       )}
                     </td>
-                    <td>
+                    <td className="p-3">
                       <button
                         className={`btn btn-sm ${selectedPlan === plan.id ? 'btn-primary' : 'btn-outline'}`}
                         onClick={() => handleSelectPlan(plan.id)}
@@ -307,35 +288,35 @@ function RegionalPlanSubmissionView() {
           {/* Plan Details */}
           {selectedPlan && planDetails && (
             <>
-              <div className="section-title" style={{ marginBottom: '12px' }}>
+              <div className="section-title mb-3">
                 <i className="fas fa-clipboard-list"></i> Plan Details - {selectedPlan}
               </div>
 
-              <div style={{ background: '#1c2128', padding: '16px', borderRadius: '8px', marginBottom: '24px', border: '1px solid #30363d' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              <div className="bg-panel dark:bg-panel p-4 rounded-lg mb-6 border border-border dark:border-border">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                   <div>
-                    <p style={{ fontSize: '12px', color: '#8b949e', margin: 0 }}>Fiscal Year</p>
-                    <p style={{ fontSize: '18px', fontWeight: 'bold', color: '#f0f6fc', margin: '4px 0 0 0' }}>
+                    <p className="text-xs text-text-mid dark:text-text-mid m-0">Fiscal Year</p>
+                    <p className="text-lg font-bold text-text-hi dark:text-text-hi mt-1">
                       {planDetails.fiscalYear}
                     </p>
                   </div>
                   <div>
-                    <p style={{ fontSize: '12px', color: '#8b949e', margin: 0 }}>Total Cases</p>
-                    <p style={{ fontSize: '18px', fontWeight: 'bold', color: '#f0f6fc', margin: '4px 0 0 0' }}>
+                    <p className="text-xs text-text-mid dark:text-text-mid m-0">Total Cases</p>
+                    <p className="text-lg font-bold text-text-hi dark:text-text-hi mt-1">
                       {planDetails.totalCases || 0}
                     </p>
                   </div>
                   <div>
-                    <p style={{ fontSize: '12px', color: '#8b949e', margin: 0 }}>Region Allocation</p>
-                    <p style={{ fontSize: '18px', fontWeight: 'bold', color: '#4f8a6f', margin: '4px 0 0 0' }}>
+                    <p className="text-xs text-text-mid dark:text-text-mid m-0">Region Allocation</p>
+                    <p className="text-lg font-bold text-teal dark:text-teal mt-1">
                       {typeof planDetails.regionalAllocation?.[selectedRegion] === 'object' 
                         ? Object.values(planDetails.regionalAllocation[selectedRegion]).reduce((sum, val) => sum + (parseInt(val) || 0), 0)
                         : (planDetails.regionalAllocation?.[selectedRegion] || 0)}
                     </p>
                   </div>
                   <div>
-                    <p style={{ fontSize: '12px', color: '#8b949e', margin: 0 }}>Plan Version</p>
-                    <p style={{ fontSize: '18px', fontWeight: 'bold', color: '#f0f6fc', margin: '4px 0 0 0' }}>
+                    <p className="text-xs text-text-mid dark:text-text-mid m-0">Plan Version</p>
+                    <p className="text-lg font-bold text-text-hi dark:text-text-hi mt-1">
                       v{planDetails.version}
                     </p>
                   </div>
@@ -343,24 +324,24 @@ function RegionalPlanSubmissionView() {
               </div>
 
               {/* Audit Type Allocation */}
-              <div className="section-title" style={{ marginBottom: '12px' }}>
+              <div className="section-title mb-3">
                 <i className="fas fa-chart-bar"></i> Audit Type Allocation for {selectedRegion}
               </div>
-              <div className="table-container" style={{ marginBottom: '24px' }}>
-                <table>
+              <div className="table-container mb-6 w-full overflow-x-auto">
+                <table className="w-full text-sm">
                   <thead>
-                    <tr>
-                      <th>AUDIT TYPE</th>
-                      <th style={{ textAlign: 'center' }}>ALLOCATED CASES</th>
+                    <tr className="bg-panel dark:bg-panel border-b border-border dark:border-border">
+                      <th className="text-left p-3 text-text-mid dark:text-text-mid">AUDIT TYPE</th>
+                      <th className="text-center p-3 text-text-mid dark:text-text-mid">ALLOCATED CASES</th>
                     </tr>
                   </thead>
                   <tbody>
                     {auditTypes.map((auditType, idx) => {
                       const allocated = planDetails.auditTypeAllocation?.[auditType] || 0;
                       return (
-                        <tr key={idx}>
-                          <td><strong>{auditTypeLabels[auditType]}</strong></td>
-                          <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{allocated}</td>
+                        <tr key={idx} className="border-b border-border dark:border-border">
+                          <td className="p-3"><strong className="text-text-hi dark:text-text-hi">{auditTypeLabels[auditType]}</strong></td>
+                          <td className="text-center p-3 font-bold text-text-hi dark:text-text-hi">{allocated}</td>
                         </tr>
                       );
                     })}
@@ -369,29 +350,18 @@ function RegionalPlanSubmissionView() {
               </div>
 
               {/* Tax Centers List */}
-              <div className="section-title" style={{ marginBottom: '12px' }}>
+              <div className="section-title mb-3">
                 <i className="fas fa-building"></i> Tax Centers - Will Receive This Plan
               </div>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr 1fr',
-                gap: '16px',
-                marginBottom: '24px'
-              }}>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                 {getTaxCentersList().map(taxCenter => (
                   <div
                     key={taxCenter}
-                    style={{
-                      background: '#1c2128',
-                      padding: '16px',
-                      borderRadius: '12px',
-                      border: '1px solid #30363d',
-                      textAlign: 'center'
-                    }}
+                    className="bg-panel dark:bg-panel p-4 rounded-lg border border-border dark:border-border text-center"
                   >
-                    <i className="fas fa-building" style={{ fontSize: '32px', color: '#4f8a6f', marginBottom: '12px', display: 'block' }}></i>
-                    <h4 style={{ margin: '8px 0', color: '#f0f6fc' }}>{taxCenter}</h4>
-                    <p style={{ color: '#0c4a6e', margin: '4px 0', fontSize: '12px', color: '#8b949e' }}>
+                    <i className="fas fa-building text-3xl text-teal dark:text-teal mb-3 block"></i>
+                    <h4 className="m-2 text-text-hi dark:text-text-hi">{taxCenter}</h4>
+                    <p className="text-text-mid dark:text-text-mid m-1 text-xs">
                       Ready to receive plan
                     </p>
                   </div>
@@ -400,32 +370,20 @@ function RegionalPlanSubmissionView() {
 
               {/* Submission Status */}
               {submitted[selectedPlan] ? (
-                <div style={{
-                  background: '#c8e6c9', color: '#1b5e20',
-                  padding: '16px',
-                  borderRadius: '8px',
-                  border: '2px solid #388e3c',
-                  marginBottom: '24px'
-                }}>
-                  <strong style={{ color: '#2e7d32' }}>
+                <div className="bg-green-50 dark:bg-green-900 text-teal dark:text-teal p-4 rounded-lg border-2 border-teal dark:border-teal mb-6">
+                  <strong className="text-teal dark:text-teal">
                     <i className="fas fa-check-circle"></i> ✅ Already Submitted
                   </strong>
-                  <p style={{ color: '#0c4a6e', margin: '8px 0 0 0', fontSize: '13px', color: '#2e7d32' }}>
+                  <p className="text-teal dark:text-teal mt-2 mb-0 text-xs">
                     This plan has been officially submitted to all tax centers. They can now review and accept it.
                   </p>
                 </div>
               ) : (
-                <div style={{
-                  background: '#0f14193cd',
-                  padding: '16px',
-                  borderRadius: '8px',
-                  border: '2px solid #ffb74d',
-                  marginBottom: '24px'
-                }}>
-                  <strong style={{ color: '#f57f17' }}>
+                <div className="bg-ink dark:bg-ink p-4 rounded-lg border-2 border-gold dark:border-gold mb-6">
+                  <strong className="text-gold dark:text-gold">
                     <i className="fas fa-exclamation-triangle"></i> Ready to Submit
                   </strong>
-                  <p style={{ color: '#0c4a6e', margin: '8px 0 0 0', fontSize: '13px', color: '#f57f17' }}>
+                  <p className="text-gold dark:text-gold mt-2 mb-0 text-xs">
                     Review the plan details above. When ready, submit to all tax centers for formal acceptance.
                   </p>
                 </div>
@@ -457,15 +415,9 @@ function RegionalPlanSubmissionView() {
         </>
       )}
 
-      <div style={{
-        background: '#e3f2fd', color: '#0c4a6e',
-        padding: '16px',
-        borderRadius: '8px',
-        border: '1px solid #1976d2',
-        marginTop: '24px'
-      }}>
+      <div className="bg-blue-50 dark:bg-blue-900 text-text-hi dark:text-text-hi p-4 rounded-lg border border-blue dark:border-blue mt-6">
         <strong><i className="fas fa-info-circle"></i> Workflow Notes</strong>
-        <ul style={{ margin: '12px 0 0 0', paddingLeft: '20px', fontSize: '13px', lineHeight: '1.8' }}>
+        <ul className="m-3 ml-5 text-xs leading-relaxed list-decimal">
           <li>Plans must be ACKNOWLEDGED in "Acknowledge Finalized Plans" first</li>
           <li>This page shows only acknowledged plans ready for submission</li>
           <li>This is the formal submission to tax centers</li>

@@ -10,6 +10,10 @@ import { loadData, saveData } from '../../utils/data';
 import { directorApprove, directorRequestRevision, getStatusDisplay, getBadgeClass, directorSendToRegions, submitToSeniorManagement, directorResubmitRejectedPlan } from '../../utils/businessLogic';
 import { auditConfig } from '../../config/auditConfig';
 
+/**
+ * DirectorView - Director plan approval and management workflow
+ * Manages plan review, regional feedback collection, and Senior Management submission
+ */
 function DirectorView({ currentView }) {
   const [plans, setPlans] = useState([]);
   const [selectedPlan, setSelectedPlan] = useState(null);
@@ -116,24 +120,18 @@ function DirectorView({ currentView }) {
         />
         
         {/* DIRECTOR DECISION PANEL */}
-        <div style={{ 
-          background: '#0f1419', color: '#f0f6fc', 
-          padding: '20px', 
-          borderRadius: '8px', 
-          marginTop: '24px', 
-          border: '2px solid #4a8fd9'
-        }}>
-          <h3 style={{ margin: '0 0 16px 0' }}>
+        <div className="bg-slate-950 dark:bg-slate-950 border-2 border-blue-500 dark:border-blue-400 rounded-lg p-5 mt-6 text-white">
+          <h3 className="m-0 mb-4">
             <i className="fas fa-gavel"></i> Director Actions & Decisions
           </h3>
           
           {canApprove && (
-            <div style={{ marginBottom: '16px', padding: '12px', background: '#0f1419', borderRadius: '6px', border: '1px solid #4a8fd9' }}>
-              <p style={{ color: '#0c4a6e', margin: '0 0 12px 0', fontSize: '13px', color: '#555' }}>
+            <div className="mb-4 p-3 bg-slate-900 dark:bg-slate-800 rounded border border-blue-600 dark:border-blue-500">
+              <p className="text-gray-300 dark:text-gray-400 m-0 mb-3 text-xs">
                 <strong>Step 1: Plan Review</strong><br/>
                 Review the plan details above. Do you approve this allocation plan, or should the Audit Team revise it?
               </p>
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div className="flex gap-2">
                 <button 
                   className="btn btn-success" 
                   onClick={() => { handleApprove(selectedPlan.id); setSelectedPlan(null); }}
@@ -151,8 +149,8 @@ function DirectorView({ currentView }) {
           )}
 
           {canSendToRegions && !isAwaitingRegionalFeedback && (
-            <div style={{ marginBottom: '16px', padding: '12px', background: '#0f1419', borderRadius: '6px', border: '1px solid #4a8fd9' }}>
-              <p style={{ color: '#0c4a6e', margin: '0 0 12px 0', fontSize: '13px', color: '#555' }}>
+            <div className="mb-4 p-3 bg-slate-900 dark:bg-slate-800 rounded border border-blue-600 dark:border-blue-500">
+              <p className="text-gray-300 dark:text-gray-400 m-0 mb-3 text-xs">
                 <strong>Step 2: Send to Regions for Feedback</strong><br/>
                 Plan is approved. Now send it to each region for their feedback before proceeding to Senior Management.
               </p>
@@ -166,8 +164,8 @@ function DirectorView({ currentView }) {
           )}
 
           {isAwaitingRegionalFeedback && (
-            <div style={{ marginBottom: '16px', padding: '12px', background: '#e3f2fd', color: '#0c4a6e', borderRadius: '6px', border: '1px solid #4a8fd9' }}>
-              <p style={{ color: '#0c4a6e', margin: 0, fontSize: '13px', color: '#1565c0' }}>
+            <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900 rounded border border-blue-400 dark:border-blue-600">
+              <p className="text-blue-900 dark:text-blue-200 m-0 text-xs">
                 <i className="fas fa-clock"></i> <strong>Waiting for Regional Feedback</strong><br/>
                 This plan has been sent to regions. Waiting for all regional feedback to be submitted.
               </p>
@@ -175,8 +173,8 @@ function DirectorView({ currentView }) {
           )}
 
           {canSendToSeniorManagement && hasRegionalFeedback && (
-            <div style={{ marginBottom: '16px', padding: '12px', background: '#c8e6c9', color: '#1b5e20', borderRadius: '6px', border: '1px solid #388e3c' }}>
-              <p style={{ color: '#0c4a6e', margin: '0 0 12px 0', fontSize: '13px', color: '#1b5e20' }}>
+            <div className="mb-4 p-3 bg-green-100 dark:bg-green-900 rounded border border-green-400 dark:border-green-600">
+              <p className="text-green-900 dark:text-green-200 m-0 mb-3 text-xs">
                 <strong>Step 3: Send to Senior Management</strong><br/>
                 All regional feedback has been collected. Plan is ready for Senior Management final approval.
               </p>
@@ -195,17 +193,17 @@ function DirectorView({ currentView }) {
           )}
 
           {selectedPlan.status === 'SENIOR_MANAGEMENT_REJECTED' && (
-            <div style={{ marginBottom: '16px', padding: '16px', background: '#3a1a1a', borderRadius: '6px', border: '3px solid #ff5252' }}>
-              <p style={{ color: '#0c4a6e', margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600', color: '#c62828' }}>
+            <div className="mb-4 p-4 bg-red-950 dark:bg-red-900 rounded border-4 border-red-500 dark:border-red-600">
+              <p className="text-red-700 dark:text-red-300 m-0 mb-3 text-sm font-semibold">
                 <i className="fas fa-exclamation-circle"></i> Plan Rejected by Senior Management
               </p>
-              <p style={{ color: '#0c4a6e', margin: '8px 0', fontSize: '13px', color: '#555' }}>
+              <p className="text-gray-400 dark:text-gray-300 my-2 text-xs">
                 This plan was rejected and needs revision before resubmission. Review the rejection feedback and make necessary changes.
               </p>
               {selectedPlan.approvalHistory && selectedPlan.approvalHistory.length > 0 && (
-                <div style={{ background: '#0f1419', padding: '12px', borderRadius: '4px', margin: '12px 0', fontSize: '12px', color: '#a0aec0', maxHeight: '120px', overflow: 'auto' }}>
+                <div className="bg-slate-900 dark:bg-slate-800 p-3 rounded text-xs text-gray-400 dark:text-gray-300 max-h-30 overflow-auto my-3">
                   <strong>Rejection Feedback:</strong>
-                  <p style={{ color: '#0c4a6e', margin: '8px 0 0 0' }}>
+                  <p className="text-gray-300 dark:text-gray-400 mt-2 mb-0">
                     {selectedPlan.approvalHistory[selectedPlan.approvalHistory.length - 1]?.notes || 'No specific feedback provided'}
                   </p>
                 </div>
@@ -220,11 +218,11 @@ function DirectorView({ currentView }) {
           )}
 
           {selectedPlan.status === 'SENIOR_MANAGEMENT_APPROVED' && (
-            <div style={{ marginBottom: '16px', padding: '16px', background: '#c8e6c9', color: '#1b5e20', borderRadius: '6px', border: '2px solid #388e3c' }}>
-              <p style={{ color: '#0c4a6e', margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600', color: '#1b5e20' }}>
+            <div className="mb-4 p-4 bg-green-100 dark:bg-green-900 rounded border-2 border-green-500 dark:border-green-600">
+              <p className="text-green-900 dark:text-green-200 m-0 mb-3 text-sm font-semibold">
                 <i className="fas fa-check"></i> Plan Approved by Senior Management
               </p>
-              <p style={{ color: '#0c4a6e', margin: '8px 0', fontSize: '13px', color: '#555' }}>
+              <p className="text-green-800 dark:text-green-300 my-2 text-xs">
                 The plan has been approved by Senior Management. Send it to each region for final distribution to tax centers.
               </p>
               <button 
@@ -263,8 +261,8 @@ function DirectorView({ currentView }) {
           )}
 
           {!canApprove && !canSendToRegions && !canSendToSeniorManagement && selectedPlan.status !== 'SENIOR_MANAGEMENT_REJECTED' && selectedPlan.status !== 'SENIOR_MANAGEMENT_APPROVED' && (
-            <div style={{ padding: '12px', background: '#1a2332', borderRadius: '6px', border: '1px solid #999' }}>
-              <p style={{ color: '#0c4a6e', margin: 0, fontSize: '13px', color: '#a0aec0' }}>
+            <div className="p-3 bg-slate-800 dark:bg-slate-700 rounded border border-gray-600 dark:border-gray-500">
+              <p className="text-gray-400 dark:text-gray-300 m-0 text-xs">
                 <i className="fas fa-info-circle"></i> No actions available for this plan status.
               </p>
             </div>
@@ -352,7 +350,7 @@ function DirectorView({ currentView }) {
         </div>
 
         <div className="section-title"><i className="fas fa-check-circle"></i> Approved Plans Ready to Send</div>
-        <div className="table-container" style={{ marginBottom: '24px' }}>
+        <div className="table-container mb-6">
           <table>
             <thead>
               <tr>
@@ -365,9 +363,9 @@ function DirectorView({ currentView }) {
             </thead>
             <tbody>
               {approvedPlans.length === 0 ? (
-                <tr><td colSpan="5" style={{ textAlign: 'center', padding: '40px' }}>
-                  <i className="fas fa-inbox" style={{ fontSize: '48px', color: '#ccc' }}></i>
-                  <br />No approved plans ready to send
+                <tr><td colSpan="5" className="text-center py-10">
+                  <i className="fas fa-inbox text-gray-400 text-4xl block mb-4"></i>
+                  <span>No approved plans ready to send</span>
                 </td></tr>
               ) : (
                 approvedPlans.map(plan => (
@@ -405,9 +403,9 @@ function DirectorView({ currentView }) {
             </thead>
             <tbody>
               {sendingPlans.length === 0 ? (
-                <tr><td colSpan="5" style={{ textAlign: 'center', padding: '40px' }}>
-                  <i className="fas fa-inbox" style={{ fontSize: '48px', color: '#ccc' }}></i>
-                  <br />No plans waiting for feedback
+                <tr><td colSpan="5" className="text-center py-10">
+                  <i className="fas fa-inbox text-gray-400 text-4xl block mb-4"></i>
+                  <span>No plans waiting for feedback</span>
                 </td></tr>
               ) : (
                 sendingPlans.map(plan => (
@@ -586,9 +584,9 @@ function DirectorView({ currentView }) {
         <Card title="Finalized" number={stats.finalized} icon="fas fa-flag-checkered" />
       </div>
 
-      <div className="action-bar" style={{ marginBottom: '24px', gap: '12px' }}>
+      <div className="action-bar mb-6 gap-3">
         <div></div>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <div className="flex gap-2 flex-wrap">
           <button 
             className="btn btn-primary"
             onClick={() => setViewMode('send-feedback')}
@@ -635,9 +633,9 @@ function DirectorView({ currentView }) {
           </thead>
           <tbody>
             {plans.length === 0 ? (
-              <tr><td colSpan="6" style={{ textAlign: 'center', padding: '40px' }}>
-                <i className="fas fa-inbox" style={{ fontSize: '48px', color: '#ccc' }}></i>
-                <br />No plans submitted for review
+              <tr><td colSpan="6" className="text-center py-10">
+                <i className="fas fa-inbox text-gray-400 text-4xl block mb-4"></i>
+                <span>No plans submitted for review</span>
               </td></tr>
             ) : (
               plans.map(plan => (

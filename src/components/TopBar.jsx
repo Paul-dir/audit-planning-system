@@ -1,95 +1,69 @@
 import React from 'react';
-import ThemeToggle from './ThemeToggle';
 import { useAuth } from '../context/AuthContext';
+import { getWorkspaceConfig } from '../config/workspaceConfig';
+import { getRoleLabel } from '../config/navigation';
 
-function TopBar({ currentRole, authContext }) {
+/**
+ * Workspace header — title, subtitle, settings, profile, and logout.
+ */
+function TopBar({ currentRole, onNavigate }) {
   const { logout, getUserInfo } = useAuth();
   const userInfo = getUserInfo();
+  const workspace = getWorkspaceConfig(currentRole);
 
-  const roleMap = {
-    audit_team: { title: 'Audit Planning Workspace', avatar: 'AP' },
-    audit_director: { title: 'Director Review Workspace', avatar: 'DR' },
-    regional_director: { title: 'Regional Feedback Workspace', avatar: 'RF' },
-    tax_center_manager: { title: 'Tax Center Management', avatar: 'TC' },
-    cascade_audit_team: { title: 'Cascade Audit Team Workspace', avatar: 'CA' },
-    senior_management: { title: 'Senior Management Review', avatar: 'SM' },
-    team_leader: { title: 'Team Leader Workspace', avatar: 'TL' },
-    auditor: { title: 'Auditor Workspace', avatar: 'AU' }
-  };
-
-  const current = roleMap[currentRole] || roleMap.audit_team;
+  const initials = (userInfo?.fullName || 'U')
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
-    <div className="top-bar">
-      <h1>{current.title}</h1>
-      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-        <ThemeToggle />
-        
-        {/* User Info & Logout */}
+    <header className="flex items-center justify-between border-b border-slate-800/80 bg-[#0d131a] px-6 py-5 lg:px-8">
+      <div>
+        <h1 className="font-serif text-2xl font-bold capitalize text-slate-100">
+          {workspace.title}
+        </h1>
+        <p className="mt-1 text-sm text-slate-500">{workspace.subtitle}</p>
+      </div>
+
+      <div className="flex items-center gap-4">
+        {onNavigate && (
+          <button
+            type="button"
+            onClick={() => onNavigate('configuration')}
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-800/80 text-slate-400 transition-all duration-200 hover:border-slate-700 hover:bg-[#161f28] hover:text-slate-200"
+            title="Settings"
+          >
+            <i className="fas fa-cog text-sm" />
+          </button>
+        )}
+
         {userInfo && (
-          <div style={{
-            display: 'flex',
-            gap: '12px',
-            alignItems: 'center',
-            paddingLeft: '12px',
-            borderLeft: '1px solid #30363d'
-          }}>
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '2px',
-              textAlign: 'right'
-            }}>
-              <div style={{
-                fontSize: '12px',
-                fontWeight: '600',
-                color: '#f0f6fc'
-              }}>
+          <div className="flex items-center gap-3 border-l border-slate-800/80 pl-4">
+            <div className="hidden text-right sm:block">
+              <p className="text-sm font-semibold text-slate-100">
                 {userInfo.fullName || 'User'}
-              </div>
-              <div style={{
-                fontSize: '10px',
-                color: '#8b949e'
-              }}>
-                {userInfo.role.replace(/_/g, ' ')}
-              </div>
+              </p>
+              <p className="text-xs text-slate-500">{getRoleLabel(userInfo.role)}</p>
             </div>
-            
-            <div style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '50%',
-              background: '#4caf50',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#fff',
-              fontSize: '12px',
-              fontWeight: 'bold'
-            }}>
-              {(userInfo.fullName || 'U').charAt(0).toUpperCase()}
+
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-700 text-xs font-bold text-slate-100">
+              {initials}
             </div>
 
             <button
+              type="button"
               onClick={logout}
-              style={{
-                padding: '6px 12px',
-                fontSize: '11px',
-                background: '#0f1419',
-                border: '1px solid #30363d',
-                borderRadius: '4px',
-                color: '#f0f6fc',
-                cursor: 'pointer',
-                marginLeft: '8px'
-              }}
-              title="Logout"
+              className="flex items-center gap-2 rounded-lg border border-slate-800/80 px-3.5 py-2 text-xs font-medium text-slate-300 transition-all duration-200 hover:border-slate-700 hover:bg-[#161f28] hover:text-slate-100"
             >
-              <i className="fas fa-sign-out-alt"></i> Logout
+              <i className="fas fa-sign-out-alt" />
+              <span className="hidden sm:inline">Log out</span>
             </button>
           </div>
         )}
       </div>
-    </div>
+    </header>
   );
 }
 

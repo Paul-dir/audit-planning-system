@@ -269,137 +269,206 @@ function RiskEngineView({ userRole: propUserRole, selectedRegion: propSelectedRe
     const { national } = riskData;
 
     return (
-      <div>
-        <div className="detail-header">
-          <h2><i className="fas fa-globe"></i> Risk Engine - National Level (Ministry of Revenue)</h2>
-          <Badge status="Level 1: MOR" className="director-approved" />
+      <div className="space-y-6 p-8 bg-neutral-900 min-h-screen">
+        {/* Page Header */}
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-1 h-8 bg-primary-600 rounded-sm"></div>
+            <h1 className="text-3xl font-serif font-bold text-neutral-50">Risk Engine - National Level</h1>
+          </div>
+          <p className="text-neutral-400 text-sm">Ministry of Revenue (MOR) — Taxpayer risk analysis and audit candidate allocation</p>
         </div>
 
-        <div className="section-title"><i className="fas fa-chart-line"></i> Taxpayer Population Overview</div>
-        <div className="cards">
-          <Card title="Total Registered" number={national.totalRegistered.toLocaleString()} icon="fas fa-users" />
-          <Card title="Active Taxpayers" number={national.activeTaxpayers.toLocaleString()} icon="fas fa-user-check" />
-          <Card title="Risky Suspects" number={national.riskySuspects.toLocaleString()} icon="fas fa-exclamation-circle" />
-          <Card title="Revenue at Risk" number={`${(national.revenueAtRisk / 1000000000).toFixed(1)}B ETB`} icon="fas fa-dollar-sign" />
+        {/* KPI Cards - 4 Column Grid */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-primary-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md">
+            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">Total Registered</h3>
+            <div className="text-4xl font-bold leading-none mb-2 text-neutral-50">{(national.totalRegistered || 0).toLocaleString()}</div>
+            <div className="text-2xl text-neutral-400 opacity-75"><i className="fas fa-users"></i></div>
+          </div>
+
+          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-info-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md">
+            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">Active Taxpayers</h3>
+            <div className="text-4xl font-bold leading-none mb-2 text-neutral-50">{(national.activeTaxpayers || 0).toLocaleString()}</div>
+            <div className="text-2xl text-neutral-400 opacity-75"><i className="fas fa-user-check"></i></div>
+          </div>
+
+          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-warning-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md">
+            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">Risky Suspects</h3>
+            <div className="text-4xl font-bold leading-none mb-2 text-neutral-50">{(national.riskySuspects || 0).toLocaleString()}</div>
+            <div className="text-2xl text-neutral-400 opacity-75"><i className="fas fa-exclamation-circle"></i></div>
+          </div>
+
+          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-danger-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md">
+            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">Revenue at Risk</h3>
+            <div className="text-4xl font-bold leading-none mb-2 text-neutral-50">{((national.revenueAtRisk || 0) / 1000000000).toFixed(1)}B ETB</div>
+            <div className="text-2xl text-neutral-400 opacity-75"><i className="fas fa-dollar-sign"></i></div>
+          </div>
         </div>
 
-        <div className="section-title"><i className="fas fa-traffic-light"></i> Risk Distribution</div>
-        <div className="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Risk Level</th>
-                <th>Taxpayers</th>
-                <th>% of Total</th>
-                <th>% of Risky</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr style={{ background: '#1a3a1a' }}>
-                <td><strong>Low Risk</strong></td>
-                <td>{national.riskDistribution.low.toLocaleString()}</td>
-                <td>{((national.riskDistribution.low / national.totalRegistered) * 100).toFixed(2)}%</td>
-                <td>-</td>
-              </tr>
-              <tr style={{ background: '#1e2a3a' }}>
-                <td><strong style={{ color: '#ffa500' }}>Medium Risk</strong></td>
-                <td>{national.riskDistribution.medium.toLocaleString()}</td>
-                <td>{((national.riskDistribution.medium / national.totalRegistered) * 100).toFixed(2)}%</td>
-                <td>{((national.riskDistribution.medium / national.riskySuspects) * 100).toFixed(1)}%</td>
-              </tr>
-              <tr style={{ background: '#3a1a1a' }}>
-                <td><strong>High Risk</strong></td>
-                <td>{national.riskDistribution.high.toLocaleString()}</td>
-                <td>{((national.riskDistribution.high / national.totalRegistered) * 100).toFixed(2)}%</td>
-                <td>{((national.riskDistribution.high / national.riskySuspects) * 100).toFixed(1)}%</td>
-              </tr>
-              <tr style={{ background: '#3a1a1a', color: '#ff5252' }}>
-                <td><strong>Critical Risk</strong></td>
-                <td>{national.riskDistribution.critical.toLocaleString()}</td>
-                <td>{((national.riskDistribution.critical / national.totalRegistered) * 100).toFixed(2)}%</td>
-                <td>{((national.riskDistribution.critical / national.riskySuspects) * 100).toFixed(1)}%</td>
-              </tr>
-            </tbody>
-          </table>
+        {/* Section Header - Risk Distribution */}
+        <div className="pt-4">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-1 h-6 bg-primary-600 rounded-sm"></div>
+            <h2 className="text-2xl font-serif font-bold text-neutral-50">Risk Distribution</h2>
+          </div>
         </div>
 
-        <div className="section-title"><i className="fas fa-tasks"></i> Audit Type Candidates (National)</div>
-        <div className="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Audit Type</th>
-                <th>Candidates</th>
-                <th>% of Risky</th>
-              </tr>
-            </thead>
-            <tbody>
-              {national.byAuditType.map((item, i) => (
-                <tr key={i}>
-                  <td><strong>{item.type}</strong></td>
-                  <td>{item.candidates.toLocaleString()}</td>
-                  <td>{((item.candidates / national.riskySuspects) * 100).toFixed(1)}%</td>
+        {/* Risk Distribution Table */}
+        <div className="bg-neutral-800 border border-neutral-700 rounded-lg overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-neutral-800 border-b border-neutral-700">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-300 uppercase tracking-wider">Risk Level</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-neutral-300 uppercase tracking-wider">Taxpayers</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-neutral-300 uppercase tracking-wider">% of Total</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-neutral-300 uppercase tracking-wider">% of Risky</th>
                 </tr>
-              ))}
-              <tr style={{ background: '#f8f9fc', color: '#0c4a6e', fontWeight: 'bold' }}>
-                <td>TOTAL CANDIDATES</td>
-                <td>{national.byAuditType.reduce((sum, item) => sum + item.candidates, 0).toLocaleString()}</td>
-                <td>100%</td>
-              </tr>
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-neutral-700">
+                <tr className="hover:bg-neutral-700/50 transition-colors">
+                  <td className="px-6 py-4 text-sm font-semibold text-success-400"><i className="fas fa-check-circle mr-2"></i>Low Risk</td>
+                  <td className="px-6 py-4 text-sm text-right text-neutral-300">{(national.riskDistribution?.low || 0).toLocaleString()}</td>
+                  <td className="px-6 py-4 text-sm text-right text-neutral-400">{((national.riskDistribution?.low || 0) / national.totalRegistered * 100).toFixed(2)}%</td>
+                  <td className="px-6 py-4 text-sm text-right text-neutral-400">-</td>
+                </tr>
+                <tr className="hover:bg-neutral-700/50 transition-colors">
+                  <td className="px-6 py-4 text-sm font-semibold text-warning-400"><i className="fas fa-exclamation mr-2"></i>Medium Risk</td>
+                  <td className="px-6 py-4 text-sm text-right text-neutral-300">{(national.riskDistribution?.medium || 0).toLocaleString()}</td>
+                  <td className="px-6 py-4 text-sm text-right text-neutral-400">{((national.riskDistribution?.medium || 0) / national.totalRegistered * 100).toFixed(2)}%</td>
+                  <td className="px-6 py-4 text-sm text-right text-neutral-400">{((national.riskDistribution?.medium || 0) / (national.riskySuspects || 1) * 100).toFixed(1)}%</td>
+                </tr>
+                <tr className="hover:bg-neutral-700/50 transition-colors">
+                  <td className="px-6 py-4 text-sm font-semibold text-amber-400"><i className="fas fa-exclamation-triangle mr-2"></i>High Risk</td>
+                  <td className="px-6 py-4 text-sm text-right text-neutral-300">{(national.riskDistribution?.high || 0).toLocaleString()}</td>
+                  <td className="px-6 py-4 text-sm text-right text-neutral-400">{((national.riskDistribution?.high || 0) / national.totalRegistered * 100).toFixed(2)}%</td>
+                  <td className="px-6 py-4 text-sm text-right text-neutral-400">{((national.riskDistribution?.high || 0) / (national.riskySuspects || 1) * 100).toFixed(1)}%</td>
+                </tr>
+                <tr className="hover:bg-neutral-700/50 transition-colors">
+                  <td className="px-6 py-4 text-sm font-semibold text-danger-400"><i className="fas fa-skull-crossbones mr-2"></i>Critical Risk</td>
+                  <td className="px-6 py-4 text-sm text-right text-neutral-300">{(national.riskDistribution?.critical || 0).toLocaleString()}</td>
+                  <td className="px-6 py-4 text-sm text-right text-neutral-400">{((national.riskDistribution?.critical || 0) / national.totalRegistered * 100).toFixed(2)}%</td>
+                  <td className="px-6 py-4 text-sm text-right text-neutral-400">{((national.riskDistribution?.critical || 0) / (national.riskySuspects || 1) * 100).toFixed(1)}%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        <div className="section-title"><i className="fas fa-percentage"></i> Risk by Tax Type (National)</div>
-        <div className="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Tax Type</th>
-                <th>Risky Taxpayers</th>
-                <th>% of Total Risky</th>
-              </tr>
-            </thead>
-            <tbody>
-              {national.byTaxType.map((item, i) => (
-                <tr key={i}>
-                  <td><strong>{item.type}</strong></td>
-                  <td>{item.risky.toLocaleString()}</td>
-                  <td>{((item.risky / national.riskySuspects) * 100).toFixed(1)}%</td>
-                </tr>
-              ))}
-              <tr style={{ background: '#f8f9fc', color: '#0c4a6e', fontWeight: 'bold' }}>
-                <td>TOTAL RISKY</td>
-                <td>{national.byTaxType.reduce((sum, item) => sum + item.risky, 0).toLocaleString()}</td>
-                <td>100%</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div className="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Industry</th>
-                <th>High Risk</th>
-              </tr>
-            </thead>
-            <tbody>
-              {national.byIndustry.map((item, i) => (
-                <tr key={i}>
-                  <td><strong>{item.industry}</strong></td>
-                  <td>{item.highRisk.toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {/* Section Header - Audit Type Candidates */}
+        <div className="pt-4">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-1 h-6 bg-info-600 rounded-sm"></div>
+            <h2 className="text-2xl font-serif font-bold text-neutral-50">Audit Type Candidates</h2>
+          </div>
         </div>
 
-        <div className="action-bar" style={{ marginTop: '24px' }}>
-          <div></div>
+        {/* Audit Type Table */}
+        <div className="bg-neutral-800 border border-neutral-700 rounded-lg overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-neutral-800 border-b border-neutral-700">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-300 uppercase tracking-wider">Audit Type</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-neutral-300 uppercase tracking-wider">Candidates</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-neutral-300 uppercase tracking-wider">% of Risky</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-700">
+                {(national.byAuditType || []).map((item, i) => (
+                  <tr key={i} className="hover:bg-neutral-700/50 transition-colors">
+                    <td className="px-6 py-4 text-sm font-semibold text-neutral-50">{item.type}</td>
+                    <td className="px-6 py-4 text-sm text-right text-neutral-300">{(item.candidates || 0).toLocaleString()}</td>
+                    <td className="px-6 py-4 text-sm text-right text-neutral-400">{((item.candidates || 0) / (national.riskySuspects || 1) * 100).toFixed(1)}%</td>
+                  </tr>
+                ))}
+                <tr className="bg-primary-900/20 border-t-2 border-primary-600 font-semibold">
+                  <td className="px-6 py-4 text-sm text-primary-300">TOTAL CANDIDATES</td>
+                  <td className="px-6 py-4 text-sm text-right text-primary-300">{((national.byAuditType || []).reduce((sum, item) => sum + (item.candidates || 0), 0)).toLocaleString()}</td>
+                  <td className="px-6 py-4 text-sm text-right text-primary-300">100%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Section Header - Risk by Tax Type */}
+        <div className="pt-4">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-1 h-6 bg-warning-600 rounded-sm"></div>
+            <h2 className="text-2xl font-serif font-bold text-neutral-50">Risk by Tax Type</h2>
+          </div>
+        </div>
+
+        {/* Tax Type Table */}
+        <div className="bg-neutral-800 border border-neutral-700 rounded-lg overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-neutral-800 border-b border-neutral-700">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-300 uppercase tracking-wider">Tax Type</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-neutral-300 uppercase tracking-wider">Risky Taxpayers</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-neutral-300 uppercase tracking-wider">% of Total Risky</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-700">
+                {(national.byTaxType || []).map((item, i) => (
+                  <tr key={i} className="hover:bg-neutral-700/50 transition-colors">
+                    <td className="px-6 py-4 text-sm font-semibold text-neutral-50">{item.type}</td>
+                    <td className="px-6 py-4 text-sm text-right text-neutral-300">{(item.risky || 0).toLocaleString()}</td>
+                    <td className="px-6 py-4 text-sm text-right text-neutral-400">{((item.risky || 0) / (national.riskySuspects || 1) * 100).toFixed(1)}%</td>
+                  </tr>
+                ))}
+                <tr className="bg-primary-900/20 border-t-2 border-primary-600 font-semibold">
+                  <td className="px-6 py-4 text-sm text-primary-300">TOTAL RISKY</td>
+                  <td className="px-6 py-4 text-sm text-right text-primary-300">{((national.byTaxType || []).reduce((sum, item) => sum + (item.risky || 0), 0)).toLocaleString()}</td>
+                  <td className="px-6 py-4 text-sm text-right text-primary-300">100%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Section Header - Risk by Industry */}
+        <div className="pt-4">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-1 h-6 bg-success-600 rounded-sm"></div>
+            <h2 className="text-2xl font-serif font-bold text-neutral-50">Risk by Industry</h2>
+          </div>
+        </div>
+
+        {/* Industry Table */}
+        <div className="bg-neutral-800 border border-neutral-700 rounded-lg overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-neutral-800 border-b border-neutral-700">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-300 uppercase tracking-wider">Industry</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-neutral-300 uppercase tracking-wider">High-Risk Taxpayers</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-700">
+                {(national.byIndustry || []).map((item, i) => (
+                  <tr key={i} className="hover:bg-neutral-700/50 transition-colors">
+                    <td className="px-6 py-4 text-sm font-semibold text-neutral-50">{item.industry}</td>
+                    <td className="px-6 py-4 text-sm text-right text-neutral-300">{(item.highRisk || 0).toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Action Button */}
+        <div className="flex justify-end gap-3 pt-4">
           {userRole !== 'regional' && userRole !== 'tax_center' && (
-            <button className="btn btn-primary" onClick={() => { setLevel(2); }}>
-              <i className="fas fa-map"></i> View by Region
+            <button 
+              onClick={() => { setLevel(2); }}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+            >
+              <i className="fas fa-map"></i>
+              View by Region
             </button>
           )}
         </div>
@@ -416,134 +485,198 @@ function RiskEngineView({ userRole: propUserRole, selectedRegion: propSelectedRe
     const isAssignedRegion = userRole === 'regional' && localSelectedRegion === assignedRegion;
 
     return (
-      <div style={{ width: '100%' }}>
-        <div className="action-bar">
+      <div className="space-y-6 p-8 bg-neutral-900 min-h-screen">
+        {/* Navigation */}
+        <div className="flex justify-start mb-4">
           {userRole === 'regional' || userRole === 'tax_center' ? (
-            <button className="btn btn-outline" onClick={() => setShowRegionSelector(true)}>
-              <i className="fas fa-exchange-alt"></i> Select Different Region
+            <button 
+              onClick={() => setShowRegionSelector(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-neutral-50 font-semibold rounded-lg transition-all duration-200"
+            >
+              <i className="fas fa-exchange-alt"></i>
+              Select Different Region
             </button>
           ) : (
-            <button className="btn btn-outline" onClick={() => { setLevel(1); setLocalSelectedRegion(null); }}>
-              <i className="fas fa-arrow-left"></i> Back to National View
+            <button 
+              onClick={() => { setLevel(1); setLocalSelectedRegion(null); }}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-neutral-50 font-semibold rounded-lg transition-all duration-200"
+            >
+              <i className="fas fa-arrow-left"></i>
+              Back to National View
             </button>
           )}
         </div>
 
-        <div className="detail-header">
-          <h2><i className="fas fa-map-pin"></i> {localSelectedRegion} Region - Risk Analysis {isAssignedRegion ? '(YOUR REGION)' : ''}</h2>
-          <Badge status="Level 2: Regional Detail" className="director-approved" />
+        {/* Page Header */}
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-1 h-8 bg-primary-600 rounded-sm"></div>
+            <h1 className="text-3xl font-serif font-bold text-neutral-50">{localSelectedRegion} Region - Risk Analysis</h1>
+          </div>
+          <p className="text-neutral-400 text-sm">
+            {isAssignedRegion ? '✓ Your assigned region ' : ''}Regional taxpayer risk assessment and audit candidate distribution
+          </p>
         </div>
 
-        <div style={{ background: '#0f1419', color: '#f0f6fc', padding: '12px', borderRadius: '8px', marginBottom: '16px', border: '1px solid #ffb74d' }}>
-          <strong>⚠️ THIS PAGE SHOWS DATA FOR {localSelectedRegion.toUpperCase()} REGION ONLY</strong>
-          <p style={{ color: '#0c4a6e', margin: '6px 0 0 0', fontSize: '12px' }}>All numbers and percentages below are specific to {localSelectedRegion} region. National data is NOT shown here.</p>
-          {isAssignedRegion && (
-            <p style={{ color: '#0c4a6e', margin: '6px 0 0 0', fontSize: '12px', color: '#388e3c' }}>
-              <strong>✓ This is your assigned region for primary focus.</strong>
-            </p>
-          )}
+        {/* Regional Scope Alert */}
+        <div className="bg-warning-900/30 border border-warning-700 rounded-lg p-4">
+          <p className="text-warning-300 text-sm">
+            <i className="fas fa-info-circle mr-2"></i>
+            <strong>Regional Data Only:</strong> All metrics below show data for {localSelectedRegion} region only. National aggregates are not included.
+          </p>
         </div>
 
-        <div className="cards">
-          <Card title="Total Taxpayers" number={region.totalTaxpayers.toLocaleString()} icon="fas fa-users" />
-          <Card title="Risky Suspects" number={region.riskySuspects.toLocaleString()} icon="fas fa-exclamation-circle" />
-          <Card title="High Risk" number={region.highRisk.toLocaleString()} icon="fas fa-exclamation-triangle" />
-          <Card title="Critical Risk" number={region.critical.toLocaleString()} icon="fas fa-skull-crossbones" />
-          <Card title="Revenue at Risk" number={`${(region.revenueAtRisk / 1000000).toFixed(0)}M ETB`} icon="fas fa-dollar-sign" />
+        {/* KPI Cards - 5 Column Grid */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
+          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-info-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md">
+            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">Total Taxpayers</h3>
+            <div className="text-4xl font-bold leading-none mb-2 text-neutral-50">{(region.totalTaxpayers || 0).toLocaleString()}</div>
+            <div className="text-2xl text-neutral-400 opacity-75"><i className="fas fa-users"></i></div>
+          </div>
+
+          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-warning-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md">
+            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">Risky Suspects</h3>
+            <div className="text-4xl font-bold leading-none mb-2 text-neutral-50">{(region.riskySuspects || 0).toLocaleString()}</div>
+            <div className="text-2xl text-neutral-400 opacity-75"><i className="fas fa-exclamation-circle"></i></div>
+          </div>
+
+          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-amber-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md">
+            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">High Risk</h3>
+            <div className="text-4xl font-bold leading-none mb-2 text-neutral-50">{(region.highRisk || 0).toLocaleString()}</div>
+            <div className="text-2xl text-neutral-400 opacity-75"><i className="fas fa-exclamation-triangle"></i></div>
+          </div>
+
+          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-danger-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md">
+            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">Critical Risk</h3>
+            <div className="text-4xl font-bold leading-none mb-2 text-neutral-50">{(region.critical || 0).toLocaleString()}</div>
+            <div className="text-2xl text-neutral-400 opacity-75"><i className="fas fa-skull-crossbones"></i></div>
+          </div>
+
+          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-primary-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md">
+            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">Revenue at Risk</h3>
+            <div className="text-4xl font-bold leading-none mb-2 text-neutral-50">{((region.revenueAtRisk || 0) / 1000000).toFixed(0)}M ETB</div>
+            <div className="text-2xl text-neutral-400 opacity-75"><i className="fas fa-dollar-sign"></i></div>
+          </div>
         </div>
 
-        <div className="section-title"><i className="fas fa-tasks"></i> Audit Type Candidates in {localSelectedRegion}</div>
-        <div className="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Audit Type</th>
-                <th>Candidates</th>
-                <th>% of {localSelectedRegion} Risky</th>
-              </tr>
-            </thead>
-            <tbody>
-              {region.auditTypeCandidates.map((item, i) => (
-                <tr key={i}>
-                  <td><strong>{item.type}</strong></td>
-                  <td>{item.candidates.toLocaleString()}</td>
-                  <td>{((item.candidates / region.riskySuspects) * 100).toFixed(1)}%</td>
+        {/* Section Header - Audit Types */}
+        <div className="pt-4">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-1 h-6 bg-info-600 rounded-sm"></div>
+            <h2 className="text-2xl font-serif font-bold text-neutral-50">Audit Type Candidates in {localSelectedRegion}</h2>
+          </div>
+        </div>
+
+        {/* Audit Type Table */}
+        <div className="bg-neutral-800 border border-neutral-700 rounded-lg overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-neutral-800 border-b border-neutral-700">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-300 uppercase tracking-wider">Audit Type</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-neutral-300 uppercase tracking-wider">Candidates</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-neutral-300 uppercase tracking-wider">% of Risky</th>
                 </tr>
-              ))}
-              <tr style={{ background: '#f8f9fc', color: '#0c4a6e', fontWeight: 'bold' }}>
-                <td>TOTAL CANDIDATES IN {localSelectedRegion.toUpperCase()}</td>
-                <td>{region.auditTypeCandidates.reduce((sum, item) => sum + item.candidates, 0).toLocaleString()}</td>
-                <td>100%</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div className="section-title"><i className="fas fa-percentage"></i> Risk by Tax Type in {localSelectedRegion}</div>
-        <div className="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Tax Type</th>
-                <th>Risky Taxpayers</th>
-                <th>% of {localSelectedRegion} Risky</th>
-              </tr>
-            </thead>
-            <tbody>
-              {region.taxTypeBreakdown.map((item, i) => (
-                <tr key={i}>
-                  <td><strong>{item.type}</strong></td>
-                  <td>{item.risky.toLocaleString()}</td>
-                  <td>{((item.risky / region.riskySuspects) * 100).toFixed(1)}%</td>
+              </thead>
+              <tbody className="divide-y divide-neutral-700">
+                {(region.auditTypeCandidates || []).map((item, i) => (
+                  <tr key={i} className="hover:bg-neutral-700/50 transition-colors">
+                    <td className="px-6 py-4 text-sm font-semibold text-neutral-50">{item.type}</td>
+                    <td className="px-6 py-4 text-sm text-right text-neutral-300">{(item.candidates || 0).toLocaleString()}</td>
+                    <td className="px-6 py-4 text-sm text-right text-neutral-400">{((item.candidates || 0) / (region.riskySuspects || 1) * 100).toFixed(1)}%</td>
+                  </tr>
+                ))}
+                <tr className="bg-primary-900/20 border-t-2 border-primary-600 font-semibold">
+                  <td className="px-6 py-4 text-sm text-primary-300">TOTAL IN {localSelectedRegion.toUpperCase()}</td>
+                  <td className="px-6 py-4 text-sm text-right text-primary-300">{((region.auditTypeCandidates || []).reduce((sum, item) => sum + (item.candidates || 0), 0)).toLocaleString()}</td>
+                  <td className="px-6 py-4 text-sm text-right text-primary-300">100%</td>
                 </tr>
-              ))}
-              <tr style={{ background: '#f8f9fc', color: '#0c4a6e', fontWeight: 'bold' }}>
-                <td>TOTAL RISKY IN {localSelectedRegion.toUpperCase()}</td>
-                <td>{region.taxTypeBreakdown.reduce((sum, item) => sum + item.risky, 0).toLocaleString()}</td>
-                <td>100%</td>
-              </tr>
-            </tbody>
-          </table>
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        <div className="section-title"><i className="fas fa-building"></i> Tax Centers in {localSelectedRegion}</div>
-        <div className="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Tax Center</th>
-                <th>Taxpayers</th>
-                <th>High Risk</th>
-                <th>Critical Risk</th>
-                <th>Revenue at Risk</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {region.taxCenters.map((tc, i) => (
-                <tr key={i}>
-                  <td><strong>{tc.name}</strong></td>
-                  <td>{tc.totalTaxpayers.toLocaleString()}</td>
-                  <td>{tc.highRisk.toLocaleString()}</td>
-                  <td>{tc.critical.toLocaleString()}</td>
-                  <td>{(tc.revenueAtRisk / 1000000).toFixed(0)}M ETB</td>
-                  <td>
-                    <button 
-                      className="btn btn-sm btn-success"
-                      onClick={() => { setLevel(3); setSelectedTaxCenter(tc); }}
-                    >
-                      <i className="fas fa-eye"></i> View Details
-                    </button>
-                  </td>
+        {/* Section Header - Tax Types */}
+        <div className="pt-4">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-1 h-6 bg-warning-600 rounded-sm"></div>
+            <h2 className="text-2xl font-serif font-bold text-neutral-50">Risk by Tax Type in {localSelectedRegion}</h2>
+          </div>
+        </div>
+
+        {/* Tax Type Table */}
+        <div className="bg-neutral-800 border border-neutral-700 rounded-lg overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-neutral-800 border-b border-neutral-700">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-300 uppercase tracking-wider">Tax Type</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-neutral-300 uppercase tracking-wider">Risky Taxpayers</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-neutral-300 uppercase tracking-wider">% of Risky</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-neutral-700">
+                {(region.taxTypeBreakdown || []).map((item, i) => (
+                  <tr key={i} className="hover:bg-neutral-700/50 transition-colors">
+                    <td className="px-6 py-4 text-sm font-semibold text-neutral-50">{item.type}</td>
+                    <td className="px-6 py-4 text-sm text-right text-neutral-300">{(item.risky || 0).toLocaleString()}</td>
+                    <td className="px-6 py-4 text-sm text-right text-neutral-400">{((item.risky || 0) / (region.riskySuspects || 1) * 100).toFixed(1)}%</td>
+                  </tr>
+                ))}
+                <tr className="bg-primary-900/20 border-t-2 border-primary-600 font-semibold">
+                  <td className="px-6 py-4 text-sm text-primary-300">TOTAL RISKY IN {localSelectedRegion.toUpperCase()}</td>
+                  <td className="px-6 py-4 text-sm text-right text-primary-300">{((region.taxTypeBreakdown || []).reduce((sum, item) => sum + (item.risky || 0), 0)).toLocaleString()}</td>
+                  <td className="px-6 py-4 text-sm text-right text-primary-300">100%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        <div style={{ background: '#e3f2fd', color: '#0c4a6e', padding: '12px', borderRadius: '8px', marginTop: '24px', border: '1px solid #1976d2' }}>
-          <strong>ℹ️ Regional Analysis Complete</strong>
-          <p style={{ color: '#0c4a6e', margin: '6px 0 0 0', fontSize: '12px' }}>This page shows comprehensive risk analysis for {localSelectedRegion} region only. Click on a tax center to see more details, or go back to select another region.</p>
+        {/* Section Header - Tax Centers */}
+        <div className="pt-4">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-1 h-6 bg-success-600 rounded-sm"></div>
+            <h2 className="text-2xl font-serif font-bold text-neutral-50">Tax Centers in {localSelectedRegion}</h2>
+          </div>
+        </div>
+
+        {/* Tax Centers Table */}
+        <div className="bg-neutral-800 border border-neutral-700 rounded-lg overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-neutral-800 border-b border-neutral-700">
+                  <th className="px-6 py-4 text-left font-semibold text-neutral-300 uppercase tracking-wider">Tax Center</th>
+                  <th className="px-6 py-4 text-right font-semibold text-neutral-300 uppercase tracking-wider">Taxpayers</th>
+                  <th className="px-6 py-4 text-right font-semibold text-neutral-300 uppercase tracking-wider">High Risk</th>
+                  <th className="px-6 py-4 text-right font-semibold text-neutral-300 uppercase tracking-wider">Critical</th>
+                  <th className="px-6 py-4 text-right font-semibold text-neutral-300 uppercase tracking-wider">Revenue at Risk</th>
+                  <th className="px-6 py-4 text-center font-semibold text-neutral-300 uppercase tracking-wider">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-700">
+                {(region.taxCenters || []).map((tc, i) => (
+                  <tr key={i} className="hover:bg-neutral-700/50 transition-colors">
+                    <td className="px-6 py-4 font-semibold text-neutral-50">{tc.name}</td>
+                    <td className="px-6 py-4 text-right text-neutral-300">{(tc.totalTaxpayers || 0).toLocaleString()}</td>
+                    <td className="px-6 py-4 text-right text-neutral-300">{(tc.highRisk || 0).toLocaleString()}</td>
+                    <td className="px-6 py-4 text-right text-neutral-300">{(tc.critical || 0).toLocaleString()}</td>
+                    <td className="px-6 py-4 text-right text-neutral-300">{((tc.revenueAtRisk || 0) / 1000000).toFixed(0)}M ETB</td>
+                    <td className="px-6 py-4 text-center">
+                      <button 
+                        onClick={() => { setLevel(3); setSelectedTaxCenter(tc); }}
+                        className="inline-flex items-center gap-1 px-3 py-1 bg-success-600 hover:bg-success-700 text-white text-xs font-semibold rounded transition-all duration-200"
+                      >
+                        <i className="fas fa-eye"></i>
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     );
@@ -556,50 +689,63 @@ function RiskEngineView({ userRole: propUserRole, selectedRegion: propSelectedRe
     if (!region) return null;
 
     return (
-      <div>
-        <div className="action-bar">
-          <button className="btn btn-outline" onClick={() => { setLevel(2); setLocalSelectedRegion(null); setSelectedTaxCenter(null); }}>
-            <i className="fas fa-arrow-left"></i> Back to {localSelectedRegion} Region
+      <div className="space-y-6 p-8 bg-neutral-900 min-h-screen">
+        {/* Navigation */}
+        <div className="flex justify-start mb-4">
+          <button 
+            onClick={() => { setLevel(2); setLocalSelectedRegion(null); setSelectedTaxCenter(null); }}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-neutral-50 font-semibold rounded-lg transition-all duration-200"
+          >
+            <i className="fas fa-arrow-left"></i>
+            Back to {localSelectedRegion} Region
           </button>
         </div>
 
-        <div className="detail-header">
-          <h2><i className="fas fa-map-pin"></i> {localSelectedRegion} - Tax Centers Overview</h2>
-          <Badge status="Level 3: Tax Center" className="director-approved" />
+        {/* Page Header */}
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-1 h-8 bg-primary-600 rounded-sm"></div>
+            <h1 className="text-3xl font-serif font-bold text-neutral-50">{localSelectedRegion} Tax Centers</h1>
+          </div>
+          <p className="text-neutral-400 text-sm">Tax center-level risk analysis and high-risk taxpayer details</p>
         </div>
 
-        <div className="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Tax Center</th>
-                <th>Taxpayers</th>
-                <th>High Risk</th>
-                <th>Critical</th>
-                <th>Revenue at Risk</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {region.taxCenters.map((tc, i) => (
-                <tr key={i}>
-                  <td><strong>{tc.name}</strong></td>
-                  <td>{tc.totalTaxpayers.toLocaleString()}</td>
-                  <td>{tc.highRisk.toLocaleString()}</td>
-                  <td>{tc.critical.toLocaleString()}</td>
-                  <td>{(tc.revenueAtRisk / 1000000).toFixed(0)}M ETB</td>
-                  <td>
-                    <button 
-                      className="btn btn-sm btn-primary"
-                      onClick={() => { setLevel(3.5); setSelectedTaxCenter(tc); }}
-                    >
-                      <i className="fas fa-eye"></i> Details
-                    </button>
-                  </td>
+        {/* Tax Centers Table */}
+        <div className="bg-neutral-800 border border-neutral-700 rounded-lg overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-neutral-800 border-b border-neutral-700">
+                  <th className="px-6 py-4 text-left font-semibold text-neutral-300 uppercase tracking-wider">Tax Center</th>
+                  <th className="px-6 py-4 text-right font-semibold text-neutral-300 uppercase tracking-wider">Taxpayers</th>
+                  <th className="px-6 py-4 text-right font-semibold text-neutral-300 uppercase tracking-wider">High Risk</th>
+                  <th className="px-6 py-4 text-right font-semibold text-neutral-300 uppercase tracking-wider">Critical</th>
+                  <th className="px-6 py-4 text-right font-semibold text-neutral-300 uppercase tracking-wider">Revenue at Risk</th>
+                  <th className="px-6 py-4 text-center font-semibold text-neutral-300 uppercase tracking-wider">Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-neutral-700">
+                {(region.taxCenters || []).map((tc, i) => (
+                  <tr key={i} className="hover:bg-neutral-700/50 transition-colors">
+                    <td className="px-6 py-4 font-semibold text-neutral-50">{tc.name}</td>
+                    <td className="px-6 py-4 text-right text-neutral-300">{(tc.totalTaxpayers || 0).toLocaleString()}</td>
+                    <td className="px-6 py-4 text-right text-neutral-300">{(tc.highRisk || 0).toLocaleString()}</td>
+                    <td className="px-6 py-4 text-right text-neutral-300">{(tc.critical || 0).toLocaleString()}</td>
+                    <td className="px-6 py-4 text-right text-neutral-300">{((tc.revenueAtRisk || 0) / 1000000).toFixed(0)}M ETB</td>
+                    <td className="px-6 py-4 text-center">
+                      <button 
+                        onClick={() => { setLevel(3.5); setSelectedTaxCenter(tc); }}
+                        className="inline-flex items-center gap-1 px-3 py-1 bg-primary-600 hover:bg-primary-700 text-white text-xs font-semibold rounded transition-all duration-200"
+                      >
+                        <i className="fas fa-eye"></i>
+                        Details
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     );
@@ -610,76 +756,126 @@ function RiskEngineView({ userRole: propUserRole, selectedRegion: propSelectedRe
     if (!selectedTaxCenter) return null;
 
     return (
-      <div>
-        <div className="action-bar">
-          <button className="btn btn-outline" onClick={() => { setLevel(3); setSelectedTaxCenter(null); }}>
-            <i className="fas fa-arrow-left"></i> Back to Tax Centers
+      <div className="space-y-6 p-8 bg-neutral-900 min-h-screen">
+        {/* Navigation */}
+        <div className="flex justify-start mb-4">
+          <button 
+            onClick={() => { setLevel(3); setSelectedTaxCenter(null); }}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-neutral-50 font-semibold rounded-lg transition-all duration-200"
+          >
+            <i className="fas fa-arrow-left"></i>
+            Back to Tax Centers
           </button>
         </div>
 
-        <div className="detail-header">
-          <h2><i className="fas fa-building"></i> {selectedTaxCenter.name} - Detailed Analysis</h2>
-          <Badge status="Level 3: Tax Center Detail" className="director-approved" />
+        {/* Page Header */}
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-1 h-8 bg-primary-600 rounded-sm"></div>
+            <h1 className="text-3xl font-serif font-bold text-neutral-50">{selectedTaxCenter.name}</h1>
+          </div>
+          <p className="text-neutral-400 text-sm">Detailed risk analysis and high-risk taxpayer identification</p>
         </div>
 
-        <div className="cards">
-          <Card title="Total Taxpayers" number={selectedTaxCenter.totalTaxpayers.toLocaleString()} icon="fas fa-users" />
-          <Card title="High Risk" number={selectedTaxCenter.highRisk.toLocaleString()} icon="fas fa-exclamation-triangle" />
-          <Card title="Critical Risk" number={selectedTaxCenter.critical.toLocaleString()} icon="fas fa-skull-crossbones" />
-          <Card title="Revenue at Risk" number={`${(selectedTaxCenter.revenueAtRisk / 1000000).toFixed(1)}M ETB`} icon="fas fa-dollar-sign" />
+        {/* KPI Cards - 4 Column Grid */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-info-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md">
+            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">Total Taxpayers</h3>
+            <div className="text-4xl font-bold leading-none mb-2 text-neutral-50">{(selectedTaxCenter.totalTaxpayers || 0).toLocaleString()}</div>
+            <div className="text-2xl text-neutral-400 opacity-75"><i className="fas fa-users"></i></div>
+          </div>
+
+          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-amber-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md">
+            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">High Risk</h3>
+            <div className="text-4xl font-bold leading-none mb-2 text-neutral-50">{(selectedTaxCenter.highRisk || 0).toLocaleString()}</div>
+            <div className="text-2xl text-neutral-400 opacity-75"><i className="fas fa-exclamation-triangle"></i></div>
+          </div>
+
+          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-danger-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md">
+            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">Critical Risk</h3>
+            <div className="text-4xl font-bold leading-none mb-2 text-neutral-50">{(selectedTaxCenter.critical || 0).toLocaleString()}</div>
+            <div className="text-2xl text-neutral-400 opacity-75"><i className="fas fa-skull-crossbones"></i></div>
+          </div>
+
+          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-primary-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md">
+            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">Revenue at Risk</h3>
+            <div className="text-4xl font-bold leading-none mb-2 text-neutral-50">{((selectedTaxCenter.revenueAtRisk || 0) / 1000000).toFixed(1)}M ETB</div>
+            <div className="text-2xl text-neutral-400 opacity-75"><i className="fas fa-dollar-sign"></i></div>
+          </div>
         </div>
 
-        <div className="section-title"><i className="fas fa-tasks"></i> Audit Type Candidates in {selectedTaxCenter.name}</div>
-        <div className="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Audit Type</th>
-                <th>Candidates</th>
-                <th>% of Tax Center</th>
-              </tr>
-            </thead>
-            <tbody>
-              {selectedTaxCenter.auditTypeCandidates.map((item, i) => (
-                <tr key={i}>
-                  <td><strong>{item.type}</strong></td>
-                  <td>{item.candidates.toLocaleString()}</td>
-                  <td>{((item.candidates / selectedTaxCenter.highRisk) * 100).toFixed(1)}%</td>
+        {/* Section Header - Audit Types */}
+        <div className="pt-4">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-1 h-6 bg-info-600 rounded-sm"></div>
+            <h2 className="text-2xl font-serif font-bold text-neutral-50">Audit Type Candidates</h2>
+          </div>
+        </div>
+
+        {/* Audit Type Table */}
+        <div className="bg-neutral-800 border border-neutral-700 rounded-lg overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-neutral-800 border-b border-neutral-700">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-300 uppercase tracking-wider">Audit Type</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-neutral-300 uppercase tracking-wider">Candidates</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-neutral-300 uppercase tracking-wider">% of Tax Center</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-neutral-700">
+                {(selectedTaxCenter.auditTypeCandidates || []).map((item, i) => (
+                  <tr key={i} className="hover:bg-neutral-700/50 transition-colors">
+                    <td className="px-6 py-4 text-sm font-semibold text-neutral-50">{item.type}</td>
+                    <td className="px-6 py-4 text-sm text-right text-neutral-300">{(item.candidates || 0).toLocaleString()}</td>
+                    <td className="px-6 py-4 text-sm text-right text-neutral-400">{((item.candidates || 0) / (selectedTaxCenter.highRisk || 1) * 100).toFixed(1)}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        <div className="section-title"><i className="fas fa-percentage"></i> Risk by Tax Type in {selectedTaxCenter.name}</div>
-        <div className="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Tax Type</th>
-                <th>Risky Taxpayers</th>
-                <th>% of Tax Center</th>
-              </tr>
-            </thead>
-            <tbody>
-              {selectedTaxCenter.taxTypeBreakdown.map((item, i) => (
-                <tr key={i}>
-                  <td><strong>{item.type}</strong></td>
-                  <td>{item.risky.toLocaleString()}</td>
-                  <td>{((item.risky / selectedTaxCenter.highRisk) * 100).toFixed(1)}%</td>
+        {/* Section Header - Tax Types */}
+        <div className="pt-4">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-1 h-6 bg-warning-600 rounded-sm"></div>
+            <h2 className="text-2xl font-serif font-bold text-neutral-50">Risk by Tax Type</h2>
+          </div>
+        </div>
+
+        {/* Tax Type Table */}
+        <div className="bg-neutral-800 border border-neutral-700 rounded-lg overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-neutral-800 border-b border-neutral-700">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-300 uppercase tracking-wider">Tax Type</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-neutral-300 uppercase tracking-wider">Risky Taxpayers</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-neutral-300 uppercase tracking-wider">% of Tax Center</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-neutral-700">
+                {(selectedTaxCenter.taxTypeBreakdown || []).map((item, i) => (
+                  <tr key={i} className="hover:bg-neutral-700/50 transition-colors">
+                    <td className="px-6 py-4 text-sm font-semibold text-neutral-50">{item.type}</td>
+                    <td className="px-6 py-4 text-sm text-right text-neutral-300">{(item.risky || 0).toLocaleString()}</td>
+                    <td className="px-6 py-4 text-sm text-right text-neutral-400">{((item.risky || 0) / (selectedTaxCenter.highRisk || 1) * 100).toFixed(1)}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        <div className="action-bar" style={{ marginTop: '24px' }}>
-          <div></div>
+        {/* Action Button */}
+        <div className="flex justify-end gap-3 pt-4">
           <button 
-            className="btn btn-success"
             onClick={() => { setLevel(4); }}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-success-600 hover:bg-success-700 text-white font-semibold rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
           >
-            <i className="fas fa-users"></i> View High-Risk Taxpayers
+            <i className="fas fa-users"></i>
+            View High-Risk Taxpayers
           </button>
         </div>
       </div>
@@ -691,103 +887,149 @@ function RiskEngineView({ userRole: propUserRole, selectedRegion: propSelectedRe
     if (!selectedTaxCenter || !selectedTaxCenter.taxpayers) return null;
 
     return (
-      <div>
-        <div className="action-bar">
-          <button className="btn btn-outline" onClick={() => { setLevel(3); setSelectedTaxCenter(null); setSelectedTaxpayer(null); }}>
-            <i className="fas fa-arrow-left"></i> Back to Tax Centers
+      <div className="space-y-6 p-8 bg-neutral-900 min-h-screen">
+        {/* Navigation */}
+        <div className="flex justify-start mb-4">
+          <button 
+            onClick={() => { setLevel(3); setSelectedTaxCenter(null); setSelectedTaxpayer(null); }}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-neutral-50 font-semibold rounded-lg transition-all duration-200"
+          >
+            <i className="fas fa-arrow-left"></i>
+            Back to Tax Centers
           </button>
         </div>
 
-        <div className="detail-header">
-          <h2><i className="fas fa-user-tie"></i> {selectedTaxCenter.name} - High-Risk Taxpayers</h2>
-          <Badge status="Level 4: Auditor View" className="rejected" />
-        </div>
-
-        <div className="section-title"><i className="fas fa-list"></i> High-Risk Taxpayers for Audit Selection</div>
-        <div className="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>TIN</th>
-                <th>Business Name</th>
-                <th>Type</th>
-                <th>Risk Score</th>
-                <th>Risk Level</th>
-                <th>Revenue at Risk</th>
-                <th>Recommended Audit Type</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {selectedTaxCenter.taxpayers.map((tp, i) => (
-                <tr key={i} style={{ background: tp.riskLevel === 'Critical' ? '#3a1a1a' : '#0f14193e0' }}>
-                  <td><strong>{tp.tin}</strong></td>
-                  <td>{tp.businessName}</td>
-                  <td>{tp.businessType}</td>
-                  <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{tp.riskScore}</td>
-                  <td>
-                    <Badge 
-                      status={tp.riskLevel} 
-                      className={tp.riskLevel === 'Critical' ? 'rejected' : 'pending'} 
-                    />
-                  </td>
-                  <td>{(tp.revenueAtRisk / 1000000).toFixed(2)}M ETB</td>
-                  <td>{tp.recommendedAuditType}</td>
-                  <td>
-                    <button 
-                      className="btn btn-sm btn-primary"
-                      onClick={() => setSelectedTaxpayer(tp)}
-                    >
-                      <i className="fas fa-search"></i> Details
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    );
-  };
-
-  // Individual Taxpayer Detail Modal
-  const renderTaxpayerDetailModal = () => {
-    if (!selectedTaxpayer) return null;
-
-    return (
-      <div style={{ marginTop: '32px', padding: '20px', background: '#f8f9fc', color: '#0c4a6e', borderRadius: '8px', border: '1px solid #2d3d4d' }}>
-        <div className="action-bar" style={{ marginBottom: '16px' }}>
-          <h3><i className="fas fa-user-tie"></i> {selectedTaxpayer.tin} - {selectedTaxpayer.businessName}</h3>
-          <button className="btn btn-sm btn-outline" onClick={() => setSelectedTaxpayer(null)}>
-            <i className="fas fa-times"></i> Close
-          </button>
-        </div>
-
-        <div className="cards" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' }}>
-          <Card title="Risk Score" number={selectedTaxpayer.riskScore} icon="fas fa-chart-line" />
-          <Card title="Risk Level" number={selectedTaxpayer.riskLevel} icon="fas fa-exclamation-triangle" />
-          <Card title="Revenue at Risk" number={`${(selectedTaxpayer.revenueAtRisk / 1000000).toFixed(1)}M ETB`} icon="fas fa-dollar-sign" />
-          <Card title="Recommended Audit" number={selectedTaxpayer.recommendedAuditType} icon="fas fa-search" />
-        </div>
-
-        <div className="section-title"><i className="fas fa-flag"></i> Risk Indicators & Evidence</div>
-        {selectedTaxpayer.riskIndicators.map((ind, i) => (
-          <div key={i} style={{ marginBottom: '16px', padding: '12px', background: '#0f1419', borderRadius: '6px', border: '1px solid #ddd', borderLeft: `4px solid ${ind.severity === 'High' ? '#ff5252' : '#f57c00'}` }}>
-            <strong>{ind.indicator}</strong>
-            <p style={{ color: '#0c4a6e', margin: '6px 0 0 0', fontSize: '13px', color: '#555' }}>
-              <i className="fas fa-info-circle"></i> {ind.evidence}
-            </p>
-            <Badge status={ind.severity} className={ind.severity === 'High' ? 'rejected' : 'pending'} />
+        {/* Page Header */}
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-1 h-8 bg-danger-600 rounded-sm"></div>
+            <h1 className="text-3xl font-serif font-bold text-neutral-50">High-Risk Taxpayers</h1>
           </div>
-        ))}
-
-        <div className="section-title"><i className="fas fa-history"></i> Compliance History</div>
-        <div style={{ padding: '12px', background: '#e3f2fd', color: '#0c4a6e', borderRadius: '6px', border: '1px solid #1976d2' }}>
-          <p style={{ color: '#0c4a6e', margin: 0, fontSize: '13px' }}>
-            <strong>Last Audit:</strong> {selectedTaxpayer.lastAudit}<br/>
-            <strong>Status:</strong> {selectedTaxpayer.complianceHistory}
-          </p>
+          <p className="text-neutral-400 text-sm">{selectedTaxCenter.name} — Audit selection and risk indicators</p>
         </div>
+
+        {/* High-Risk Taxpayers Table */}
+        <div className="bg-neutral-800 border border-neutral-700 rounded-lg overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-neutral-800 border-b border-neutral-700">
+                  <th className="px-6 py-4 text-left font-semibold text-neutral-300 uppercase tracking-wider">TIN</th>
+                  <th className="px-6 py-4 text-left font-semibold text-neutral-300 uppercase tracking-wider">Business Name</th>
+                  <th className="px-6 py-4 text-left font-semibold text-neutral-300 uppercase tracking-wider">Type</th>
+                  <th className="px-6 py-4 text-center font-semibold text-neutral-300 uppercase tracking-wider">Risk Score</th>
+                  <th className="px-6 py-4 text-center font-semibold text-neutral-300 uppercase tracking-wider">Risk Level</th>
+                  <th className="px-6 py-4 text-right font-semibold text-neutral-300 uppercase tracking-wider">Revenue at Risk</th>
+                  <th className="px-6 py-4 text-center font-semibold text-neutral-300 uppercase tracking-wider">Recommended Audit</th>
+                  <th className="px-6 py-4 text-center font-semibold text-neutral-300 uppercase tracking-wider">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-700">
+                {(selectedTaxCenter.taxpayers || []).map((tp, i) => (
+                  <tr key={i} className="hover:bg-neutral-700/50 transition-colors">
+                    <td className="px-6 py-4 font-mono font-semibold text-neutral-50">{tp.tin}</td>
+                    <td className="px-6 py-4 text-neutral-300">{tp.businessName}</td>
+                    <td className="px-6 py-4 text-neutral-400">{tp.businessType}</td>
+                    <td className="px-6 py-4 text-center font-bold text-neutral-50">{tp.riskScore}</td>
+                    <td className="px-6 py-4 text-center">
+                      <span className={`inline-block px-3 py-1 rounded text-xs font-semibold ${tp.riskLevel === 'Critical' ? 'bg-danger-900/50 text-danger-300' : tp.riskLevel === 'High' ? 'bg-amber-900/50 text-amber-300' : 'bg-warning-900/50 text-warning-300'}`}>
+                        {tp.riskLevel}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right text-neutral-300">{((tp.revenueAtRisk || 0) / 1000000).toFixed(2)}M ETB</td>
+                    <td className="px-6 py-4 text-center text-neutral-400">{tp.recommendedAuditType}</td>
+                    <td className="px-6 py-4 text-center">
+                      <button 
+                        onClick={() => setSelectedTaxpayer(tp)}
+                        className="inline-flex items-center gap-1 px-3 py-1 bg-primary-600 hover:bg-primary-700 text-white text-xs font-semibold rounded transition-all duration-200"
+                      >
+                        <i className="fas fa-search"></i>
+                        Details
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Taxpayer Detail Modal */}
+        {selectedTaxpayer && (
+          <div className="border-t-4 border-primary-600 bg-neutral-800 rounded-lg p-6 mt-8">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between mb-6 pb-4 border-b border-neutral-700">
+              <div>
+                <h2 className="text-2xl font-serif font-bold text-neutral-50">{selectedTaxpayer.tin} — {selectedTaxpayer.businessName}</h2>
+                <p className="text-neutral-400 text-sm mt-1">{selectedTaxpayer.businessType}</p>
+              </div>
+              <button 
+                onClick={() => setSelectedTaxpayer(null)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-neutral-50 font-semibold rounded-lg transition-all duration-200"
+              >
+                <i className="fas fa-times"></i>
+                Close
+              </button>
+            </div>
+
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-4 mb-6">
+              <div className="bg-neutral-700 rounded-lg p-4">
+                <div className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">Risk Score</div>
+                <div className="text-3xl font-bold text-neutral-50">{selectedTaxpayer.riskScore}</div>
+              </div>
+              <div className="bg-neutral-700 rounded-lg p-4">
+                <div className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">Risk Level</div>
+                <div className="text-2xl font-bold">
+                  <span className={`inline-block px-3 py-1 rounded text-sm ${selectedTaxpayer.riskLevel === 'Critical' ? 'bg-danger-900/50 text-danger-300' : selectedTaxpayer.riskLevel === 'High' ? 'bg-amber-900/50 text-amber-300' : 'bg-warning-900/50 text-warning-300'}`}>
+                    {selectedTaxpayer.riskLevel}
+                  </span>
+                </div>
+              </div>
+              <div className="bg-neutral-700 rounded-lg p-4">
+                <div className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">Revenue at Risk</div>
+                <div className="text-3xl font-bold text-neutral-50">{((selectedTaxpayer.revenueAtRisk || 0) / 1000000).toFixed(1)}M</div>
+              </div>
+              <div className="bg-neutral-700 rounded-lg p-4">
+                <div className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">Recommended Audit</div>
+                <div className="text-lg font-bold text-neutral-50">{selectedTaxpayer.recommendedAuditType}</div>
+              </div>
+            </div>
+
+            {/* Risk Indicators Section */}
+            <div className="mb-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-1 h-6 bg-danger-600 rounded-sm"></div>
+                <h3 className="text-xl font-serif font-bold text-neutral-50">Risk Indicators & Evidence</h3>
+              </div>
+              <div className="space-y-4">
+                {(selectedTaxpayer.riskIndicators || []).map((ind, i) => (
+                  <div key={i} className="border-l-4 border-l-danger-600 bg-danger-900/20 rounded-lg p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <h4 className="font-semibold text-neutral-50">{ind.indicator}</h4>
+                      <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${ind.severity === 'High' ? 'bg-danger-900/50 text-danger-300' : 'bg-warning-900/50 text-warning-300'}`}>
+                        {ind.severity}
+                      </span>
+                    </div>
+                    <p className="text-neutral-300 text-sm"><i className="fas fa-info-circle mr-2"></i>{ind.evidence}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Compliance History Section */}
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-1 h-6 bg-info-600 rounded-sm"></div>
+                <h3 className="text-xl font-serif font-bold text-neutral-50">Compliance History</h3>
+              </div>
+              <div className="bg-info-900/20 border border-info-700 rounded-lg p-4">
+                <p className="text-neutral-300"><strong>Last Audit:</strong> {selectedTaxpayer.lastAudit}</p>
+                <p className="text-neutral-300 mt-2"><strong>Status:</strong> {selectedTaxpayer.complianceHistory}</p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -1105,15 +1347,11 @@ function RiskEngineView({ userRole: propUserRole, selectedRegion: propSelectedRe
   } else if (level === 3.5) {
     return renderTaxCenterDetailsView();
   } else if (level === 4) {
-    return (
-      <>
-        {renderTaxpayerDetailsView()}
-        {renderTaxpayerDetailModal()}
-      </>
-    );
+    return renderTaxpayerDetailsView();
   }
 
   return renderNationalView();
+
 }
 
 export default RiskEngineView;

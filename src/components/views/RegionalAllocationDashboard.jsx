@@ -6,9 +6,12 @@ import { loadData } from '../../utils/data';
 import { useRegional } from '../../context/RegionalContext';
 
 /**
- * RegionalAllocationDashboard
- * Shows all plans awaiting tax center allocation for this region
- * Similar to how Director sees all plans to approve
+ * RegionalAllocationDashboard - Regional Allocation Metrics Dashboard
+ * Shows all plans awaiting tax center allocation for the current region.
+ * Similar to how Director sees all plans to approve.
+ * 
+ * @component
+ * @returns {React.ReactElement} Regional allocation dashboard
  */
 
 function RegionalAllocationDashboard() {
@@ -44,7 +47,7 @@ function RegionalAllocationDashboard() {
   if (selectedPlan) {
     return (
       <>
-        <div className="action-bar" style={{ marginBottom: '20px' }}>
+        <div className="action-bar mb-5">
           <button 
             className="btn btn-outline"
             onClick={() => {
@@ -68,7 +71,7 @@ function RegionalAllocationDashboard() {
 
   // Main dashboard showing all plans
   return (
-    <div style={{ padding: '24px' }}>
+    <div className="min-h-screen bg-ink dark:bg-ink p-8">
       <div className="cards">
         <Card 
           title="Plans Awaiting Allocation" 
@@ -87,34 +90,28 @@ function RegionalAllocationDashboard() {
         />
       </div>
 
-      <div className="section-title">
+      <div className="section-title mb-6">
         <i className="fas fa-tasks"></i> Plans Ready for Tax Center Allocation
       </div>
 
       {plans.length === 0 ? (
-        <div style={{
-          background: '#1a3a1a',
-          padding: '40px',
-          borderRadius: '8px',
-          textAlign: 'center',
-          border: '1px solid #388e3c'
-        }}>
-          <i className="fas fa-check-circle" style={{ fontSize: '48px', color: '#388e3c', marginBottom: '16px', display: 'block' }}></i>
-          <h3 style={{ margin: '0 0 8px 0', color: '#388e3c' }}>All Plans Allocated!</h3>
-          <p style={{ color: '#0c4a6e', margin: 0, color: '#a0aec0', fontSize: '13px' }}>
+        <div className="bg-green-900 dark:bg-green-900 p-10 rounded-lg text-center border border-teal dark:border-teal">
+          <i className="fas fa-check-circle text-6xl text-teal dark:text-teal mb-4 block"></i>
+          <h3 className="m-2 text-teal dark:text-teal font-bold">All Plans Allocated!</h3>
+          <p className="text-text-mid dark:text-text-mid m-0 text-xs">
             All plans for {assignedRegion} have been allocated to tax centers.
           </p>
         </div>
       ) : (
-        <div className="table-container">
-          <table>
+        <div className="table-container w-full overflow-x-auto">
+          <table className="w-full text-sm">
             <thead>
-              <tr>
-                <th>Plan ID</th>
-                <th>Fiscal Year</th>
-                <th>Total Regional Cases</th>
-                <th>Status</th>
-                <th>Action</th>
+              <tr className="bg-panel dark:bg-panel border-b border-border dark:border-border">
+                <th className="text-left p-3 text-text-mid dark:text-text-mid">Plan ID</th>
+                <th className="text-left p-3 text-text-mid dark:text-text-mid">Fiscal Year</th>
+                <th className="text-left p-3 text-text-mid dark:text-text-mid">Total Regional Cases</th>
+                <th className="text-left p-3 text-text-mid dark:text-text-mid">Status</th>
+                <th className="text-left p-3 text-text-mid dark:text-text-mid">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -123,17 +120,17 @@ function RegionalAllocationDashboard() {
                 const cases = regionData?.cases || 0;
                 
                 return (
-                  <tr key={plan.id}>
-                    <td><strong>{plan.id}</strong></td>
-                    <td>{plan.fiscalYear}</td>
-                    <td>{cases} cases</td>
-                    <td>
+                  <tr key={plan.id} className="border-b border-border dark:border-border hover:bg-panel dark:hover:bg-panel">
+                    <td className="p-3"><strong className="text-text-hi dark:text-text-hi">{plan.id}</strong></td>
+                    <td className="p-3 text-text-mid dark:text-text-mid">{plan.fiscalYear}</td>
+                    <td className="p-3 text-text-mid dark:text-text-mid">{cases} cases</td>
+                    <td className="p-3">
                       <Badge 
                         status="Ready for Allocation" 
                         className="pending"
                       />
                     </td>
-                    <td>
+                    <td className="p-3">
                       <button 
                         className="btn btn-sm btn-primary"
                         onClick={() => setSelectedPlan(plan)}
@@ -150,15 +147,9 @@ function RegionalAllocationDashboard() {
       )}
 
       {allocatedCount > 0 && (
-        <div style={{
-          marginTop: '24px',
-          background: '#e3f2fd', color: '#0c4a6e',
-          padding: '16px',
-          borderRadius: '8px',
-          border: '1px solid #1976d2'
-        }}>
+        <div className="mt-6 bg-blue-50 dark:bg-blue-900 text-text-hi dark:text-text-hi p-4 rounded-lg border border-blue dark:border-blue">
           <strong><i className="fas fa-info-circle"></i> Allocation History</strong>
-          <p style={{ color: '#0c4a6e', margin: '8px 0 0 0', fontSize: '13px' }}>
+          <p className="text-text-mid dark:text-text-mid mt-2 mb-0 text-xs">
             You have already allocated {allocatedCount} plan(s) to tax centers in {assignedRegion}. 
             Tax center feedback will be collected once allocations are sent.
           </p>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../Card';
 import Badge from '../Badge';
+import Button from '../Button';
 import CreateAnnualPlanModal from '../modals/CreateAnnualPlanModal';
 import ConfigurationManagementView from './ConfigurationManagementView';
 import FeedbackReviewView from './FeedbackReviewView';
@@ -9,6 +10,19 @@ import RiskEngineView from './RiskEngineView';
 import { loadData } from '../../utils/data';
 import { submitPlanToDirector, getStatusDisplay, getBadgeClass } from '../../utils/businessLogic';
 import { auditConfig } from '../../config/auditConfig';
+
+/**
+ * AuditPlanningView - Modern Enterprise Audit Planning Interface
+ * 
+ * Features:
+ * - Dashboard with KPI metrics and status overview
+ * - Create Annual Audit Plan workflow
+ * - Plan details and MOR analysis
+ * - Regional breakdown visualization
+ * - Modern dark theme with semantic colors
+ * - Responsive design for all screen sizes
+ * - Professional typography and spacing
+ */
 
 function AuditPlanningView({ currentView }) {
   const [plans, setPlans] = useState([]);
@@ -20,6 +34,24 @@ function AuditPlanningView({ currentView }) {
   const loadPlans = () => {
     const data = loadData();
     setPlans(data.plans || []);
+  };
+
+  // Helper function to map status to badge variant
+  const getBadgeVariant = (status) => {
+    switch(status) {
+      case 'DRAFT':
+        return 'draft';
+      case 'SUBMITTED_TO_DIRECTOR':
+        return 'submitted';
+      case 'DIRECTOR_APPROVED':
+        return 'approved';
+      case 'REVISION_REQUESTED':
+        return 'warning';
+      case 'FINALIZED':
+        return 'success';
+      default:
+        return 'info';
+    }
   };
 
   useEffect(() => {
@@ -90,7 +122,7 @@ function AuditPlanningView({ currentView }) {
     totalEffort: plans.reduce((sum, p) => sum + (p.totalEffortHours || 0), 0)
   };
 
-  // Render MOR Analysis View
+  // Render MOR Analysis View with Modern Design
   const renderMORAnalysis = () => {
     if (!selectedPlan) return null;
 
@@ -113,144 +145,170 @@ function AuditPlanningView({ currentView }) {
     });
 
     return (
-      <div>
-        <div className="action-bar">
-          <button className="btn btn-outline" onClick={() => setDetailView(null)}>
-            <i className="fas fa-arrow-left"></i> Back to Plans
-          </button>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button className="btn btn-info" onClick={() => handleViewDetails(selectedPlan)}>
-              <i className="fas fa-file-alt"></i> Plan Details
-            </button>
-            <button className="btn btn-primary" onClick={() => handleViewRegionalBreakdown(selectedPlan)}>
-              <i className="fas fa-map"></i> Regional Breakdown
-            </button>
-          </div>
-        </div>
-
-        <div className="detail-header">
-          <h2><i className="fas fa-building"></i> Ministry of Revenue (MOR) - National Allocation Analysis</h2>
-          <Badge status={`${selectedPlan.id} (v${selectedPlan.version})`} className="director-approved" />
-        </div>
-
-        <div className="cards">
-          <Card title="Total Taxpayers" number={taxpayerPool.total.toLocaleString()} icon="fas fa-users" />
-          <Card title="Planned Audits" number={morData.totalCases.toLocaleString()} icon="fas fa-clipboard-check" />
-          <Card title="Coverage Rate" number={`${morData.coverageRate}%`} icon="fas fa-percentage" />
-          <Card title="Total Effort" number={`${morData.totalEffort.toLocaleString()}h`} icon="fas fa-clock" />
-          <Card title="Regions Covered" number={morData.regions} icon="fas fa-map-marked-alt" />
-          <Card title="Fiscal Year" number={selectedPlan.fiscalYear} icon="fas fa-calendar-alt" />
-        </div>
-
-        <div className="section-title"><i className="fas fa-chart-pie"></i> National Audit Distribution by Type</div>
-        <div className="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Audit Type</th>
-                <th>Total Cases</th>
-                <th>% of Total</th>
-                <th>Total Effort (hrs)</th>
-                <th>% of Effort</th>
-                <th>Avg Effort/Case</th>
-              </tr>
-            </thead>
-            <tbody>
-              {auditConfig.auditTypes.map((type, i) => (
-                <tr key={`type_${i}`}>
-                  <td><strong>{type.name}</strong></td>
-                  <td>{auditTypeAggregation[i]?.count || 0}</td>
-                  <td>{morData.totalCases > 0 ? ((auditTypeAggregation[i]?.count / morData.totalCases) * 100).toFixed(1) : 0}%</td>
-                  <td>{auditTypeAggregation[i]?.effort.toLocaleString() || 0}</td>
-                  <td>{morData.totalEffort > 0 ? ((auditTypeAggregation[i]?.effort / morData.totalEffort) * 100).toFixed(1) : 0}%</td>
-                  <td>{type.effortPerCase}h</td>
-                </tr>
-              ))}
-              <tr style={{ background: '#f8f9fc', color: '#0c4a6e', fontWeight: 'bold', fontSize: '15px' }}>
-                <td>TOTAL (MOR)</td>
-                <td>{morData.totalCases}</td>
-                <td>100%</td>
-                <td>{morData.totalEffort.toLocaleString()}</td>
-                <td>100%</td>
-                <td>{morData.totalCases > 0 ? Math.round(morData.totalEffort / morData.totalCases) : 0}h</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div className="section-title"><i className="fas fa-map-marked"></i> Regional Allocation Overview</div>
-        <div className="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Region</th>
-                <th>Taxpayer Base</th>
-                <th>Allocated Cases</th>
-                <th>Coverage %</th>
-                <th>Total Effort (hrs)</th>
-                <th>% of National Effort</th>
-                <th>Available Skills</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {selectedPlan.locations?.map(loc => (
-                <tr key={loc.name}>
-                  <td><strong>{loc.name}</strong></td>
-                  <td>{loc.taxpayers?.toLocaleString() || 'N/A'}</td>
-                  <td>{loc.cases}</td>
-                  <td>{loc.taxpayers > 0 ? ((loc.cases / loc.taxpayers) * 100).toFixed(2) : 0}%</td>
-                  <td>{loc.totalEffort?.toLocaleString() || 0}</td>
-                  <td>{morData.totalEffort > 0 ? ((loc.totalEffort / morData.totalEffort) * 100).toFixed(1) : 0}%</td>
-                  <td>{loc.availableSkills}</td>
-                  <td>
-                    <Badge status={loc.capacityStatus} className={loc.capacityStatus === 'Sufficient' ? 'director-approved' : 'rejected'} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="section-title"><i className="fas fa-bullseye"></i> Strategic Analysis</div>
-        <div className="cards" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
-          <div className="card">
-            <div className="info">
-              <h3>Efficiency Ratio</h3>
-              <div className="number" style={{ fontSize: '18px' }}>
-                {morData.totalEffort > 0 ? (morData.totalCases / (morData.totalEffort / 160)).toFixed(1) : 0} cases/auditor
+      <div className="bg-neutral-900 min-h-screen">
+        {/* Header */}
+        <div className="bg-neutral-800 border-b border-neutral-700 px-8 py-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="tertiary" 
+                onClick={() => setDetailView(null)}
+              >
+                <i className="fas fa-arrow-left"></i>
+              </Button>
+              <div>
+                <h1 className="text-3xl font-serif font-bold text-neutral-50">
+                  <i className="fas fa-building mr-3"></i>National Audit Allocation Analysis
+                </h1>
+                <p className="text-neutral-400 text-sm mt-1">Ministry of Revenue (MOR) Planning</p>
               </div>
             </div>
-            <div className="icon"><i className="fas fa-chart-line"></i></div>
-          </div>
-          <div className="card">
-            <div className="info">
-              <h3>Avg Cases/Region</h3>
-              <div className="number" style={{ fontSize: '18px' }}>
-                {morData.regions > 0 ? Math.round(morData.totalCases / morData.regions) : 0}
-              </div>
-            </div>
-            <div className="icon"><i className="fas fa-map"></i></div>
-          </div>
-          <div className="card">
-            <div className="info">
-              <h3>Planning Period</h3>
-              <div className="number" style={{ fontSize: '16px' }}>
-                {selectedPlan.duration} days
-              </div>
-            </div>
-            <div className="icon"><i className="fas fa-calendar"></i></div>
+            <Badge status={`${selectedPlan.id} (v${selectedPlan.version})`} variant="approved" size="lg" />
           </div>
         </div>
 
-        {selectedPlan.tactics && (
-          <>
-            <div className="section-title"><i className="fas fa-bullseye"></i> National Audit Strategy</div>
-            <div style={{ background: '#f0f7ff', color: '#0c4a6e', padding: '16px', borderRadius: '8px', border: '1px solid #4fc3f7' }}>
-              <p style={{ color: '#0c4a6e', margin: 0, lineHeight: '1.6' }}>{selectedPlan.tactics}</p>
+        <div className="p-8">
+          {/* KPI Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-6 mb-8">
+            <Card title="Total Taxpayers" number={taxpayerPool.total.toLocaleString()} icon="fas fa-users" accent="info" />
+            <Card title="Planned Audits" number={morData.totalCases.toLocaleString()} icon="fas fa-clipboard-check" accent="primary" />
+            <Card title="Coverage Rate" number={`${morData.coverageRate}%`} icon="fas fa-percentage" accent="success" />
+            <Card title="Total Effort" number={`${morData.totalEffort.toLocaleString()}h`} icon="fas fa-clock" accent="warning" />
+            <Card title="Regions Covered" number={morData.regions} icon="fas fa-map-marked-alt" accent="info" />
+            <Card title="Fiscal Year" number={selectedPlan.fiscalYear} icon="fas fa-calendar-alt" accent="primary" />
+          </div>
+
+          {/* Audit Distribution Table */}
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-1 h-6 bg-primary-600 rounded-sm"></div>
+              <h2 className="text-xl font-semibold text-neutral-50">National Audit Distribution by Type</h2>
             </div>
-          </>
-        )}
+            <div className="card rounded-lg overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-neutral-800 border-b border-neutral-700">
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-neutral-300 uppercase tracking-wider">Audit Type</th>
+                      <th className="px-6 py-4 text-right text-sm font-semibold text-neutral-300 uppercase tracking-wider">Total Cases</th>
+                      <th className="px-6 py-4 text-right text-sm font-semibold text-neutral-300 uppercase tracking-wider">% of Total</th>
+                      <th className="px-6 py-4 text-right text-sm font-semibold text-neutral-300 uppercase tracking-wider">Total Effort (hrs)</th>
+                      <th className="px-6 py-4 text-right text-sm font-semibold text-neutral-300 uppercase tracking-wider">% of Effort</th>
+                      <th className="px-6 py-4 text-right text-sm font-semibold text-neutral-300 uppercase tracking-wider">Avg Effort/Case</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-700">
+                    {auditConfig.auditTypes.map((type, i) => (
+                      <tr key={`type_${i}`} className="hover:bg-neutral-700/50 transition-colors">
+                        <td className="px-6 py-4 text-sm font-semibold text-neutral-50">{type.name}</td>
+                        <td className="px-6 py-4 text-sm text-right text-neutral-300">{auditTypeAggregation[i]?.count || 0}</td>
+                        <td className="px-6 py-4 text-sm text-right text-neutral-400">
+                          {morData.totalCases > 0 ? ((auditTypeAggregation[i]?.count / morData.totalCases) * 100).toFixed(1) : 0}%
+                        </td>
+                        <td className="px-6 py-4 text-sm text-right text-neutral-300">{auditTypeAggregation[i]?.effort.toLocaleString() || 0}</td>
+                        <td className="px-6 py-4 text-sm text-right text-neutral-400">
+                          {morData.totalEffort > 0 ? ((auditTypeAggregation[i]?.effort / morData.totalEffort) * 100).toFixed(1) : 0}%
+                        </td>
+                        <td className="px-6 py-4 text-sm text-right text-neutral-300 font-medium">{type.effortPerCase}h</td>
+                      </tr>
+                    ))}
+                    <tr className="bg-primary-900/20 border-t-2 border-primary-600 font-semibold">
+                      <td className="px-6 py-4 text-sm text-primary-300">TOTAL (MOR)</td>
+                      <td className="px-6 py-4 text-sm text-right text-primary-300">{morData.totalCases}</td>
+                      <td className="px-6 py-4 text-sm text-right text-primary-300">100%</td>
+                      <td className="px-6 py-4 text-sm text-right text-primary-300">{morData.totalEffort.toLocaleString()}</td>
+                      <td className="px-6 py-4 text-sm text-right text-primary-300">100%</td>
+                      <td className="px-6 py-4 text-sm text-right text-primary-300">
+                        {morData.totalCases > 0 ? Math.round(morData.totalEffort / morData.totalCases) : 0}h
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          {/* Regional Allocation Table */}
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-1 h-6 bg-success-600 rounded-sm"></div>
+              <h2 className="text-xl font-semibold text-neutral-50">Regional Allocation Overview</h2>
+            </div>
+            <div className="card rounded-lg overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-neutral-800 border-b border-neutral-700">
+                      <th className="px-6 py-4 text-left font-semibold text-neutral-300 uppercase tracking-wider">Region</th>
+                      <th className="px-6 py-4 text-right font-semibold text-neutral-300 uppercase tracking-wider">Taxpayer Base</th>
+                      <th className="px-6 py-4 text-right font-semibold text-neutral-300 uppercase tracking-wider">Allocated Cases</th>
+                      <th className="px-6 py-4 text-right font-semibold text-neutral-300 uppercase tracking-wider">Coverage %</th>
+                      <th className="px-6 py-4 text-right font-semibold text-neutral-300 uppercase tracking-wider">Total Effort (hrs)</th>
+                      <th className="px-6 py-4 text-right font-semibold text-neutral-300 uppercase tracking-wider">% of National Effort</th>
+                      <th className="px-6 py-4 text-left font-semibold text-neutral-300 uppercase tracking-wider">Available Skills</th>
+                      <th className="px-6 py-4 text-left font-semibold text-neutral-300 uppercase tracking-wider">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-700">
+                    {selectedPlan.locations?.map(loc => (
+                      <tr key={loc.name} className="hover:bg-neutral-700/50 transition-colors">
+                        <td className="px-6 py-4 font-semibold text-neutral-50">{loc.name}</td>
+                        <td className="px-6 py-4 text-right text-neutral-300">{loc.taxpayers?.toLocaleString() || 'N/A'}</td>
+                        <td className="px-6 py-4 text-right text-neutral-300 font-medium">{loc.cases}</td>
+                        <td className="px-6 py-4 text-right text-neutral-400">
+                          {loc.taxpayers > 0 ? ((loc.cases / loc.taxpayers) * 100).toFixed(2) : 0}%
+                        </td>
+                        <td className="px-6 py-4 text-right text-neutral-300">{loc.totalEffort?.toLocaleString() || 0}</td>
+                        <td className="px-6 py-4 text-right text-neutral-400">
+                          {morData.totalEffort > 0 ? ((loc.totalEffort / morData.totalEffort) * 100).toFixed(1) : 0}%
+                        </td>
+                        <td className="px-6 py-4 text-neutral-300">{loc.availableSkills}</td>
+                        <td className="px-6 py-4">
+                          <Badge 
+                            status={loc.capacityStatus} 
+                            variant={loc.capacityStatus === 'Sufficient' ? 'approved' : 'danger'}
+                            size="sm"
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          {/* Strategy Section */}
+          {selectedPlan.tactics && (
+            <div className="bg-primary-900/20 border border-primary-600/50 rounded-lg p-6 mb-8">
+              <div className="flex items-start gap-3">
+                <i className="fas fa-bullseye text-primary-400 text-lg mt-1"></i>
+                <div>
+                  <h3 className="text-lg font-semibold text-neutral-50 mb-2">National Audit Strategy</h3>
+                  <p className="text-neutral-300 leading-relaxed">{selectedPlan.tactics}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex gap-3 justify-between">
+            <Button 
+              variant="tertiary" 
+              onClick={() => setDetailView(null)}
+            >
+              <i className="fas fa-arrow-left mr-2"></i>Back to Plans
+            </Button>
+            <div className="flex gap-3">
+              <Button 
+                variant="secondary" 
+                onClick={() => handleViewRegionalBreakdown(selectedPlan)}
+              >
+                <i className="fas fa-map mr-2"></i>Regional Breakdown
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
     );
   };
@@ -432,68 +490,169 @@ function AuditPlanningView({ currentView }) {
     }
 
     return (
-      <div>
-        <div className="cards">
-          <Card title="Draft Plans" number={stats.draft} icon="fas fa-file-alt" />
-          <Card title="Under Review" number={stats.submitted} icon="fas fa-hourglass-half" />
-          <Card title="Approved" number={stats.approved} icon="fas fa-check-circle" />
-          <Card title="In Revision" number={stats.inRevision} icon="fas fa-redo" />
-          <Card title="Finalized" number={stats.finalized} icon="fas fa-flag-checkered" />
-          <Card title="Total Cases" number={stats.totalVolume} icon="fas fa-calculator" />
-          <Card title="Total Effort" number={`${stats.totalEffort}h`} icon="fas fa-clock" />
+      <div className="space-y-6 p-8 bg-neutral-900 min-h-screen">
+        {/* Page Header */}
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-1 h-8 bg-primary-600 rounded-sm"></div>
+            <h1 className="text-3xl font-serif font-bold text-neutral-50">Audit Planning Workspace</h1>
+          </div>
+          <p className="text-neutral-400 text-sm">Annual audit cycle — regional allocation and feedback tracking</p>
         </div>
 
-        <div className="action-bar">
-          <div></div>
-          <button className="btn btn-primary" onClick={() => {setSelectedPlan(null); setShowModal(true);}}>
-            <i className="fas fa-plus-circle"></i> Create New Audit Plan
-          </button>
+        {/* KPI Cards - Same pattern as dashboard */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-7">
+          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-primary-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md">
+            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">Draft Plans</h3>
+            <div className="text-4xl font-bold leading-none mb-2 text-neutral-50">{stats.draft}</div>
+            <div className="text-2xl text-neutral-400 opacity-75"><i className="fas fa-file-alt"></i></div>
+          </div>
+
+          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-info-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md">
+            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">Under Review</h3>
+            <div className="text-4xl font-bold leading-none mb-2 text-neutral-50">{stats.submitted}</div>
+            <div className="text-2xl text-neutral-400 opacity-75"><i className="fas fa-hourglass-half"></i></div>
+          </div>
+
+          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-success-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md">
+            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">Approved</h3>
+            <div className="text-4xl font-bold leading-none mb-2 text-neutral-50">{stats.approved}</div>
+            <div className="text-2xl text-neutral-400 opacity-75"><i className="fas fa-check-circle"></i></div>
+          </div>
+
+          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-warning-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md">
+            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">In Revision</h3>
+            <div className="text-4xl font-bold leading-none mb-2 text-neutral-50">{stats.inRevision}</div>
+            <div className="text-2xl text-neutral-400 opacity-75"><i className="fas fa-redo"></i></div>
+          </div>
+
+          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-success-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md">
+            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">Finalized</h3>
+            <div className="text-4xl font-bold leading-none mb-2 text-neutral-50">{stats.finalized}</div>
+            <div className="text-2xl text-neutral-400 opacity-75"><i className="fas fa-flag-checkered"></i></div>
+          </div>
+
+          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-info-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md">
+            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">Total Cases</h3>
+            <div className="text-4xl font-bold leading-none mb-2 text-neutral-50">{(stats.totalVolume || 0).toLocaleString()}</div>
+            <div className="text-2xl text-neutral-400 opacity-75"><i className="fas fa-calculator"></i></div>
+          </div>
+
+          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-warning-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md">
+            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">Total Effort</h3>
+            <div className="text-4xl font-bold leading-none mb-2 text-neutral-50">{(stats.totalEffort || 0).toLocaleString()}h</div>
+            <div className="text-2xl text-neutral-400 opacity-75"><i className="fas fa-clock"></i></div>
+          </div>
         </div>
 
-        <div className="section-title">
-          <i className="fas fa-list"></i> 
-          {currentView === 'revisions' ? 'Plans in Revision' : 'Audit Plans'}
+        {/* Section Header */}
+        <div className="pt-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-1 h-6 bg-primary-600 rounded-sm"></div>
+              <div>
+                <h2 className="text-2xl font-serif font-bold text-neutral-50">
+                  {currentView === 'revisions' ? 'Plans in Revision' : 'Audit Plans'}
+                </h2>
+                <p className="text-neutral-400 text-sm mt-1">{displayPlans.length} plan{displayPlans.length !== 1 ? 's' : ''}</p>
+              </div>
+            </div>
+            <Button 
+              variant="primary" 
+              size="lg"
+              onClick={() => {setSelectedPlan(null); setShowModal(true);}}
+            >
+              <i className="fas fa-plus-circle mr-2"></i>
+              Create New Plan
+            </Button>
+          </div>
         </div>
-        <div className="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Plan ID</th>
-                <th>Version</th>
-                <th>Fiscal Year</th>
-                <th>Period</th>
-                <th>Total Cases</th>
-                <th>Effort (hrs)</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {displayPlans.length === 0 ? (
-                <tr><td colSpan="8" style={{ textAlign: 'center', padding: '40px' }}>
-                  <i className="fas fa-inbox" style={{ fontSize: '48px', color: '#ccc', marginBottom: '16px' }}></i>
-                  <br />{currentView === 'revisions' ? 'No plans in revision.' : 'No audit plans yet. Create your first plan to get started.'}
-                </td></tr>
-              ) : (
-                displayPlans.map(plan => (
-                  <tr key={plan.id}>
-                    <td><strong>{plan.id}</strong></td>
-                    <td>v{plan.version}</td>
-                    <td>{plan.fiscalYear}</td>
-                    <td>{plan.startDate} to {plan.endDate}</td>
-                    <td>{plan.totalVolume}</td>
-                    <td>{plan.totalEffortHours}</td>
-                    <td>
-                      <Badge status={getStatusDisplay(plan.status)} className={getBadgeClass(plan.status)} />
+
+        {/* Plans Table */}
+        <div className="bg-neutral-800 border border-neutral-700 rounded-lg overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-neutral-800 border-b border-neutral-700">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-300 uppercase tracking-wider">Plan ID</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-300 uppercase tracking-wider">Version</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-300 uppercase tracking-wider">Fiscal Year</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-300 uppercase tracking-wider">Period</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-300 uppercase tracking-wider">Total Cases</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-300 uppercase tracking-wider">Effort (hrs)</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-300 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-300 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-700">
+                {displayPlans.length === 0 ? (
+                  <tr>
+                    <td colSpan="8" className="px-6 py-12 text-center">
+                      <div className="flex flex-col items-center justify-center">
+                        <i className="fas fa-inbox text-4xl text-neutral-600 mb-4"></i>
+                        <p className="text-neutral-400 text-lg">
+                          {currentView === 'revisions' ? 'No plans in revision.' : 'No audit plans yet. Create your first plan to get started.'}
+                        </p>
+                      </div>
                     </td>
-                    <td>{renderActions(plan)}</td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  displayPlans.map(plan => (
+                    <tr 
+                      key={plan.id}
+                      className="hover:bg-neutral-700/50 transition-colors duration-200"
+                    >
+                      <td className="px-6 py-4 text-sm font-mono font-semibold text-neutral-50">{plan.id}</td>
+                      <td className="px-6 py-4 text-sm text-neutral-400">v{plan.version}</td>
+                      <td className="px-6 py-4 text-sm font-medium text-neutral-300">{plan.fiscalYear}</td>
+                      <td className="px-6 py-4 text-sm text-neutral-400">{plan.startDate} to {plan.endDate}</td>
+                      <td className="px-6 py-4 text-sm font-semibold text-neutral-50">{(plan.totalVolume || 0).toLocaleString()}</td>
+                      <td className="px-6 py-4 text-sm text-neutral-400">{(plan.totalEffortHours || 0).toLocaleString()}h</td>
+                      <td className="px-6 py-4">
+                        <Badge 
+                          status={getStatusDisplay(plan.status)} 
+                          variant={getBadgeVariant(plan.status)}
+                          size="sm"
+                        />
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="secondary" 
+                            size="sm"
+                            onClick={() => handleViewMORAnalysis(plan)}
+                          >
+                            <i className="fas fa-chart-pie"></i>
+                          </Button>
+                          {(plan.status === 'DRAFT' || plan.status === 'REVISION_REQUESTED') && (
+                            <>
+                              <Button 
+                                variant="tertiary" 
+                                size="sm"
+                                onClick={() => handleEditPlan(plan)}
+                              >
+                                <i className="fas fa-edit"></i>
+                              </Button>
+                              <Button 
+                                variant="primary" 
+                                size="sm"
+                                onClick={() => handleSubmitToDirector(plan.id)}
+                              >
+                                <i className="fas fa-paper-plane"></i>
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
+        {/* Modal */}
         {showModal && (
           <CreateAnnualPlanModal 
             onClose={() => { 

@@ -4,8 +4,11 @@ import Badge from '../Badge';
 import { loadData, saveData } from '../../utils/data';
 
 /**
- * StoredCasesView - Process Owner
- * View all cases stored for audit execution
+ * StoredCasesView
+ * Displays all audit cases stored for execution with filtering, sorting, and removal capabilities.
+ * Features: risk level filtering, audit type selection, revenue tracking, and pagination.
+ * Design: Dark theme with navy background and teal/coral accents for status indicators.
+ * Styling: 100% Tailwind CSS with dark mode support.
  */
 
 function StoredCasesView() {
@@ -151,39 +154,37 @@ function StoredCasesView() {
   };
 
   return (
-    <div style={{ padding: '24px' }}>
-      <div className="detail-header">
-        <h2><i className="fas fa-folder-open"></i> Stored Cases</h2>
+    <div className="min-h-screen bg-ink dark:bg-ink p-8">
+      <div className="flex items-center gap-3 mb-8 pl-4 border-l-4 border-gold dark:border-gold">
+        <h2 className="text-3xl font-bold text-text-hi dark:text-text-hi">
+          <i className="fas fa-folder-open mr-3"></i> Stored Cases
+        </h2>
         <Badge status={`${filteredCases.length} Cases`} className="director-approved" />
       </div>
 
       {storedCases.length === 0 ? (
-        <div style={{
-          background: '#1c2128',
-          padding: '40px',
-          borderRadius: '8px',
-          textAlign: 'center',
-          border: '1px solid #30363d'
-        }}>
-          <i className="fas fa-inbox" style={{ fontSize: '48px', color: '#8b949e', marginBottom: '16px', display: 'block' }}></i>
-          <h3 style={{ color: '#f0f6fc', margin: '0 0 8px 0' }}>No Stored Cases Yet</h3>
-          <p style={{ color: '#8b949e', margin: 0 }}>
+        <div className="bg-panel dark:bg-panel-dark border border-border dark:border-border-dark rounded-sm p-10 text-center">
+          <i className="fas fa-inbox text-text-mid dark:text-text-mid text-5xl mb-4 block"></i>
+          <h3 className="text-text-hi dark:text-text-hi text-lg font-semibold mb-2">No Stored Cases Yet</h3>
+          <p className="text-text-mid dark:text-text-mid text-sm">
             Go to "Audit Case Selection" to select and store cases for audit execution.
           </p>
         </div>
       ) : (
         <>
           {/* Summary Info */}
-          <div style={{ background: '#e3f2fd', color: '#0c4a6e', padding: '16px', borderRadius: '8px', marginBottom: '24px', border: '1px solid #1976d2' }}>
-            <strong style={{ color: '#0c4a6e' }}><i className="fas fa-check-circle"></i> Stored Cases Ready for Audit</strong>
-            <p style={{ color: '#0c4a6e', margin: '8px 0 0 0', fontSize: '13px', lineHeight: '1.6' }}>
+          <div className="bg-blue-50 dark:bg-blue-900 border border-blue-500 dark:border-blue-600 rounded-sm p-4 mb-6 text-blue-900 dark:text-blue-100">
+            <strong className="text-blue-900 dark:text-blue-100">
+              <i className="fas fa-check-circle mr-2"></i> Stored Cases Ready for Audit
+            </strong>
+            <p className="text-blue-900 dark:text-blue-100 text-sm leading-relaxed mt-2">
               These cases have been selected and stored for audit execution. 
               Total stored: <strong>{storedCases.length}</strong> cases | Displayed: <strong>{filteredCases.length}</strong>
             </p>
           </div>
 
           {/* Statistics Cards */}
-          <div className="cards" style={{ marginBottom: '24px' }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <Card title="Total Stored" number={filteredCases.length} icon="fas fa-inbox" />
             <Card title="Critical Risk" number={stats.riskLevels.Critical} icon="fas fa-exclamation-circle" />
             <Card title="High Risk" number={stats.riskLevels.High} icon="fas fa-warning" />
@@ -191,70 +192,31 @@ function StoredCasesView() {
           </div>
 
           {/* Filters */}
-          <div style={{
-            background: '#1c2128',
-            padding: '16px',
-            borderRadius: '8px',
-            marginBottom: '24px',
-            display: 'flex',
-            gap: '12px',
-            flexWrap: 'wrap',
-            alignItems: 'center'
-          }}>
+          <div className="bg-panel dark:bg-panel-dark border border-border dark:border-border-dark rounded-sm p-4 mb-6 flex flex-wrap gap-3 items-center">
             <input
               type="text"
               placeholder="Search TIN, name, or case ID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                flex: 1,
-                minWidth: '180px',
-                padding: '8px 12px',
-                border: '1px solid #30363d',
-                borderRadius: '6px',
-                background: '#0f1419',
-                color: '#f0f6fc',
-                fontSize: '12px'
-              }}
+              className="flex-1 min-w-[180px] px-3 py-2 border border-border dark:border-border-dark rounded-sm bg-ink dark:bg-ink text-text-hi dark:text-text-hi text-sm focus:outline-none focus:border-gold"
             />
 
             <select value={filterBranch} onChange={(e) => setFilterBranch(e.target.value)}
-              style={{
-                padding: '8px 12px',
-                border: '1px solid #30363d',
-                borderRadius: '6px',
-                background: '#0f1419',
-                color: '#f0f6fc',
-                fontSize: '12px'
-              }}>
+              className="px-3 py-2 border border-border dark:border-border-dark rounded-sm bg-ink dark:bg-ink text-text-hi dark:text-text-hi text-sm focus:outline-none focus:border-gold">
               {getBranches().map(branch => (
                 <option key={branch} value={branch}>{branch}</option>
               ))}
             </select>
 
             <select value={filterAuditType} onChange={(e) => setFilterAuditType(e.target.value)}
-              style={{
-                padding: '8px 12px',
-                border: '1px solid #30363d',
-                borderRadius: '6px',
-                background: '#0f1419',
-                color: '#f0f6fc',
-                fontSize: '12px'
-              }}>
+              className="px-3 py-2 border border-border dark:border-border-dark rounded-sm bg-ink dark:bg-ink text-text-hi dark:text-text-hi text-sm focus:outline-none focus:border-gold">
               {getAuditTypes().map(type => (
                 <option key={type} value={type}>{type}</option>
               ))}
             </select>
 
             <select value={filterRiskLevel} onChange={(e) => setFilterRiskLevel(e.target.value)}
-              style={{
-                padding: '8px 12px',
-                border: '1px solid #30363d',
-                borderRadius: '6px',
-                background: '#0f1419',
-                color: '#f0f6fc',
-                fontSize: '12px'
-              }}>
+              className="px-3 py-2 border border-border dark:border-border-dark rounded-sm bg-ink dark:bg-ink text-text-hi dark:text-text-hi text-sm focus:outline-none focus:border-gold">
               {getRiskLevels().map(level => (
                 <option key={level} value={level}>{level}</option>
               ))}
@@ -267,42 +229,17 @@ function StoredCasesView() {
                 setFilterAuditType('All');
                 setFilterRiskLevel('All');
               }}
-              style={{
-                padding: '8px 12px',
-                border: '1px solid #30363d',
-                borderRadius: '6px',
-                background: '#0f1419',
-                color: '#8b949e',
-                fontSize: '12px',
-                cursor: 'pointer'
-              }}
+              className="px-3 py-2 border border-border dark:border-border-dark rounded-sm bg-ink dark:bg-ink text-text-mid dark:text-text-mid text-sm cursor-pointer hover:bg-panel dark:hover:bg-panel transition-colors"
             >
               Clear Filters
             </button>
           </div>
 
           {/* Sort Options */}
-          <div style={{
-            background: '#0f1419',
-            padding: '12px',
-            borderRadius: '8px',
-            marginBottom: '12px',
-            display: 'flex',
-            gap: '12px',
-            alignItems: 'center',
-            fontSize: '12px',
-            color: '#8b949e'
-          }}>
-            <span>Sort by:</span>
+          <div className="bg-ink dark:bg-ink border border-border dark:border-border-dark rounded-sm p-3 mb-4 flex gap-3 items-center text-text-mid dark:text-text-mid text-sm">
+            <span className="font-semibold">Sort by:</span>
             <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}
-              style={{
-                padding: '4px 8px',
-                border: '1px solid #30363d',
-                borderRadius: '4px',
-                background: '#1c2128',
-                color: '#f0f6fc',
-                fontSize: '11px'
-              }}>
+              className="px-2 py-1 border border-border dark:border-border-dark rounded-sm bg-panel dark:bg-panel-dark text-text-hi dark:text-text-hi text-xs focus:outline-none focus:border-gold">
               <option value="stored_date">Storage Date (Newest)</option>
               <option value="risk_score">Risk Score</option>
               <option value="taxpayer_name">Taxpayer Name</option>
@@ -310,72 +247,49 @@ function StoredCasesView() {
             
             <button
               onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-              style={{
-                padding: '4px 8px',
-                border: '1px solid #30363d',
-                borderRadius: '4px',
-                background: '#1c2128',
-                color: '#8b949e',
-                fontSize: '11px',
-                cursor: 'pointer'
-              }}
+              className="px-2 py-1 border border-border dark:border-border-dark rounded-sm bg-panel dark:bg-panel-dark text-text-mid dark:text-text-mid text-xs cursor-pointer hover:bg-border dark:hover:bg-border-dark transition-colors"
             >
               {sortOrder === 'desc' ? '↓ Descending' : '↑ Ascending'}
             </button>
           </div>
 
           {/* Cases Table */}
-          <div className="table-container" style={{ marginBottom: '24px' }}>
-            <table>
-              <thead>
+          <div className="overflow-x-auto mb-6 border border-border dark:border-border-dark rounded-sm">
+            <table className="w-full text-sm">
+              <thead className="bg-panel dark:bg-panel-dark border-b border-border dark:border-border-dark">
                 <tr>
-                  <th>STORED ID</th>
-                  <th>CASE ID</th>
-                  <th>TIN</th>
-                  <th>TAXPAYER</th>
-                  <th>BRANCH</th>
-                  <th>AUDIT TYPE</th>
-                  <th>RISK</th>
-                  <th>REVENUE</th>
-                  <th>STORED DATE</th>
-                  <th>ACTIONS</th>
+                  <th className="text-left px-4 py-3 text-text-mid dark:text-text-mid font-semibold text-xs">STORED ID</th>
+                  <th className="text-left px-4 py-3 text-text-mid dark:text-text-mid font-semibold text-xs">CASE ID</th>
+                  <th className="text-left px-4 py-3 text-text-mid dark:text-text-mid font-semibold text-xs">TIN</th>
+                  <th className="text-left px-4 py-3 text-text-mid dark:text-text-mid font-semibold text-xs">TAXPAYER</th>
+                  <th className="text-left px-4 py-3 text-text-mid dark:text-text-mid font-semibold text-xs">BRANCH</th>
+                  <th className="text-left px-4 py-3 text-text-mid dark:text-text-mid font-semibold text-xs">AUDIT TYPE</th>
+                  <th className="text-left px-4 py-3 text-text-mid dark:text-text-mid font-semibold text-xs">RISK</th>
+                  <th className="text-left px-4 py-3 text-text-mid dark:text-text-mid font-semibold text-xs">REVENUE</th>
+                  <th className="text-left px-4 py-3 text-text-mid dark:text-text-mid font-semibold text-xs">STORED DATE</th>
+                  <th className="text-left px-4 py-3 text-text-mid dark:text-text-mid font-semibold text-xs">ACTIONS</th>
                 </tr>
               </thead>
               <tbody>
                 {paginatedCases.map(auditCase => (
-                  <tr key={auditCase.storedId}>
-                    <td><strong style={{ color: '#4caf50' }}>{auditCase.storedId?.substring(0, 20)}...</strong></td>
-                    <td>{auditCase.id?.substring(0, 25)}...</td>
-                    <td>{auditCase.tin}</td>
-                    <td>{auditCase.taxpayerName}</td>
-                    <td>{auditCase.region}</td>
-                    <td>{auditCase.auditType}</td>
-                    <td>
-                      <span style={{
-                        background: getRiskColor(auditCase.riskLevel),
-                        color: '#fff',
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        fontSize: '11px',
-                        fontWeight: 'bold'
-                      }}>
+                  <tr key={auditCase.storedId} className="border-b border-border dark:border-border-dark hover:bg-panel dark:hover:bg-panel-dark transition-colors">
+                    <td className="px-4 py-3"><strong className="text-success dark:text-success">{auditCase.storedId?.substring(0, 20)}...</strong></td>
+                    <td className="px-4 py-3 text-text-hi dark:text-text-hi">{auditCase.id?.substring(0, 25)}...</td>
+                    <td className="px-4 py-3 text-text-hi dark:text-text-hi">{auditCase.tin}</td>
+                    <td className="px-4 py-3 text-text-hi dark:text-text-hi">{auditCase.taxpayerName}</td>
+                    <td className="px-4 py-3 text-text-hi dark:text-text-hi">{auditCase.region}</td>
+                    <td className="px-4 py-3 text-text-hi dark:text-text-hi">{auditCase.auditType}</td>
+                    <td className="px-4 py-3">
+                      <span className="inline-block px-2 py-1 rounded-sm text-xs font-bold text-white" style={{ backgroundColor: getRiskColor(auditCase.riskLevel) }}>
                         {auditCase.riskLevel}
                       </span>
                     </td>
-                    <td>{(auditCase.revenueAtRisk / 1000000).toFixed(1)}M</td>
-                    <td style={{ fontSize: '11px', color: '#8b949e' }}>{formatDate(auditCase.storedDate)}</td>
-                    <td>
+                    <td className="px-4 py-3 text-text-hi dark:text-text-hi">{(auditCase.revenueAtRisk / 1000000).toFixed(1)}M</td>
+                    <td className="px-4 py-3 text-text-mid dark:text-text-mid text-xs">{formatDate(auditCase.storedDate)}</td>
+                    <td className="px-4 py-3">
                       <button
                         onClick={() => handleRemoveCase(auditCase.storedId)}
-                        style={{
-                          padding: '4px 8px',
-                          background: '#f44336',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: '4px',
-                          fontSize: '11px',
-                          cursor: 'pointer'
-                        }}
+                        className="px-2 py-1 bg-danger dark:bg-danger text-white border-none rounded-sm text-xs cursor-pointer hover:opacity-90 transition-opacity"
                       >
                         Remove
                       </button>
@@ -387,29 +301,18 @@ function StoredCasesView() {
           </div>
 
           {/* Pagination */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '12px 0',
-            fontSize: '12px',
-            color: '#8b949e'
-          }}>
+          <div className="flex justify-between items-center py-3 text-text-mid dark:text-text-mid text-sm">
             <span>Showing {paginatedCases.length} of {filteredCases.length} cases</span>
-            <div style={{ display: 'flex', gap: '4px' }}>
+            <div className="flex gap-1">
               {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                 <button
                   key={page}
                   onClick={() => setCurrentPage(page)}
-                  style={{
-                    padding: '4px 8px',
-                    border: '1px solid #30363d',
-                    borderRadius: '4px',
-                    background: currentPage === page ? '#4a8fd9' : '#0f1419',
-                    color: currentPage === page ? '#fff' : '#8b949e',
-                    fontSize: '11px',
-                    cursor: 'pointer'
-                  }}
+                  className={`px-2 py-1 border border-border dark:border-border-dark rounded-sm text-xs cursor-pointer transition-colors ${
+                    currentPage === page 
+                      ? 'bg-info dark:bg-info text-white font-semibold' 
+                      : 'bg-ink dark:bg-ink text-text-mid dark:text-text-mid hover:bg-panel dark:hover:bg-panel'
+                  }`}
                 >
                   {page}
                 </button>
@@ -418,15 +321,9 @@ function StoredCasesView() {
           </div>
 
           {/* Summary */}
-          <div style={{
-            background: '#1a3a1a',
-            color: '#4caf50',
-            padding: '16px',
-            borderRadius: '8px',
-            border: '1px solid #388e3c'
-          }}>
-            <strong><i className="fas fa-chart-bar"></i> Stored Cases Summary</strong>
-            <p style={{ color: '#a8d5a8', margin: '8px 0 0 0', fontSize: '13px', lineHeight: '1.6' }}>
+          <div className="mt-6 bg-green-900 dark:bg-green-900 border border-success dark:border-success rounded-sm p-4 text-success dark:text-success">
+            <strong><i className="fas fa-chart-bar mr-2"></i> Stored Cases Summary</strong>
+            <p className="text-green-200 dark:text-green-200 text-sm leading-relaxed mt-2">
               Total Stored: <strong>{storedCases.length}</strong> | 
               Critical Risk: <strong>{stats.riskLevels.Critical}</strong> | 
               High Risk: <strong>{stats.riskLevels.High}</strong> | 

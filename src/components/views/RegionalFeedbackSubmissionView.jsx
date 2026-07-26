@@ -5,8 +5,12 @@ import { loadData, saveData } from '../../utils/data';
 import { useRegional } from '../../context/RegionalContext';
 
 /**
- * RegionalFeedbackSubmissionView - Regional Director submits aggregated feedback
- * Allows viewing, editing, and submitting consolidated feedback to Director
+ * RegionalFeedbackSubmissionView - Feedback Submission Form
+ * Regional Director submits aggregated feedback from tax centers.
+ * Allows viewing, editing, and submitting consolidated feedback to Director.
+ * 
+ * @component
+ * @returns {React.ReactElement} Feedback submission interface
  */
 function RegionalFeedbackSubmissionView({ currentView }) {
   const { assignedRegion, selectedRegion: contextSelectedRegion } = useRegional();
@@ -201,16 +205,16 @@ function RegionalFeedbackSubmissionView({ currentView }) {
   };
 
   if (loading) {
-    return <div style={{ padding: '20px' }}>Loading feedback...</div>;
+    return <div className="min-h-screen bg-ink dark:bg-ink p-8">Loading feedback...</div>;
   }
 
   if (!plan || feedbackList.length === 0) {
     return (
-      <div style={{ padding: '24px' }}>
-        <div className="detail-header">
-          <h2>No Data Available</h2>
+      <div className="min-h-screen bg-ink dark:bg-ink p-8">
+        <div className="flex items-center gap-3 pl-4 border-l-4 border-gold dark:border-gold mb-6">
+          <h2 className="text-2xl font-bold">No Data Available</h2>
         </div>
-        <p>No allocations or feedback found for {selectedRegion}.</p>
+        <p className="text-text-mid dark:text-text-mid">No allocations or feedback found for {selectedRegion}.</p>
       </div>
     );
   }
@@ -220,10 +224,10 @@ function RegionalFeedbackSubmissionView({ currentView }) {
   const allReceived = receivedCount === totalCount;
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div className="min-h-screen bg-ink dark:bg-ink p-8">
       {/* Header */}
-      <div className="detail-header">
-        <h2><i className="fas fa-paper-plane"></i> Submit Regional Feedback - {selectedRegion}</h2>
+      <div className="flex items-center gap-3 pl-4 border-l-4 border-gold dark:border-gold mb-6">
+        <h2 className="text-2xl font-bold"><i className="fas fa-paper-plane"></i> Submit Regional Feedback - {selectedRegion}</h2>
         <Badge 
           status={submitted ? 'Submitted' : (allReceived ? 'Ready to Submit' : 'Pending')}
           className={submitted ? 'director-approved' : (allReceived ? 'pending' : 'pending')}
@@ -231,25 +235,19 @@ function RegionalFeedbackSubmissionView({ currentView }) {
       </div>
 
       {/* Status */}
-      <div style={{
-        background: allReceived ? '#1a3a1a' : '#0f14193e0',
-        padding: '16px',
-        borderRadius: '8px',
-        marginBottom: '24px',
-        border: `1px solid ${allReceived ? '#4caf50' : '#ffb74d'}`
-      }}>
-        <strong style={{ color: allReceived ? '#2e7d32' : '#f57f17' }}>
+      <div className={`p-4 rounded-lg mb-6 border ${allReceived ? 'bg-green-900 dark:bg-green-900 border-teal dark:border-teal' : 'bg-ink dark:bg-ink border-gold dark:border-gold'}`}>
+        <strong className={allReceived ? 'text-teal dark:text-teal' : 'text-gold dark:text-gold'}>
           <i className={`fas ${allReceived ? 'fa-check-circle' : 'fa-info-circle'}`}></i> 
           {' '}
           {allReceived ? 'Ready to Submit' : 'Waiting for Feedback'}
         </strong>
-        <p style={{ color: '#0c4a6e', margin: '8px 0 0 0', fontSize: '13px' }}>
+        <p className={`mt-2 mb-0 text-xs ${allReceived ? 'text-teal dark:text-teal' : 'text-gold dark:text-gold'}`}>
           {receivedCount} of {totalCount} tax centers have provided feedback.
         </p>
       </div>
 
       {/* Cards */}
-      <div className="cards">
+      <div className="cards mb-6">
         <Card 
           title="Plan ID" 
           number={plan.id} 
@@ -273,19 +271,19 @@ function RegionalFeedbackSubmissionView({ currentView }) {
       </div>
 
       {/* Aggregated Feedback Table - EDITABLE */}
-      <div className="section-title" style={{ marginTop: '24px', marginBottom: '12px' }}>
+      <div className="section-title mt-6 mb-3">
         <i className="fas fa-chart-bar"></i> Aggregated Regional Feedback (Editable)
       </div>
 
-      <div className="table-container" style={{ marginBottom: '24px' }}>
-        <table>
+      <div className="table-container mb-6 w-full overflow-x-auto">
+        <table className="w-full text-sm">
           <thead>
-            <tr style={{ background: '#1e2a3a' }}>
-              <th style={{ textAlign: 'left', color: '#4a8fd9' }}>AUDIT TYPE</th>
-              <th style={{ textAlign: 'center', color: '#4a8fd9' }}>TOTAL ALLOCATED</th>
-              <th style={{ textAlign: 'center', color: '#4a8fd9' }}>TAX CENTERS CAN DELIVER</th>
-              <th style={{ textAlign: 'center', color: '#4a8fd9' }}>REGIONAL OVERRIDE</th>
-              <th style={{ textAlign: 'center', color: '#4a8fd9' }}>VARIANCE</th>
+            <tr className="bg-panel dark:bg-panel">
+              <th className="text-left p-3 text-text-mid dark:text-text-mid">AUDIT TYPE</th>
+              <th className="text-center p-3 text-text-mid dark:text-text-mid">TOTAL ALLOCATED</th>
+              <th className="text-center p-3 text-text-mid dark:text-text-mid">TAX CENTERS CAN DELIVER</th>
+              <th className="text-center p-3 text-text-mid dark:text-text-mid">REGIONAL OVERRIDE</th>
+              <th className="text-center p-3 text-text-mid dark:text-text-mid">VARIANCE</th>
             </tr>
           </thead>
           <tbody>
@@ -294,56 +292,39 @@ function RegionalFeedbackSubmissionView({ currentView }) {
               const override = overrides[auditType] || { allocated: 0, canDeliver: 0, variance: 0 };
               const variance = (override.canDeliver || 0) - (agg.allocated || 0);
 
-              console.log(`Row ${auditType}:`, { agg, override, variance });
-
               return (
-                <tr key={idx}>
-                  <td><strong>{auditTypeLabels[auditType]}</strong></td>
-                  <td style={{ textAlign: 'center' }}>{agg.allocated || 0}</td>
-                  <td style={{ textAlign: 'center', background: '#e3f2fd', color: '#0c4a6e' }}>
-                    <strong>{agg.canDeliver || 0}</strong>
+                <tr key={idx} className="border-b border-border dark:border-border hover:bg-panel dark:hover:bg-panel">
+                  <td className="p-3"><strong className="text-text-hi dark:text-text-hi">{auditTypeLabels[auditType]}</strong></td>
+                  <td className="text-center p-3 text-text-mid dark:text-text-mid">{agg.allocated || 0}</td>
+                  <td className="text-center p-3 bg-blue-50 dark:bg-blue-900">
+                    <strong className="text-text-hi dark:text-text-hi">{agg.canDeliver || 0}</strong>
                   </td>
-                  <td style={{ textAlign: 'center', padding: '8px' }}>
+                  <td className="text-center p-2">
                     <input
                       type="number"
                       value={override.canDeliver || 0}
                       onChange={(e) => handleOverrideChange(auditType, 'canDeliver', e.target.value)}
                       disabled={submitted}
-                      style={{
-                        width: '70px',
-                        padding: '6px',
-                        border: '1px solid #ccc',
-                        borderRadius: '4px',
-                        textAlign: 'center',
-                        fontSize: '14px',
-                        background: submitted ? '#1a2332' : '#0f1419'
-                      }}
+                      className="w-16 px-2 py-1 border border-border dark:border-border rounded text-center text-sm bg-ink dark:bg-panel text-text-hi dark:text-text-hi disabled:opacity-50"
                       min="0"
                     />
                   </td>
-                  <td style={{
-                    textAlign: 'center',
-                    fontWeight: 'bold',
-                    color: variance < 0 ? '#ff5252' : '#4caf50'
-                  }}>
+                  <td className="text-center p-3 font-bold" style={{ color: variance < 0 ? '#ff5252' : '#4caf50' }}>
                     {variance > 0 ? '+' : ''}{variance}
                   </td>
                 </tr>
               );
             })}
-            <tr style={{ background: '#0f1419', fontWeight: 'bold' }}>
-              <td>TOTAL</td>
-              <td style={{ textAlign: 'center' }}>{getTotalAllocated()}</td>
-              <td style={{ textAlign: 'center', background: '#e3f2fd', color: '#0c4a6e' }}>
+            <tr className="bg-ink dark:bg-ink font-bold border-t-2 border-border dark:border-border">
+              <td className="p-3 text-text-hi dark:text-text-hi">TOTAL</td>
+              <td className="text-center p-3 text-text-hi dark:text-text-hi">{getTotalAllocated()}</td>
+              <td className="text-center p-3 bg-blue-50 dark:bg-blue-900 text-text-hi dark:text-text-hi">
                 {Object.values(aggregated).reduce((sum, item) => sum + (item.canDeliver || 0), 0)}
               </td>
-              <td style={{ textAlign: 'center' }}>
+              <td className="text-center p-3 text-text-hi dark:text-text-hi">
                 {getTotalCanDeliver()}
               </td>
-              <td style={{
-                textAlign: 'center',
-                color: getTotalVariance() < 0 ? '#ff5252' : '#4caf50'
-              }}>
+              <td className="text-center p-3 text-text-hi dark:text-text-hi" style={{ color: getTotalVariance() < 0 ? '#ff5252' : '#4caf50' }}>
                 {getTotalVariance() > 0 ? '+' : ''}{getTotalVariance()}
               </td>
             </tr>
@@ -352,36 +333,22 @@ function RegionalFeedbackSubmissionView({ currentView }) {
       </div>
 
       {/* Summary */}
-      <div style={{
-        background: '#1e2a3a',
-        padding: '16px',
-        borderRadius: '8px',
-        marginBottom: '24px',
-        border: '1px solid #2d3d4d',
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr 1fr',
-        gap: '16px'
-      }}>
+      <div className="bg-panel dark:bg-panel p-4 rounded-lg mb-6 border border-border dark:border-border grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
-          <p style={{ fontSize: '12px', color: '#a0aec0', margin: 0 }}>Total Allocated</p>
-          <p style={{ fontSize: '20px', fontWeight: 'bold', color: '#4a8fd9', margin: '4px 0 0 0' }}>
+          <p className="text-xs text-text-mid dark:text-text-mid m-0">Total Allocated</p>
+          <p className="text-lg font-bold text-blue dark:text-blue mt-1">
             {getTotalAllocated()}
           </p>
         </div>
         <div>
-          <p style={{ fontSize: '12px', color: '#a0aec0', margin: 0 }}>Region Can Deliver</p>
-          <p style={{ fontSize: '20px', fontWeight: 'bold', color: '#4a8fd9', margin: '4px 0 0 0' }}>
+          <p className="text-xs text-text-mid dark:text-text-mid m-0">Region Can Deliver</p>
+          <p className="text-lg font-bold text-blue dark:text-blue mt-1">
             {getTotalCanDeliver()}
           </p>
         </div>
         <div>
-          <p style={{ fontSize: '12px', color: '#a0aec0', margin: 0 }}>Total Variance</p>
-          <p style={{
-            fontSize: '20px',
-            fontWeight: 'bold',
-            color: getTotalVariance() < 0 ? '#ff5252' : '#4caf50',
-            margin: '4px 0 0 0'
-          }}>
+          <p className="text-xs text-text-mid dark:text-text-mid m-0">Total Variance</p>
+          <p className="text-lg font-bold mt-1" style={{ color: getTotalVariance() < 0 ? '#ff5252' : '#4caf50' }}>
             {getTotalVariance() > 0 ? '+' : ''}{getTotalVariance()}
           </p>
         </div>
@@ -389,50 +356,29 @@ function RegionalFeedbackSubmissionView({ currentView }) {
 
       {/* Status message */}
       {submitted ? (
-        <div style={{
-          background: '#c8e6c9', color: '#1b5e20',
-          padding: '16px',
-          borderRadius: '8px',
-          marginBottom: '24px',
-          border: '2px solid #388e3c',
-          textAlign: 'center'
-        }}>
-          <strong style={{ color: '#2e7d32' }}>
+        <div className="bg-green-50 dark:bg-green-900 border-2 border-teal dark:border-teal rounded-lg p-4 mb-6 text-center">
+          <strong className="text-teal dark:text-teal">
             <i className="fas fa-check-circle"></i> Feedback Submitted
           </strong>
-          <p style={{ color: '#0c4a6e', margin: '8px 0 0 0', fontSize: '13px', color: '#2e7d32' }}>
+          <p className="text-teal dark:text-teal mt-2 mb-0 text-xs">
             Your regional feedback has been sent to the Director for review.
           </p>
         </div>
       ) : !allReceived ? (
-        <div style={{
-          background: '#0f14193cd',
-          padding: '16px',
-          borderRadius: '8px',
-          marginBottom: '24px',
-          border: '2px solid #ffb74d',
-          textAlign: 'center'
-        }}>
-          <strong style={{ color: '#f57f17' }}>
+        <div className="bg-ink dark:bg-ink border-2 border-gold dark:border-gold rounded-lg p-4 mb-6 text-center">
+          <strong className="text-gold dark:text-gold">
             <i className="fas fa-exclamation-triangle"></i> Waiting for Feedback
           </strong>
-          <p style={{ color: '#0c4a6e', margin: '8px 0 0 0', fontSize: '13px', color: '#f57f17' }}>
+          <p className="text-gold dark:text-gold mt-2 mb-0 text-xs">
             All tax centers must submit feedback before you can submit regional feedback.
           </p>
         </div>
       ) : (
-        <div style={{
-          background: '#1a3a1a',
-          padding: '16px',
-          borderRadius: '8px',
-          marginBottom: '24px',
-          border: '2px solid #4caf50',
-          textAlign: 'center'
-        }}>
-          <strong style={{ color: '#2e7d32' }}>
+        <div className="bg-green-900 dark:bg-green-900 border-2 border-teal dark:border-teal rounded-lg p-4 mb-6 text-center">
+          <strong className="text-teal dark:text-teal">
             <i className="fas fa-check-circle"></i> Ready to Submit
           </strong>
-          <p style={{ color: '#0c4a6e', margin: '8px 0 0 0', fontSize: '13px', color: '#2e7d32' }}>
+          <p className="text-teal dark:text-teal mt-2 mb-0 text-xs">
             You can now submit the aggregated regional feedback to the Director.
           </p>
         </div>

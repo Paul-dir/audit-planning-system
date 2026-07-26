@@ -1,6 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { createNationalPlan, submitPlanToDirector } from '../../utils/businessLogic';
 
+/**
+ * CreatePlanModal Component
+ * Modal for creating a new national audit plan with regional allocations.
+ * 
+ * Features:
+ * - Fiscal year selection (2020 - current + 5 years)
+ * - Planning period date range selection
+ * - Regional allocation grid editor with 6 regions
+ * - Effort estimate input
+ * - Save as draft or submit to director
+ * 
+ * Auto-populated on mount:
+ * - Year: Next fiscal year
+ * - Planning period: Current calendar year (Jan 1 - Dec 31)
+ * - Default regional allocations with pre-set values
+ * 
+ * @component
+ * @param {Function} onClose - Callback to close modal
+ * @returns {React.ReactElement} Modal overlay with plan creation form
+ */
 function CreatePlanModal({ onClose }) {
   const [year, setYear] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -56,64 +76,161 @@ function CreatePlanModal({ onClose }) {
   }
 
   return (
-    <div className="modal-overlay show" onClick={(e) => e.target.className.includes('modal-overlay') && onClose()}>
-      <div className="modal">
-        <h2><i className="fas fa-calendar-plus" style={{ color: '#4fc3f7' }}></i> Create National Plan</h2>
-        
-        <div className="form-group">
-          <label>Fiscal Year</label>
-          <select value={year} onChange={(e) => setYear(e.target.value)}>
-            {years.map(y => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="modal-base w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="modal-header border-b border-border dark:border-border-dark bg-panel dark:bg-panel-dark">
+          <h2 className="text-lg font-semibold text-text-hi dark:text-text-hi-dark">
+            <i className="fas fa-calendar-plus text-blue-400 mr-2"></i>
+            Create National Plan
+          </h2>
         </div>
 
-        <div className="form-group">
-          <label>Planning Period</label>
-          <div className="date-range">
-            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+        {/* Content */}
+        <div className="p-6 space-y-6">
+          {/* Fiscal Year */}
+          <div className="form-group">
+            <label className="block text-sm font-medium text-text-hi dark:text-text-hi-dark mb-2">
+              Fiscal Year
+            </label>
+            <select 
+              value={year} 
+              onChange={(e) => setYear(e.target.value)}
+              className="form-select w-full"
+            >
+              {years.map(y => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
           </div>
-        </div>
 
-        <div className="form-group">
-          <label>Regional Allocations</label>
-          <div>
-            <div className="region-grid" style={{ fontWeight: 'bold', fontSize: '12px', marginBottom: '4px' }}>
-              <span>Region</span>
-              <span>Total</span>
-              <span>Desk</span>
-              <span>Field</span>
-              <span>TP</span>
-              <span>Issue</span>
+          {/* Planning Period */}
+          <div className="form-group">
+            <label className="block text-sm font-medium text-text-hi dark:text-text-hi-dark mb-2">
+              Planning Period
+            </label>
+            <div className="flex gap-4">
+              <input 
+                type="date" 
+                value={startDate} 
+                onChange={(e) => setStartDate(e.target.value)}
+                className="form-input flex-1"
+              />
+              <input 
+                type="date" 
+                value={endDate} 
+                onChange={(e) => setEndDate(e.target.value)}
+                className="form-input flex-1"
+              />
             </div>
-            {allocations.map((alloc, index) => (
-              <div key={index} className="region-grid" style={{ marginBottom: '4px' }}>
-                <input type="text" value={alloc.region} readOnly style={{ background: '#f0f2f5' }} />
-                <input type="number" value={alloc.total} onChange={(e) => updateAllocation(index, 'total', e.target.value)} />
-                <input type="number" value={alloc.desk} onChange={(e) => updateAllocation(index, 'desk', e.target.value)} />
-                <input type="number" value={alloc.field} onChange={(e) => updateAllocation(index, 'field', e.target.value)} />
-                <input type="number" value={alloc.tp} onChange={(e) => updateAllocation(index, 'tp', e.target.value)} />
-                <input type="number" value={alloc.issue} onChange={(e) => updateAllocation(index, 'issue', e.target.value)} />
+          </div>
+
+          {/* Regional Allocations */}
+          <div className="form-group">
+            <label className="block text-sm font-medium text-text-hi dark:text-text-hi-dark mb-3">
+              Regional Allocations
+            </label>
+            <div className="border border-border dark:border-border-dark rounded-lg overflow-hidden">
+              {/* Header Row */}
+              <div className="grid grid-cols-6 gap-2 p-3 bg-panel dark:bg-panel-dark border-b border-border dark:border-border-dark">
+                <span className="text-xs font-bold text-text-mid dark:text-text-mid-dark">Region</span>
+                <span className="text-xs font-bold text-text-mid dark:text-text-mid-dark">Total</span>
+                <span className="text-xs font-bold text-text-mid dark:text-text-mid-dark">Desk</span>
+                <span className="text-xs font-bold text-text-mid dark:text-text-mid-dark">Field</span>
+                <span className="text-xs font-bold text-text-mid dark:text-text-mid-dark">TP</span>
+                <span className="text-xs font-bold text-text-mid dark:text-text-mid-dark">Issue</span>
               </div>
-            ))}
+
+              {/* Data Rows */}
+              <div className="divide-y divide-border dark:divide-border-dark">
+                {allocations.map((alloc, index) => (
+                  <div key={index} className="grid grid-cols-6 gap-2 p-3 hover:bg-panel/50 dark:hover:bg-panel-dark/50 transition-colors">
+                    <input 
+                      type="text" 
+                      value={alloc.region} 
+                      readOnly 
+                      className="text-sm text-text-hi dark:text-text-hi-dark bg-transparent font-medium truncate"
+                    />
+                    <input 
+                      type="number" 
+                      value={alloc.total} 
+                      onChange={(e) => updateAllocation(index, 'total', e.target.value)}
+                      className="form-input text-sm"
+                    />
+                    <input 
+                      type="number" 
+                      value={alloc.desk} 
+                      onChange={(e) => updateAllocation(index, 'desk', e.target.value)}
+                      className="form-input text-sm"
+                    />
+                    <input 
+                      type="number" 
+                      value={alloc.field} 
+                      onChange={(e) => updateAllocation(index, 'field', e.target.value)}
+                      className="form-input text-sm"
+                    />
+                    <input 
+                      type="number" 
+                      value={alloc.tp} 
+                      onChange={(e) => updateAllocation(index, 'tp', e.target.value)}
+                      className="form-input text-sm"
+                    />
+                    <input 
+                      type="number" 
+                      value={alloc.issue} 
+                      onChange={(e) => updateAllocation(index, 'issue', e.target.value)}
+                      className="form-input text-sm"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Total Display */}
+          <div className="form-group p-4 bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-700/50 rounded-lg">
+            <label className="text-sm font-medium text-text-hi dark:text-text-hi-dark">
+              Total National Cases: <span className="font-bold text-teal-600 dark:text-teal-400">{calculateTotal()}</span>
+            </label>
+          </div>
+
+          {/* Effort Estimate */}
+          <div className="form-group">
+            <label className="block text-sm font-medium text-text-hi dark:text-text-hi-dark mb-2">
+              Effort Estimate (hours)
+            </label>
+            <input 
+              type="number" 
+              value={effort} 
+              onChange={(e) => setEffort(parseInt(e.target.value) || 0)}
+              className="form-input w-full"
+            />
           </div>
         </div>
 
-        <div className="form-group">
-          <label>Total National Cases: <span>{calculateTotal()}</span></label>
-        </div>
-
-        <div className="form-group">
-          <label>Effort Estimate (hours)</label>
-          <input type="number" value={effort} onChange={(e) => setEffort(parseInt(e.target.value) || 0)} />
-        </div>
-
-        <div className="actions">
-          <button className="btn btn-outline" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary" onClick={handleSaveDraft}>Save Draft</button>
-          <button className="btn btn-success" onClick={handleSubmit}>Submit to Director</button>
+        {/* Footer Actions */}
+        <div className="modal-footer border-t border-border dark:border-border-dark bg-panel dark:bg-panel-dark p-4 flex gap-3 justify-end">
+          <button 
+            onClick={onClose}
+            className="btn btn-outline"
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={handleSaveDraft}
+            className="btn btn-primary"
+          >
+            Save Draft
+          </button>
+          <button 
+            onClick={handleSubmit}
+            className="btn btn-success"
+          >
+            Submit to Director
+          </button>
         </div>
       </div>
     </div>

@@ -105,8 +105,8 @@ function DirectorBulkFeedbackView() {
   // View: Plan Selected - Show Region Selector
   if (selectedPlan && showRegionSelector) {
     return (
-      <div style={{ padding: '24px' }}>
-        <div className="action-bar" style={{ marginBottom: '24px' }}>
+      <div className="p-6">
+        <div className="action-bar mb-6">
           <button 
             className="btn btn-outline"
             onClick={() => setShowRegionSelector(false)}
@@ -145,15 +145,9 @@ function DirectorBulkFeedbackView() {
         </div>
 
         {/* Feedback Instructions */}
-        <div style={{
-          background: '#e3f2fd', color: '#0c4a6e',
-          padding: '16px',
-          borderRadius: '8px',
-          marginBottom: '24px',
-          border: '1px solid #1976d2'
-        }}>
+        <div className="bg-blue-50 dark:bg-blue-900 text-slate-900 dark:text-slate-100 p-4 rounded mb-6 border border-blue-400 dark:border-blue-600">
           <strong><i className="fas fa-info-circle"></i> Instructions</strong>
-          <p style={{ color: '#0c4a6e', margin: '8px 0 0 0', fontSize: '13px', lineHeight: '1.6' }}>
+          <p className="text-slate-700 dark:text-slate-300 m-2 text-xs leading-relaxed">
             Type any feedback, instructions, or questions you want to send to the selected regions. 
             This will be delivered to all selected regional directors.
           </p>
@@ -164,16 +158,7 @@ function DirectorBulkFeedbackView() {
         <textarea
           value={feedbackText}
           onChange={(e) => setFeedbackText(e.target.value)}
-          style={{
-            width: '100%',
-            minHeight: '160px',
-            padding: '12px',
-            border: '1px solid #2d3d4d',
-            borderRadius: '4px',
-            fontFamily: 'inherit',
-            fontSize: '14px',
-            marginBottom: '24px'
-          }}
+          className="w-full min-h-40 p-3 border border-gray-600 dark:border-gray-500 rounded text-gray-900 dark:text-gray-100 bg-slate-50 dark:bg-slate-800 font-inherit text-sm mb-6"
           placeholder="Type your feedback or instructions to send to the regional directors...
 Examples:
 - Please review this plan and provide feedback on feasibility
@@ -200,8 +185,8 @@ Examples:
     const totalRegions = selectedPlan.locations?.length || 0;
 
     return (
-      <div style={{ padding: '24px' }}>
-        <div className="action-bar" style={{ marginBottom: '24px' }}>
+      <div className="p-6">
+        <div className="action-bar mb-6">
           <button 
             className="btn btn-outline"
             onClick={() => setSelectedPlan(null)}
@@ -274,7 +259,7 @@ Examples:
         </div>
 
         {/* Send Feedback Button */}
-        <div className="action-bar" style={{ marginTop: '24px' }}>
+        <div className="action-bar mt-6">
           <div></div>
           <button 
             className="btn btn-success"
@@ -292,7 +277,7 @@ Examples:
 
   // View: Plan List
   return (
-    <div style={{ padding: '24px' }}>
+    <div className="p-6">
       <div className="cards">
         <Card 
           title="Total Plans" 
@@ -322,9 +307,9 @@ Examples:
           <tbody>
             {plans.length === 0 ? (
               <tr>
-                <td colSpan="6" style={{ textAlign: 'center', padding: '40px' }}>
-                  <i className="fas fa-inbox" style={{ fontSize: '48px', color: '#ccc' }}></i>
-                  <br />No plans ready for feedback
+                <td colSpan="6" className="text-center py-10">
+                  <i className="fas fa-inbox text-gray-400 dark:text-gray-600 text-4xl block mb-4"></i>
+                  <span>No plans ready for feedback</span>
                 </td>
               </tr>
             ) : (

@@ -5,6 +5,14 @@ import { loadData } from '../../utils/data';
 import { useRegional } from '../../context/RegionalContext';
 import { useAuth } from '../../context/AuthContext';
 
+/**
+ * AuditCasesListView
+ * Displays audit cases for the selected tax center and region.
+ * Features: case filtering by type/status, search, pagination, and tax center context display.
+ * Design: Dark navy theme with status indicators for case states (Assigned, In Progress, Closed).
+ * Styling: 100% Tailwind CSS with dark mode support via dark: prefix.
+ */
+
 function AuditCasesListView() {
   const { assignedTaxCenter, assignedTaxCenterRegion } = useRegional();
   const { getUserInfo } = useAuth();
@@ -127,7 +135,7 @@ function AuditCasesListView() {
   };
 
   if (loading) {
-    return <div style={{ padding: '20px' }}>Loading audit cases...</div>;
+    return <div className="min-h-screen bg-ink dark:bg-ink p-8 text-text-hi dark:text-text-hi">Loading audit cases...</div>;
   }
 
   // Show selected tax center's cases
@@ -137,52 +145,38 @@ function AuditCasesListView() {
   const statuses = [...new Set(allCases.map(c => c.status))];
 
   return (
-    <div style={{ padding: '24px' }}>
-      <div className="detail-header">
-        <h2><i className="fas fa-briefcase"></i> Audit Cases</h2>
+    <div className="min-h-screen bg-ink dark:bg-ink p-8">
+      <div className="flex items-center gap-3 mb-8 pl-4 border-l-4 border-gold dark:border-gold">
+        <h2 className="text-3xl font-bold text-text-hi dark:text-text-hi">
+          <i className="fas fa-briefcase mr-3"></i> Audit Cases
+        </h2>
         <Badge status={`${casesToShow.length} Cases`} className="director-approved" />
       </div>
 
       {/* Region & Tax Center Selector */}
-      <div style={{
-        background: '#1c2128',
-        padding: '16px',
-        borderRadius: '8px',
-        marginBottom: '24px',
-        border: '1px solid #30363d',
-        display: 'flex',
-        gap: '12px',
-        alignItems: 'center',
-        flexWrap: 'wrap'
-      }}>
-        <div style={{ fontSize: '12px', fontWeight: '600', color: '#f0f6fc', whiteSpace: 'nowrap' }}>
-          <i className="fas fa-map-marker-alt"></i> Region: <strong style={{ color: '#4caf50' }}>{selectedRegion}</strong>
+      <div className="bg-panel dark:bg-panel-dark border border-border dark:border-border-dark rounded-sm p-4 mb-6 flex flex-wrap gap-4 items-center">
+        <div className="text-sm font-semibold text-text-hi dark:text-text-hi whitespace-nowrap">
+          <i className="fas fa-map-marker-alt mr-2"></i> Region: <strong className="text-success dark:text-success">{selectedRegion}</strong>
         </div>
 
-        <div style={{ fontSize: '12px', fontWeight: '600', color: '#f0f6fc', whiteSpace: 'nowrap', marginLeft: '16px' }}>
-          <i className="fas fa-building"></i> Tax Center: <strong style={{ color: '#4caf50' }}>{selectedTaxCenter}</strong>
+        <div className="text-sm font-semibold text-text-hi dark:text-text-hi whitespace-nowrap">
+          <i className="fas fa-building mr-2"></i> Tax Center: <strong className="text-success dark:text-success">{selectedTaxCenter}</strong>
         </div>
       </div>
 
       {casesToShow.length === 0 ? (
-        <div style={{
-          background: '#0f1419', color: '#f0f6fc',
-          padding: '24px',
-          borderRadius: '8px',
-          textAlign: 'center',
-          border: '1px solid #ffb74d'
-        }}>
-          <p style={{ color: '#f57f17', fontSize: '14px', margin: 0 }}>
+        <div className="bg-ink dark:bg-ink border-2 border-gold dark:border-gold rounded-sm p-6 text-center">
+          <p className="text-coral dark:text-coral text-base mb-2">
             No audit cases created yet for {selectedTaxCenter} in {selectedRegion}.
           </p>
-          <p style={{ color: '#999', fontSize: '12px', margin: '8px 0 0 0' }}>
+          <p className="text-text-mid dark:text-text-mid text-sm">
             Go to "Cascade Plan to Cases" to create audit cases from approved plans.
           </p>
         </div>
       ) : (
         <>
           {/* Summary Cards */}
-          <div className="cards" style={{ marginBottom: '24px' }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <Card title="Total Cases" number={casesToShow.length} icon="fas fa-briefcase" />
             <Card title="Assigned (Pending)" number={casesToShow.filter(c => c.status === 'ASSIGNED').length} icon="fas fa-clipboard-list" />
             <Card title="In Progress" number={casesToShow.filter(c => c.status === 'IN_PROGRESS').length} icon="fas fa-hourglass-half" />
@@ -190,44 +184,19 @@ function AuditCasesListView() {
           </div>
 
           {/* Filters */}
-          <div style={{
-            background: '#1c2128',
-            padding: '12px',
-            borderRadius: '8px',
-            marginBottom: '24px',
-            display: 'flex',
-            gap: '12px',
-            flexWrap: 'wrap',
-            alignItems: 'center'
-          }}>
+          <div className="bg-panel dark:bg-panel-dark border border-border dark:border-border-dark rounded-sm p-3 mb-6 flex flex-wrap gap-3 items-center">
             <input 
               type="text"
               placeholder="Search by TIN, name, or ID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                flex: 1,
-                minWidth: '200px',
-                padding: '8px 12px',
-                border: '1px solid #30363d',
-                borderRadius: '6px',
-                background: '#0f1419',
-                color: '#f0f6fc',
-                fontSize: '12px'
-              }}
+              className="flex-1 min-w-[200px] px-3 py-2 border border-border dark:border-border-dark rounded-sm bg-ink dark:bg-ink text-text-hi dark:text-text-hi text-sm focus:outline-none focus:border-gold"
             />
             
             <select 
               value={filterAuditType}
               onChange={(e) => setFilterAuditType(e.target.value)}
-              style={{
-                padding: '8px 12px',
-                border: '1px solid #30363d',
-                borderRadius: '6px',
-                background: '#0f1419',
-                color: '#f0f6fc',
-                fontSize: '12px'
-              }}
+              className="px-3 py-2 border border-border dark:border-border-dark rounded-sm bg-ink dark:bg-ink text-text-hi dark:text-text-hi text-sm focus:outline-none focus:border-gold"
             >
               <option value="All">All Audit Types</option>
               {auditTypes.map(type => (
@@ -238,14 +207,7 @@ function AuditCasesListView() {
             <select 
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              style={{
-                padding: '8px 12px',
-                border: '1px solid #30363d',
-                borderRadius: '6px',
-                background: '#0f1419',
-                color: '#f0f6fc',
-                fontSize: '12px'
-              }}
+              className="px-3 py-2 border border-border dark:border-border-dark rounded-sm bg-ink dark:bg-ink text-text-hi dark:text-text-hi text-sm focus:outline-none focus:border-gold"
             >
               <option value="All">All Statuses</option>
               {statuses.map(status => (
@@ -255,70 +217,48 @@ function AuditCasesListView() {
 
             <button
               onClick={() => { setSearchTerm(''); setFilterAuditType('All'); setFilterStatus('All'); }}
-              style={{
-                padding: '8px 12px',
-                border: '1px solid #30363d',
-                borderRadius: '6px',
-                background: '#0f1419',
-                color: '#8b949e',
-                fontSize: '12px',
-                cursor: 'pointer'
-              }}
+              className="px-3 py-2 border border-border dark:border-border-dark rounded-sm bg-ink dark:bg-ink text-text-mid dark:text-text-mid text-sm cursor-pointer hover:bg-panel dark:hover:bg-panel transition-colors"
             >
               Clear
             </button>
           </div>
 
           {/* Cases Table */}
-          <div className="table-container" style={{ marginBottom: '24px' }}>
-            <table>
-              <thead>
+          <div className="overflow-x-auto mb-6 border border-border dark:border-border-dark rounded-sm">
+            <table className="w-full text-sm">
+              <thead className="bg-panel dark:bg-panel-dark border-b border-border dark:border-border-dark">
                 <tr>
-                  <th>CASE ID</th>
-                  <th>TIN</th>
-                  <th>TAXPAYER</th>
-                  <th>AUDIT TYPE</th>
-                  <th>RISK</th>
-                  <th>REVENUE AT RISK</th>
-                  <th>EST. HOURS</th>
-                  <th>STATUS</th>
-                  <th>CREATED DATE</th>
+                  <th className="text-left px-4 py-3 text-text-mid dark:text-text-mid font-semibold text-xs">CASE ID</th>
+                  <th className="text-left px-4 py-3 text-text-mid dark:text-text-mid font-semibold text-xs">TIN</th>
+                  <th className="text-left px-4 py-3 text-text-mid dark:text-text-mid font-semibold text-xs">TAXPAYER</th>
+                  <th className="text-left px-4 py-3 text-text-mid dark:text-text-mid font-semibold text-xs">AUDIT TYPE</th>
+                  <th className="text-left px-4 py-3 text-text-mid dark:text-text-mid font-semibold text-xs">RISK</th>
+                  <th className="text-left px-4 py-3 text-text-mid dark:text-text-mid font-semibold text-xs">REVENUE AT RISK</th>
+                  <th className="text-left px-4 py-3 text-text-mid dark:text-text-mid font-semibold text-xs">EST. HOURS</th>
+                  <th className="text-left px-4 py-3 text-text-mid dark:text-text-mid font-semibold text-xs">STATUS</th>
+                  <th className="text-left px-4 py-3 text-text-mid dark:text-text-mid font-semibold text-xs">CREATED DATE</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredCases.map(auditCase => (
-                  <tr key={auditCase.id}>
-                    <td><strong>{auditCase.id}</strong></td>
-                    <td>{auditCase.tin}</td>
-                    <td>{auditCase.taxpayerName}</td>
-                    <td>{auditCase.auditType}</td>
-                    <td>
-                      <span style={{
-                        background: getRiskColor(auditCase.riskLevel),
-                        color: '#fff',
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        fontSize: '11px',
-                        fontWeight: 'bold'
-                      }}>
+                  <tr key={auditCase.id} className="border-b border-border dark:border-border-dark hover:bg-panel dark:hover:bg-panel-dark transition-colors">
+                    <td className="px-4 py-3"><strong className="text-text-hi dark:text-text-hi">{auditCase.id}</strong></td>
+                    <td className="px-4 py-3 text-text-hi dark:text-text-hi">{auditCase.tin}</td>
+                    <td className="px-4 py-3 text-text-hi dark:text-text-hi">{auditCase.taxpayerName}</td>
+                    <td className="px-4 py-3 text-text-hi dark:text-text-hi">{auditCase.auditType}</td>
+                    <td className="px-4 py-3">
+                      <span className="inline-block px-2 py-1 rounded-sm text-xs font-bold text-white" style={{ backgroundColor: getRiskColor(auditCase.riskLevel) }}>
                         {auditCase.riskLevel}
                       </span>
                     </td>
-                    <td>{(auditCase.revenueAtRisk / 1000000).toFixed(1)}M</td>
-                    <td>{auditCase.estimatedHours}</td>
-                    <td>
-                      <span style={{
-                        background: getStatusColor(auditCase.status),
-                        color: '#fff',
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        fontSize: '11px',
-                        fontWeight: 'bold'
-                      }}>
+                    <td className="px-4 py-3 text-text-hi dark:text-text-hi">{(auditCase.revenueAtRisk / 1000000).toFixed(1)}M</td>
+                    <td className="px-4 py-3 text-text-hi dark:text-text-hi">{auditCase.estimatedHours}</td>
+                    <td className="px-4 py-3">
+                      <span className="inline-block px-2 py-1 rounded-sm text-xs font-bold text-white" style={{ backgroundColor: getStatusColor(auditCase.status) }}>
                         {getStatusLabel(auditCase.status)}
                       </span>
                     </td>
-                    <td>{new Date(auditCase.createdDate).toLocaleDateString()}</td>
+                    <td className="px-4 py-3 text-text-hi dark:text-text-hi">{new Date(auditCase.createdDate).toLocaleDateString()}</td>
                   </tr>
                 ))}
               </tbody>
@@ -326,15 +266,11 @@ function AuditCasesListView() {
           </div>
 
           {/* Summary */}
-          <div style={{
-            background: '#e3f2fd', color: '#0c4a6e',
-            padding: '16px',
-            borderRadius: '8px',
-            border: '1px solid #1976d2',
-            color: '#0c4a6e'
-          }}>
-            <strong style={{ color: '#0c4a6e' }}><i className="fas fa-info-circle"></i> Audit Cases Summary</strong>
-            <p style={{ color: '#0c4a6e', margin: '8px 0 0 0', fontSize: '13px', lineHeight: '1.6', color: '#0c4a6e' }}>
+          <div className="bg-blue-50 dark:bg-blue-900 border border-blue-500 dark:border-blue-600 rounded-sm p-4 text-blue-900 dark:text-blue-100">
+            <strong className="text-blue-900 dark:text-blue-100">
+              <i className="fas fa-info-circle mr-2"></i> Audit Cases Summary
+            </strong>
+            <p className="text-blue-900 dark:text-blue-100 text-sm leading-relaxed mt-2">
               Showing <strong>{filteredCases.length}</strong> of <strong>{casesToShow.length}</strong> audit cases for <strong>{selectedTaxCenter}</strong> in <strong>{selectedRegion}</strong>.
               Total revenue at risk: <strong>{(casesToShow.reduce((sum, c) => sum + (c.revenueAtRisk || 0), 0) / 1000000).toFixed(1)}M</strong>.
               Total estimated hours: <strong>{casesToShow.reduce((sum, c) => sum + (c.estimatedHours || 0), 0).toLocaleString()}</strong>.

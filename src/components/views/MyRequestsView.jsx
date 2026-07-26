@@ -6,7 +6,10 @@ import { useAuth } from '../../context/AuthContext';
 
 /**
  * MyRequestsView
- * View and manage requests submitted by current requester
+ * Displays a list and management interface for audit requests submitted by the current user.
+ * Features: filtering, sorting, pagination, detail view, and request withdrawal.
+ * Design: Dark theme with navy background (#0f1419) and panels (#161D22).
+ * Styling: 100% Tailwind CSS with dark mode support via dark: prefix.
  */
 
 function MyRequestsView({ userRole }) {
@@ -151,148 +154,109 @@ function MyRequestsView({ userRole }) {
 
   if (selectedRequest) {
     return (
-      <div style={{ padding: '24px' }}>
+      <div className="min-h-screen bg-ink dark:bg-ink p-8">
         <button
           onClick={() => setSelectedRequest(null)}
-          style={{
-            padding: '8px 16px',
-            border: '1px solid #30363d',
-            borderRadius: '6px',
-            background: '#0f1419',
-            color: '#8b949e',
-            fontSize: '13px',
-            fontWeight: '600',
-            cursor: 'pointer',
-            marginBottom: '24px'
-          }}
+          className="mb-6 px-4 py-2 border border-border dark:border-border-dark rounded-sm bg-ink dark:bg-ink text-text-mid dark:text-text-mid text-sm font-semibold cursor-pointer hover:bg-panel dark:hover:bg-panel transition-colors"
         >
-          <i className="fas fa-arrow-left"></i> Back to Requests
+          <i className="fas fa-arrow-left mr-2"></i> Back to Requests
         </button>
 
-        <div className="detail-header">
-          <h2><i className="fas fa-file-alt"></i> Request Details</h2>
+        <div className="flex items-center gap-3 mb-6 pl-4 border-l-4 border-gold dark:border-gold">
+          <h2 className="text-2xl font-bold text-text-hi dark:text-text-hi">
+            <i className="fas fa-file-alt mr-3"></i> Request Details
+          </h2>
           <Badge status={getStatusLabel(selectedRequest.status)} className="director-approved" />
         </div>
 
-        <div style={{
-          background: '#1c2128',
-          border: '1px solid #30363d',
-          borderRadius: '8px',
-          padding: '24px',
-          marginBottom: '24px'
-        }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+        <div className="bg-panel dark:bg-panel-dark border border-border dark:border-border-dark rounded-sm p-8 mb-6">
+          <div className="grid grid-cols-2 gap-6 mb-6">
             <div>
-              <p style={{ color: '#8b949e', fontSize: '12px', margin: '0 0 4px 0' }}>REQUEST ID</p>
-              <p style={{ color: '#f0f6fc', fontSize: '13px', fontWeight: '600', margin: '0', fontFamily: 'monospace' }}>{selectedRequest.id}</p>
+              <p className="text-text-mid dark:text-text-mid text-xs mb-1 uppercase">REQUEST ID</p>
+              <p className="text-text-hi dark:text-text-hi text-sm font-semibold font-mono">{selectedRequest.id}</p>
             </div>
             <div>
-              <p style={{ color: '#8b949e', fontSize: '12px', margin: '0 0 4px 0' }}>STATUS</p>
-              <span style={{
-                background: getStatusColor(selectedRequest.status),
-                color: '#fff',
-                padding: '4px 8px',
-                borderRadius: '4px',
-                fontSize: '12px',
-                fontWeight: 'bold',
-                display: 'inline-block'
-              }}>
+              <p className="text-text-mid dark:text-text-mid text-xs mb-1 uppercase">STATUS</p>
+              <span className="inline-block px-2 py-1 rounded-sm text-xs font-bold text-white" style={{ backgroundColor: getStatusColor(selectedRequest.status) }}>
                 {getStatusLabel(selectedRequest.status)}
               </span>
             </div>
           </div>
 
-          <div style={{ borderTop: '1px solid #30363d', paddingTop: '16px', marginBottom: '16px' }}>
-            <h3 style={{ color: '#f0f6fc', margin: '0 0 12px 0', fontSize: '13px', fontWeight: '600' }}>Taxpayer Information</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div className="border-t border-border dark:border-border-dark pt-4 mb-4">
+            <h3 className="text-text-hi dark:text-text-hi mb-3 text-sm font-semibold">Taxpayer Information</h3>
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <p style={{ color: '#8b949e', fontSize: '11px', margin: '0 0 4px 0' }}>TAXPAYER NAME</p>
-                <p style={{ color: '#f0f6fc', fontSize: '13px', margin: '0' }}>{selectedRequest.taxpayerName}</p>
+                <p className="text-text-mid dark:text-text-mid text-xs mb-1 uppercase">TAXPAYER NAME</p>
+                <p className="text-text-hi dark:text-text-hi text-sm">{selectedRequest.taxpayerName}</p>
               </div>
               <div>
-                <p style={{ color: '#8b949e', fontSize: '11px', margin: '0 0 4px 0' }}>TIN</p>
-                <p style={{ color: '#f0f6fc', fontSize: '13px', margin: '0', fontFamily: 'monospace' }}>{selectedRequest.tin}</p>
+                <p className="text-text-mid dark:text-text-mid text-xs mb-1 uppercase">TIN</p>
+                <p className="text-text-hi dark:text-text-hi text-sm font-mono">{selectedRequest.tin}</p>
               </div>
               <div>
-                <p style={{ color: '#8b949e', fontSize: '11px', margin: '0 0 4px 0' }}>REQUEST TYPE</p>
-                <p style={{ color: '#f0f6fc', fontSize: '13px', margin: '0' }}>{selectedRequest.requestType}</p>
+                <p className="text-text-mid dark:text-text-mid text-xs mb-1 uppercase">REQUEST TYPE</p>
+                <p className="text-text-hi dark:text-text-hi text-sm">{selectedRequest.requestType}</p>
               </div>
               <div>
-                <p style={{ color: '#8b949e', fontSize: '11px', margin: '0 0 4px 0' }}>REGION</p>
-                <p style={{ color: '#f0f6fc', fontSize: '13px', margin: '0' }}>{selectedRequest.region}</p>
+                <p className="text-text-mid dark:text-text-mid text-xs mb-1 uppercase">REGION</p>
+                <p className="text-text-hi dark:text-text-hi text-sm">{selectedRequest.region}</p>
               </div>
             </div>
           </div>
 
-          <div style={{ borderTop: '1px solid #30363d', paddingTop: '16px', marginBottom: '16px' }}>
-            <h3 style={{ color: '#f0f6fc', margin: '0 0 12px 0', fontSize: '13px', fontWeight: '600' }}>Request Details</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div className="border-t border-border dark:border-border-dark pt-4 mb-4">
+            <h3 className="text-text-hi dark:text-text-hi mb-3 text-sm font-semibold">Request Details</h3>
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <p style={{ color: '#8b949e', fontSize: '11px', margin: '0 0 4px 0' }}>PRIORITY</p>
-                <span style={{
-                  background: getPriorityColor(selectedRequest.priority),
-                  color: '#fff',
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                  fontSize: '11px',
-                  fontWeight: 'bold',
-                  display: 'inline-block'
-                }}>
+                <p className="text-text-mid dark:text-text-mid text-xs mb-1 uppercase">PRIORITY</p>
+                <span className="inline-block px-2 py-1 rounded-sm text-xs font-bold text-white" style={{ backgroundColor: getPriorityColor(selectedRequest.priority) }}>
                   {selectedRequest.priority}
                 </span>
               </div>
               <div>
-                <p style={{ color: '#8b949e', fontSize: '11px', margin: '0 0 4px 0' }}>SUBMITTED DATE</p>
-                <p style={{ color: '#f0f6fc', fontSize: '13px', margin: '0' }}>
+                <p className="text-text-mid dark:text-text-mid text-xs mb-1 uppercase">SUBMITTED DATE</p>
+                <p className="text-text-hi dark:text-text-hi text-sm">
                   {new Date(selectedRequest.submittedDate).toLocaleDateString()} {new Date(selectedRequest.submittedDate).toLocaleTimeString()}
                 </p>
               </div>
             </div>
           </div>
 
-          <div style={{ borderTop: '1px solid #30363d', paddingTop: '16px', marginBottom: '16px' }}>
-            <h3 style={{ color: '#f0f6fc', margin: '0 0 12px 0', fontSize: '13px', fontWeight: '600' }}>Reason & Justification</h3>
-            <div style={{ marginBottom: '12px' }}>
-              <p style={{ color: '#8b949e', fontSize: '11px', margin: '0 0 4px 0' }}>REASON</p>
-              <p style={{ color: '#f0f6fc', fontSize: '13px', margin: '0', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>{selectedRequest.reason}</p>
+          <div className="border-t border-border dark:border-border-dark pt-4 mb-4">
+            <h3 className="text-text-hi dark:text-text-hi mb-3 text-sm font-semibold">Reason & Justification</h3>
+            <div className="mb-3">
+              <p className="text-text-mid dark:text-text-mid text-xs mb-1 uppercase">REASON</p>
+              <p className="text-text-hi dark:text-text-hi text-sm leading-relaxed whitespace-pre-wrap">{selectedRequest.reason}</p>
             </div>
             <div>
-              <p style={{ color: '#8b949e', fontSize: '11px', margin: '0 0 4px 0' }}>JUSTIFICATION</p>
-              <p style={{ color: '#f0f6fc', fontSize: '13px', margin: '0', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>{selectedRequest.justification}</p>
+              <p className="text-text-mid dark:text-text-mid text-xs mb-1 uppercase">JUSTIFICATION</p>
+              <p className="text-text-hi dark:text-text-hi text-sm leading-relaxed whitespace-pre-wrap">{selectedRequest.justification}</p>
             </div>
           </div>
 
           {selectedRequest.supportingNotes && (
-            <div style={{ borderTop: '1px solid #30363d', paddingTop: '16px', marginBottom: '16px' }}>
-              <p style={{ color: '#8b949e', fontSize: '11px', margin: '0 0 4px 0' }}>SUPPORTING NOTES</p>
-              <p style={{ color: '#f0f6fc', fontSize: '13px', margin: '0', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>{selectedRequest.supportingNotes}</p>
+            <div className="border-t border-border dark:border-border-dark pt-4 mb-4">
+              <p className="text-text-mid dark:text-text-mid text-xs mb-1 uppercase">SUPPORTING NOTES</p>
+              <p className="text-text-hi dark:text-text-hi text-sm leading-relaxed whitespace-pre-wrap">{selectedRequest.supportingNotes}</p>
             </div>
           )}
 
           {selectedRequest.status === 'APPROVED_SCHEDULED' && selectedRequest.auditCaseId && (
-            <div style={{ background: '#1a3a1a', border: '1px solid #4caf50', borderRadius: '6px', padding: '12px', marginTop: '16px' }}>
-              <p style={{ color: '#4caf50', fontSize: '12px', margin: '0' }}>
-                <strong>✓ Audit case created:</strong> {selectedRequest.auditCaseId}
+            <div className="bg-green-900 dark:bg-green-900 border border-success dark:border-success rounded-sm p-3 mt-4">
+              <p className="text-success dark:text-success text-sm font-medium">
+                <i className="fas fa-check mr-2"></i> Audit case created: {selectedRequest.auditCaseId}
               </p>
             </div>
           )}
 
           {selectedRequest.status === 'PENDING_REVIEW' && (
-            <div style={{ marginTop: '24px', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+            <div className="mt-6 flex gap-3 justify-end">
               <button
                 onClick={() => handleWithdraw(selectedRequest)}
-                style={{
-                  padding: '10px 16px',
-                  background: '#f44336',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '6px',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  cursor: 'pointer'
-                }}
+                className="px-4 py-2 bg-danger dark:bg-danger text-white border-none rounded-sm text-sm font-semibold cursor-pointer hover:opacity-90 transition-opacity"
               >
-                <i className="fas fa-times"></i> Withdraw Request
+                <i className="fas fa-times mr-2"></i> Withdraw Request
               </button>
             </div>
           )}
@@ -302,23 +266,27 @@ function MyRequestsView({ userRole }) {
   }
 
   return (
-    <div style={{ padding: '24px' }}>
-      <div className="detail-header">
-        <h2><i className="fas fa-list"></i> My Requests</h2>
+    <div className="min-h-screen bg-ink dark:bg-ink p-8">
+      <div className="flex items-center gap-3 mb-8 pl-4 border-l-4 border-gold dark:border-gold">
+        <h2 className="text-3xl font-bold text-text-hi dark:text-text-hi">
+          <i className="fas fa-list mr-3"></i> My Requests
+        </h2>
         <Badge status={`${filteredRequests.length} Requests`} className="director-approved" />
       </div>
 
       {/* Summary Info */}
-      <div style={{ background: '#e3f2fd', color: '#0c4a6e', padding: '16px', borderRadius: '8px', marginBottom: '24px', border: '1px solid #1976d2' }}>
-        <strong style={{ color: '#0c4a6e' }}><i className="fas fa-info-circle"></i> Your Audit Requests</strong>
-        <p style={{ color: '#0c4a6e', margin: '8px 0 0 0', fontSize: '13px', lineHeight: '1.6' }}>
+      <div className="bg-blue-50 dark:bg-blue-900 border border-blue-500 dark:border-blue-600 rounded-sm p-4 mb-6 text-blue-900 dark:text-blue-100">
+        <strong className="text-blue-900 dark:text-blue-100">
+          <i className="fas fa-info-circle mr-2"></i> Your Audit Requests
+        </strong>
+        <p className="text-blue-900 dark:text-blue-100 text-sm leading-relaxed mt-2">
           Track all audit requests you have submitted. Total Requests: <strong>{allRequests.length}</strong> | 
           Displayed: <strong>{filteredRequests.length}</strong>
         </p>
       </div>
 
       {/* Statistics Cards */}
-      <div className="cards" style={{ marginBottom: '24px' }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Card title="Total Submitted" number={allRequests.length} icon="fas fa-inbox" />
         <Card title="Pending Review" number={stats['PENDING_REVIEW']} icon="fas fa-hourglass-half" />
         <Card title="Approved" number={stats['APPROVED_SCHEDULED']} icon="fas fa-check-circle" />
@@ -326,56 +294,24 @@ function MyRequestsView({ userRole }) {
       </div>
 
       {/* Filters */}
-      <div style={{
-        background: '#1c2128',
-        padding: '16px',
-        borderRadius: '8px',
-        marginBottom: '24px',
-        display: 'flex',
-        gap: '12px',
-        flexWrap: 'wrap',
-        alignItems: 'center'
-      }}>
+      <div className="bg-panel dark:bg-panel-dark border border-border dark:border-border-dark rounded-sm p-4 mb-6 flex flex-wrap gap-3 items-center">
         <input
           type="text"
           placeholder="Search TIN, name, or request ID..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          style={{
-            flex: 1,
-            minWidth: '180px',
-            padding: '8px 12px',
-            border: '1px solid #30363d',
-            borderRadius: '6px',
-            background: '#0f1419',
-            color: '#f0f6fc',
-            fontSize: '12px'
-          }}
+          className="flex-1 min-w-[180px] px-3 py-2 border border-border dark:border-border-dark rounded-sm bg-ink dark:bg-ink text-text-hi dark:text-text-hi text-sm focus:outline-none focus:border-gold dark:focus:border-gold"
         />
 
         <select value={filterRequestType} onChange={(e) => setFilterRequestType(e.target.value)}
-          style={{
-            padding: '8px 12px',
-            border: '1px solid #30363d',
-            borderRadius: '6px',
-            background: '#0f1419',
-            color: '#f0f6fc',
-            fontSize: '12px'
-          }}>
+          className="px-3 py-2 border border-border dark:border-border-dark rounded-sm bg-ink dark:bg-ink text-text-hi dark:text-text-hi text-sm focus:outline-none focus:border-gold">
           {getRequestTypes().map(type => (
             <option key={type} value={type}>{type}</option>
           ))}
         </select>
 
         <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}
-          style={{
-            padding: '8px 12px',
-            border: '1px solid #30363d',
-            borderRadius: '6px',
-            background: '#0f1419',
-            color: '#f0f6fc',
-            fontSize: '12px'
-          }}>
+          className="px-3 py-2 border border-border dark:border-border-dark rounded-sm bg-ink dark:bg-ink text-text-hi dark:text-text-hi text-sm focus:outline-none focus:border-gold">
           {getStatuses().map(status => (
             <option key={status} value={status}>{status === 'All' ? 'All Statuses' : getStatusLabel(status)}</option>
           ))}
@@ -387,15 +323,7 @@ function MyRequestsView({ userRole }) {
             setFilterRequestType('All');
             setFilterStatus('All');
           }}
-          style={{
-            padding: '8px 12px',
-            border: '1px solid #30363d',
-            borderRadius: '6px',
-            background: '#0f1419',
-            color: '#8b949e',
-            fontSize: '12px',
-            cursor: 'pointer'
-          }}
+          className="px-3 py-2 border border-border dark:border-border-dark rounded-sm bg-ink dark:bg-ink text-text-mid dark:text-text-mid text-sm cursor-pointer hover:bg-panel dark:hover:bg-panel transition-colors"
         >
           Clear Filters
         </button>
@@ -403,78 +331,50 @@ function MyRequestsView({ userRole }) {
 
       {/* Requests Table */}
       {filteredRequests.length === 0 ? (
-        <div style={{
-          background: '#1c2128',
-          padding: '40px',
-          borderRadius: '8px',
-          border: '1px solid #30363d',
-          textAlign: 'center'
-        }}>
-          <i className="fas fa-inbox" style={{ fontSize: '32px', color: '#8b949e', marginBottom: '12px', display: 'block' }}></i>
-          <p style={{ color: '#8b949e', margin: '0', fontSize: '13px' }}>No requests found</p>
+        <div className="bg-panel dark:bg-panel-dark border border-border dark:border-border-dark rounded-sm p-10 text-center">
+          <i className="fas fa-inbox text-text-mid dark:text-text-mid text-4xl mb-3 block"></i>
+          <p className="text-text-mid dark:text-text-mid text-sm">No requests found</p>
         </div>
       ) : (
         <>
-          <div className="table-container" style={{ marginBottom: '24px' }}>
-            <table>
-              <thead>
+          <div className="overflow-x-auto mb-6 border border-border dark:border-border-dark rounded-sm">
+            <table className="w-full text-sm">
+              <thead className="bg-panel dark:bg-panel-dark border-b border-border dark:border-border-dark">
                 <tr>
-                  <th>REQUEST ID</th>
-                  <th>TAXPAYER</th>
-                  <th>TIN</th>
-                  <th>TYPE</th>
-                  <th>PRIORITY</th>
-                  <th>SUBMITTED DATE</th>
-                  <th>STATUS</th>
-                  <th>ACTION</th>
+                  <th className="text-left px-4 py-3 text-text-mid dark:text-text-mid font-semibold text-xs">REQUEST ID</th>
+                  <th className="text-left px-4 py-3 text-text-mid dark:text-text-mid font-semibold text-xs">TAXPAYER</th>
+                  <th className="text-left px-4 py-3 text-text-mid dark:text-text-mid font-semibold text-xs">TIN</th>
+                  <th className="text-left px-4 py-3 text-text-mid dark:text-text-mid font-semibold text-xs">TYPE</th>
+                  <th className="text-left px-4 py-3 text-text-mid dark:text-text-mid font-semibold text-xs">PRIORITY</th>
+                  <th className="text-left px-4 py-3 text-text-mid dark:text-text-mid font-semibold text-xs">SUBMITTED DATE</th>
+                  <th className="text-left px-4 py-3 text-text-mid dark:text-text-mid font-semibold text-xs">STATUS</th>
+                  <th className="text-left px-4 py-3 text-text-mid dark:text-text-mid font-semibold text-xs">ACTION</th>
                 </tr>
               </thead>
               <tbody>
                 {paginatedRequests.map(request => (
-                  <tr key={request.id}>
-                    <td><strong style={{ color: '#4caf50' }}>{request.id?.substring(0, 20)}...</strong></td>
-                    <td>{request.taxpayerName}</td>
-                    <td>{request.tin}</td>
-                    <td>{request.requestType}</td>
-                    <td>
-                      <span style={{
-                        background: getPriorityColor(request.priority),
-                        color: '#fff',
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        fontSize: '11px',
-                        fontWeight: 'bold'
-                      }}>
+                  <tr key={request.id} className="border-b border-border dark:border-border-dark hover:bg-panel dark:hover:bg-panel-dark transition-colors">
+                    <td className="px-4 py-3"><strong className="text-success dark:text-success">{request.id?.substring(0, 20)}...</strong></td>
+                    <td className="px-4 py-3 text-text-hi dark:text-text-hi">{request.taxpayerName}</td>
+                    <td className="px-4 py-3 text-text-hi dark:text-text-hi">{request.tin}</td>
+                    <td className="px-4 py-3 text-text-hi dark:text-text-hi">{request.requestType}</td>
+                    <td className="px-4 py-3">
+                      <span className="inline-block px-2 py-1 rounded-sm text-xs font-bold text-white" style={{ backgroundColor: getPriorityColor(request.priority) }}>
                         {request.priority}
                       </span>
                     </td>
-                    <td style={{ fontSize: '11px', color: '#8b949e' }}>
+                    <td className="px-4 py-3 text-text-mid dark:text-text-mid text-xs">
                       {new Date(request.submittedDate).toLocaleDateString()}
                     </td>
-                    <td>
-                      <span style={{
-                        background: getStatusColor(request.status),
-                        color: '#fff',
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        fontSize: '11px',
-                        fontWeight: 'bold'
-                      }}>
+                    <td className="px-4 py-3">
+                      <span className="inline-block px-2 py-1 rounded-sm text-xs font-bold text-white" style={{ backgroundColor: getStatusColor(request.status) }}>
                         {getStatusLabel(request.status)}
                       </span>
                     </td>
-                    <td>
+                    <td className="px-4 py-3">
                       <button
                         onClick={() => setSelectedRequest(request)}
-                        style={{
-                          padding: '4px 8px',
-                          background: '#2196f3',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: '4px',
-                          fontSize: '11px',
-                          cursor: 'pointer'
-                        }}
+                        className="px-2 py-1 bg-info dark:bg-info text-white border-none rounded-sm text-xs cursor-pointer hover:opacity-90 transition-opacity"
                       >
                         View
                       </button>
@@ -486,29 +386,18 @@ function MyRequestsView({ userRole }) {
           </div>
 
           {/* Pagination */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '12px 0',
-            fontSize: '12px',
-            color: '#8b949e'
-          }}>
+          <div className="flex justify-between items-center py-3 text-text-mid dark:text-text-mid text-sm">
             <span>Showing {paginatedRequests.length} of {filteredRequests.length} requests</span>
-            <div style={{ display: 'flex', gap: '4px' }}>
+            <div className="flex gap-1">
               {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                 <button
                   key={page}
                   onClick={() => setCurrentPage(page)}
-                  style={{
-                    padding: '4px 8px',
-                    border: '1px solid #30363d',
-                    borderRadius: '4px',
-                    background: currentPage === page ? '#4a8fd9' : '#0f1419',
-                    color: currentPage === page ? '#fff' : '#8b949e',
-                    fontSize: '11px',
-                    cursor: 'pointer'
-                  }}
+                  className={`px-2 py-1 border border-border dark:border-border-dark rounded-sm text-xs cursor-pointer transition-colors ${
+                    currentPage === page 
+                      ? 'bg-info dark:bg-info text-white font-semibold' 
+                      : 'bg-ink dark:bg-ink text-text-mid dark:text-text-mid hover:bg-panel dark:hover:bg-panel'
+                  }`}
                 >
                   {page}
                 </button>
@@ -519,16 +408,9 @@ function MyRequestsView({ userRole }) {
       )}
 
       {/* Summary */}
-      <div style={{
-        background: '#1a3a1a',
-        color: '#4caf50',
-        padding: '16px',
-        borderRadius: '8px',
-        border: '1px solid #388e3c',
-        marginTop: '24px'
-      }}>
-        <strong><i className="fas fa-chart-bar"></i> Request Summary</strong>
-        <p style={{ color: '#a8d5a8', margin: '8px 0 0 0', fontSize: '13px', lineHeight: '1.6' }}>
+      <div className="mt-6 bg-green-900 dark:bg-green-900 border border-success dark:border-success rounded-sm p-4 text-success dark:text-success">
+        <strong><i className="fas fa-chart-bar mr-2"></i> Request Summary</strong>
+        <p className="text-green-200 dark:text-green-200 text-sm leading-relaxed mt-2">
           Total Submitted: <strong>{allRequests.length}</strong> | 
           Pending: <strong>{stats['PENDING_REVIEW']}</strong> | 
           Approved: <strong>{stats['APPROVED_SCHEDULED']}</strong> | 
