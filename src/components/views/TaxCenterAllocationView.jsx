@@ -14,6 +14,7 @@ function TaxCenterAllocationView({ currentView, selectedPlan: propSelectedPlan, 
   const [loading, setLoading] = useState(true);
   const [allPlans, setAllPlans] = useState([]);
   const [selectedPlan, setSelectedPlan] = useState(propSelectedPlan || null);
+  const [isDarkMode] = useState(false);
 
   // Use context region if available, otherwise use assigned region
   useEffect(() => {
@@ -392,24 +393,24 @@ function TaxCenterAllocationView({ currentView, selectedPlan: propSelectedPlan, 
   };
 
   if (loading) {
-    return <div style={{ padding: '20px' }}>Loading...</div>;
+    return <div className="px-6 py-8 text-text-primary dark:text-text-primary">Loading...</div>;
   }
 
   if (!plan || !regionAllocation) {
     return (
-      <div style={{ padding: '24px' }}>
+      <div className="px-6 py-8">
         <div className="detail-header">
-          <h2>No Plan Available</h2>
+          <h2 className="text-2xl font-bold text-text-hi dark:text-text-hi">No Plan Available</h2>
         </div>
-        <p>No plan found with regional allocation for {selectedRegion}</p>
-        <p style={{ fontSize: '12px', color: '#a0aec0' }}>
+        <p className="text-text-primary dark:text-text-primary mt-4">No plan found with regional allocation for {selectedRegion}</p>
+        <p className="text-xs text-text-mid dark:text-text-mid mt-2">
           Total plans in system: {allPlans.length}
         </p>
         {allPlans.length > 0 && (
-          <div style={{ marginTop: '12px', fontSize: '12px' }}>
-            <p>Available plans:</p>
+          <div className="mt-4 text-xs">
+            <p className="text-text-primary dark:text-text-primary font-semibold">Available plans:</p>
             {allPlans.map(p => (
-              <div key={p.id} style={{ color: '#a0aec0' }}>
+              <div key={p.id} className="text-text-mid dark:text-text-mid mt-1">
                 {p.id}: {p.regionalAllocation ? Object.keys(p.regionalAllocation).join(', ') : 'no regional allocation'}
               </div>
             ))}
@@ -432,29 +433,20 @@ function TaxCenterAllocationView({ currentView, selectedPlan: propSelectedPlan, 
   const taxCenters = Object.keys(taxCenterDistribution);
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div className="px-6 py-8">
       {/* Header */}
-      <div className="detail-header">
-        <h2><i className="fas fa-tasks"></i> Allocate to Tax Centers - {selectedRegion}</h2>
+      <div className="detail-header mb-6">
+        <h2 className="text-2xl font-bold text-text-hi dark:text-text-hi flex items-center gap-2">
+          <i className="fas fa-tasks"></i> Allocate to Tax Centers - {selectedRegion}
+        </h2>
         <Badge status="Manual Distribution" className="director-approved" />
       </div>
 
       {/* Plan Selector - PROMINENT at top */}
       {propPlans && propPlans.length > 0 && (
-        <div style={{
-          background: '#0f1419', color: '#f0f6fc',
-          padding: '16px',
-          borderRadius: '8px',
-          marginBottom: '24px',
-          border: '3px solid #4a8fd9',
-          display: 'flex',
-          gap: '16px',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          boxShadow: '0 3px 10px rgba(0, 212, 255, 0.2)'
-        }}>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: 1, minWidth: '400px' }}>
-            <label style={{ fontSize: '14px', fontWeight: '700', color: '#4a8fd9', whiteSpace: 'nowrap' }}>
+        <div className="bg-ink dark:bg-ink border-2 border-blue dark:border-blue rounded-lg px-4 py-3 mb-6 shadow-lg flex flex-col gap-4 sm:flex-row sm:items-center sm:flex-wrap">
+          <div className="flex gap-3 items-center flex-1 min-w-96">
+            <label className="text-sm font-bold text-blue dark:text-blue whitespace-nowrap">
               <i className="fas fa-file-alt"></i> CHOOSE PLAN:
             </label>
             <select
@@ -465,17 +457,7 @@ function TaxCenterAllocationView({ currentView, selectedPlan: propSelectedPlan, 
                 setSelectedPlan(newPlanId);
                 if (onPlanChange) onPlanChange(newPlanId);
               }}
-              style={{
-                padding: '12px 16px',
-                borderRadius: '6px',
-                border: '2px solid #4a8fd9',
-                fontSize: '14px',
-                fontWeight: '700',
-                cursor: 'pointer',
-                background: '#0f1419',
-                minWidth: '240px',
-                color: '#2d3d4d'
-              }}
+              className="px-4 py-3 rounded border-2 border-blue dark:border-blue text-sm font-bold cursor-pointer bg-ink dark:bg-ink min-w-60 text-text-primary dark:text-text-primary"
             >
               <option value="">-- Select a plan to allocate --</option>
               {propPlans.map(planOption => {
@@ -488,16 +470,16 @@ function TaxCenterAllocationView({ currentView, selectedPlan: propSelectedPlan, 
               })}
             </select>
           </div>
-          <div style={{ fontSize: '12px', color: '#d84315', fontWeight: '600', textAlign: 'right' }}>
+          <div className="text-xs text-danger dark:text-danger font-semibold text-right">
             {selectedPlan ? (
               <>
                 <div><i className="fas fa-check-circle" style={{ color: '#4caf50' }}></i> {selectedPlan} selected</div>
-                <div style={{ fontSize: '11px', color: '#999', marginTop: '2px' }}>Switch to allocate different plan</div>
+                <div className="text-xs text-text-mid dark:text-text-mid mt-1">Switch to allocate different plan</div>
               </>
             ) : (
               <>
                 <div><i className="fas fa-info-circle"></i> {propPlans.length} plan(s) available</div>
-                <div style={{ fontSize: '11px', color: '#999', marginTop: '2px' }}>Select to begin allocation</div>
+                <div className="text-xs text-text-mid dark:text-text-mid mt-1">Select to begin allocation</div>
               </>
             )}
           </div>
@@ -505,15 +487,15 @@ function TaxCenterAllocationView({ currentView, selectedPlan: propSelectedPlan, 
       )}
 
       {/* Step 1: Review Plan */}
-      <div style={{ background: '#1a3a1a', padding: '16px', borderRadius: '8px', marginBottom: '24px', border: '1px solid #388e3c' }}>
-        <strong><i className="fas fa-check-circle"></i> Step 1: Review Plan from Director</strong>
-        <p style={{ color: '#0c4a6e', margin: '8px 0 0 0', fontSize: '13px', lineHeight: '1.6' }}>
+      <div className="bg-teal/20 dark:bg-teal/20 border border-teal dark:border-teal rounded-lg px-4 py-3 mb-6">
+        <strong className="flex items-center gap-2 text-text-hi dark:text-text-hi"><i className="fas fa-check-circle"></i> Step 1: Review Plan from Director</strong>
+        <p className="text-text-mid dark:text-text-mid mt-2 text-xs leading-relaxed">
           You have received the {plan.name || 'Annual Audit Plan'} for {selectedRegion} region. Total cases: <strong>{regionAllocation.totalCases}</strong>
         </p>
       </div>
 
       {/* Plan Details Cards */}
-      <div className="cards">
+      <div className="cards mb-6">
         <Card title="Plan ID" number={plan.id} icon="fas fa-id-badge" />
         <Card title="Version" number={plan.version} icon="fas fa-code-branch" />
         <Card title="Total Cases" number={regionAllocation.totalCases} icon="fas fa-tasks" />
@@ -521,31 +503,31 @@ function TaxCenterAllocationView({ currentView, selectedPlan: propSelectedPlan, 
       </div>
 
       {/* Plan Details Section */}
-      <div style={{ marginTop: '24px', background: '#f8f9fc', color: '#0c4a6e', padding: '16px', borderRadius: '8px', border: '1px solid #2d3d4d' }}>
-        <h3><i className="fas fa-info-circle"></i> Plan Details</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '12px' }}>
+      <div className="mt-6 bg-panel dark:bg-panel border border-border dark:border-border rounded-lg px-4 py-4 mb-6">
+        <h3 className="text-text-hi dark:text-text-hi font-bold text-base mb-3 m-0"><i className="fas fa-info-circle"></i> Plan Details</h3>
+        <div className="grid grid-cols-2 gap-4 mt-3">
           <div>
-            <p style={{ fontSize: '12px', color: '#a0aec0', margin: 0 }}>Planning Tactics</p>
-            <p style={{ fontSize: '13px', margin: '4px 0 0 0' }}>{plan.strategy || 'Risk-based approach'}</p>
+            <p className="text-xs text-text-mid dark:text-text-mid m-0">Planning Tactics</p>
+            <p className="text-sm text-text-primary dark:text-text-primary m-0 mt-1">{plan.strategy || 'Risk-based approach'}</p>
           </div>
           <div>
-            <p style={{ fontSize: '12px', color: '#a0aec0', margin: 0 }}>Planning Period</p>
-            <p style={{ fontSize: '13px', margin: '4px 0 0 0' }}>{plan.startDate?.split('T')[0]} to {plan.endDate?.split('T')[0]}</p>
+            <p className="text-xs text-text-mid dark:text-text-mid m-0">Planning Period</p>
+            <p className="text-sm text-text-primary dark:text-text-primary m-0 mt-1">{plan.startDate?.split('T')[0]} to {plan.endDate?.split('T')[0]}</p>
           </div>
         </div>
       </div>
 
       {/* Audit Type Breakdown */}
-      <div className="section-title" style={{ marginTop: '24px', marginBottom: '12px' }}>
+      <div className="section-title mt-6 mb-4 flex items-center gap-2 text-text-hi dark:text-text-hi font-bold">
         <i className="fas fa-chart-pie"></i> Audit Type Breakdown for {selectedRegion}
       </div>
-      <div className="table-container" style={{ marginBottom: '24px' }}>
-        <table>
+      <div className="overflow-x-auto mb-6 border border-border dark:border-border rounded-lg">
+        <table className="w-full text-xs bg-panel dark:bg-panel">
           <thead>
-            <tr style={{ background: '#1e2a3a', borderBottom: '2px solid #2d3d4d' }}>
-              <th style={{ textAlign: 'left', color: '#4a8fd9' }}>AUDIT TYPE</th>
-              <th style={{ textAlign: 'center', color: '#4a8fd9' }}>CASES</th>
-              <th style={{ textAlign: 'center', color: '#4a8fd9' }}>% OF TOTAL</th>
+            <tr className="bg-panel dark:bg-panel border-b-2 border-border dark:border-border">
+              <th className="text-left text-blue dark:text-blue px-4 py-2 font-bold">AUDIT TYPE</th>
+              <th className="text-center text-blue dark:text-blue px-4 py-2 font-bold">CASES</th>
+              <th className="text-center text-blue dark:text-blue px-4 py-2 font-bold">% OF TOTAL</th>
             </tr>
           </thead>
           <tbody>
@@ -553,83 +535,76 @@ function TaxCenterAllocationView({ currentView, selectedPlan: propSelectedPlan, 
               const cases = regionAllocation.breakdown?.[auditType] || 0;
               const percentage = ((cases / regionAllocation.totalCases) * 100).toFixed(1);
               return (
-                <tr key={idx}>
-                  <td><strong>{auditTypeLabels[auditType]}</strong></td>
-                  <td style={{ textAlign: 'center' }}>{cases}</td>
-                  <td style={{ textAlign: 'center' }}>{percentage}%</td>
+                <tr key={idx} className="border-b border-border dark:border-border hover:bg-ink/50 dark:hover:bg-ink/50">
+                  <td className="px-4 py-2"><strong className="text-text-primary dark:text-text-primary">{auditTypeLabels[auditType]}</strong></td>
+                  <td className="text-center px-4 py-2 text-text-primary dark:text-text-primary">{cases}</td>
+                  <td className="text-center px-4 py-2 text-text-primary dark:text-text-primary">{percentage}%</td>
                 </tr>
               );
             })}
-            <tr style={{ background: '#0f1419', fontWeight: 'bold' }}>
-              <td>TOTAL</td>
-              <td style={{ textAlign: 'center' }}>{regionAllocation.totalCases}</td>
-              <td style={{ textAlign: 'center' }}>100%</td>
+            <tr className="bg-ink dark:bg-ink font-bold border-t-2 border-border dark:border-border">
+              <td className="px-4 py-2 text-text-hi dark:text-text-hi">TOTAL</td>
+              <td className="text-center px-4 py-2 text-text-hi dark:text-text-hi">{regionAllocation.totalCases}</td>
+              <td className="text-center px-4 py-2 text-text-hi dark:text-text-hi">100%</td>
             </tr>
           </tbody>
         </table>
       </div>
 
       {/* Step 2: Allocate to Tax Centers */}
-      <div style={{ background: '#1a3a1a', padding: '16px', borderRadius: '8px', marginBottom: '24px', border: '1px solid #388e3c' }}>
-        <strong><i className="fas fa-tasks"></i> Step 2: Allocate to Tax Centers</strong>
-        <p style={{ color: '#0c4a6e', margin: '8px 0 0 0', fontSize: '13px', lineHeight: '1.6' }}>
+      <div className="bg-teal/20 dark:bg-teal/20 border border-teal dark:border-teal rounded-lg px-4 py-3 mb-6">
+        <strong className="flex items-center gap-2 text-text-hi dark:text-text-hi"><i className="fas fa-tasks"></i> Step 2: Allocate to Tax Centers</strong>
+        <p className="text-text-mid dark:text-text-mid mt-2 text-xs leading-relaxed">
           You must allocate all {regionAllocation.totalCases} cases to your 3 tax centers. Each tax center will provide feedback based on their allocation.
         </p>
       </div>
 
       {/* Tax Center Distribution Table */}
-      <div className="section-title" style={{ marginBottom: '12px' }}>
+      <div className="section-title mb-4 flex items-center gap-2 text-text-hi dark:text-text-hi font-bold">
         <i className="fas fa-building"></i> Tax Center Distribution
       </div>
       
-      <div className="table-container">
-        <table>
+      <div className="overflow-x-auto mb-6 border border-border dark:border-border rounded-lg">
+        <table className="w-full text-xs bg-panel dark:bg-panel">
           <thead>
-            <tr style={{ background: '#1e2a3a' }}>
-              <th style={{ textAlign: 'left', color: '#4a8fd9' }}>TAX CENTER</th>
+            <tr className="bg-panel dark:bg-panel border-b-2 border-border dark:border-border">
+              <th className="text-left text-blue dark:text-blue px-4 py-2 font-bold">TAX CENTER</th>
               {auditTypes.map(auditType => (
-                <th key={auditType} style={{ textAlign: 'center', color: '#4a8fd9' }}>
+                <th key={auditType} className="text-center text-blue dark:text-blue px-4 py-2 font-bold">
                   {auditTypeLabels[auditType]}
                 </th>
               ))}
-              <th style={{ textAlign: 'center', color: '#4a8fd9' }}>TOTAL</th>
+              <th className="text-center text-blue dark:text-blue px-4 py-2 font-bold">TOTAL</th>
             </tr>
           </thead>
           <tbody>
             {taxCenters.map((tcName, idx) => (
-              <tr key={idx}>
-                <td style={{ fontWeight: 'bold' }}>{tcName}</td>
+              <tr key={idx} className="border-b border-border dark:border-border hover:bg-ink/50 dark:hover:bg-ink/50">
+                <td className="px-4 py-2 font-bold text-text-primary dark:text-text-primary">{tcName}</td>
                 {auditTypes.map(auditType => (
-                  <td key={auditType} style={{ textAlign: 'center', padding: '8px' }}>
+                  <td key={auditType} className="text-center px-4 py-2">
                     <input
                       type="number"
                       value={taxCenterDistribution[tcName][auditType] || 0}
                       onChange={(e) => handleCellChange(tcName, auditType, e.target.value)}
-                      style={{
-                        width: '70px',
-                        padding: '6px',
-                        border: '1px solid #ccc',
-                        borderRadius: '4px',
-                        textAlign: 'center',
-                        fontSize: '14px'
-                      }}
+                      className="w-16 px-2 py-1 border border-border dark:border-border rounded text-center text-sm bg-ink dark:bg-ink text-text-primary dark:text-text-primary focus:border-blue dark:focus:border-blue focus:outline-none focus:ring-1 focus:ring-blue dark:focus:ring-blue"
                       min="0"
                     />
                   </td>
                 ))}
-                <td style={{ textAlign: 'center', fontWeight: 'bold', background: '#1a3a1a' }}>
+                <td className="text-center px-4 py-2 font-bold bg-teal/20 dark:bg-teal/20 text-teal dark:text-teal">
                   {getTaxCenterTotal(tcName)}
                 </td>
               </tr>
             ))}
-            <tr style={{ background: '#c8e6c9', color: '#1b5e20', fontWeight: 'bold' }}>
-              <td>TOTAL</td>
+            <tr className="bg-teal/20 dark:bg-teal/20 text-teal dark:text-teal font-bold border-t-2 border-teal dark:border-teal">
+              <td className="px-4 py-2">TOTAL</td>
               {auditTypes.map(auditType => (
-                <td key={auditType} style={{ textAlign: 'center' }}>
+                <td key={auditType} className="text-center px-4 py-2">
                   {getAuditTypeTotal(auditType)} / {regionAllocation.breakdown?.[auditType] || 0}
                 </td>
               ))}
-              <td style={{ textAlign: 'center' }}>
+              <td className="text-center px-4 py-2">
                 {Object.values(taxCenterDistribution).reduce((sum, tc) => {
                   const tcName = Object.keys(taxCenterDistribution)[Object.values(taxCenterDistribution).indexOf(tc)];
                   return sum + (getTaxCenterTotal(tcName) || 0);
@@ -642,51 +617,30 @@ function TaxCenterAllocationView({ currentView, selectedPlan: propSelectedPlan, 
 
       {/* Status Message */}
       {isSent() ? (
-        <div style={{
-          background: '#c8e6c9', color: '#1b5e20',
-          padding: '16px',
-          borderRadius: '8px',
-          marginTop: '24px',
-          border: '2px solid #388e3c',
-          textAlign: 'center'
-        }}>
-          <strong style={{ color: '#2e7d32' }}>
+        <div className="bg-teal/20 dark:bg-teal/20 border-2 border-teal dark:border-teal rounded-lg px-4 py-4 text-center mb-6">
+          <strong className="flex items-center justify-center gap-2 text-teal dark:text-teal">
             <i className="fas fa-check-circle"></i> ✅ Allocations Already Sent
           </strong>
-          <p style={{ color: '#0c4a6e', margin: '8px 0 0 0', fontSize: '13px', color: '#2e7d32' }}>
+          <p className="text-text-mid dark:text-text-mid m-0 mt-2 text-xs">
             Allocations have been sent to all tax centers. Each tax center can view their specific allocation.
           </p>
         </div>
       ) : isDistributionPerfect() ? (
-        <div style={{
-          background: '#c8e6c9', color: '#1b5e20',
-          padding: '16px',
-          borderRadius: '8px',
-          marginTop: '24px',
-          border: '2px solid #388e3c',
-          textAlign: 'center'
-        }}>
-          <strong style={{ color: '#2e7d32' }}>
+        <div className="bg-teal/20 dark:bg-teal/20 border-2 border-teal dark:border-teal rounded-lg px-4 py-4 text-center mb-6">
+          <strong className="flex items-center justify-center gap-2 text-teal dark:text-teal">
             <i className="fas fa-check-circle"></i> Perfect: All regional allocations have been distributed to tax centers exactly.
           </strong>
         </div>
       ) : (
-        <div style={{
-          background: '#0f14193cd',
-          padding: '16px',
-          borderRadius: '8px',
-          marginTop: '24px',
-          border: '2px solid #ffb74d',
-          textAlign: 'center'
-        }}>
-          <strong style={{ color: '#f57f17' }}>
+        <div className="bg-gold/20 dark:bg-gold/20 border-2 border-gold dark:border-gold rounded-lg px-4 py-4 text-center mb-6">
+          <strong className="text-gold dark:text-gold flex items-center justify-center gap-2">
             <i className="fas fa-exclamation-triangle"></i> Distribute all audit types to tax centers exactly as allocated.
           </strong>
         </div>
       )}
 
       {/* Action Bar */}
-      <div className="action-bar" style={{ marginTop: '24px' }}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mt-8 pt-6 border-t border-border dark:border-border">
         <button className="btn btn-outline">
           <i className="fas fa-arrow-left"></i> Back to Menu
         </button>
@@ -711,9 +665,8 @@ function TaxCenterAllocationView({ currentView, selectedPlan: propSelectedPlan, 
         )}
         {isSent() && (
           <button 
-            className="btn btn-success"
+            className="btn btn-success opacity-60 cursor-not-allowed"
             disabled
-            style={{ opacity: 0.5, cursor: 'not-allowed' }}
           >
             <i className="fas fa-check"></i> Already Sent - Cannot Send Again
           </button>

@@ -1,26 +1,62 @@
 import React, { useState } from 'react';
-import Sidebar from '../Sidebar';
-import TopBar from '../TopBar';
-import Badge from '../Badge';
+import ProtectedRoute from '../ProtectedRoute';
+import RoleLayout from '../layouts/RoleLayout';
 import AuditCaseSelectionView from '../views/AuditCaseSelectionView';
 import AuditCaseTypesConfigView from '../views/AuditCaseTypesConfigView';
 import StoredCasesView from '../views/StoredCasesView';
 import RequestForAuditView from '../views/RequestForAuditView';
 import CaseAssignmentView from '../views/CaseAssignmentView';
+import ConfigurationView from '../views/ConfigurationView';
+import RoleDashboardShell from '../dashboard/RoleDashboardShell';
+import { useSidebarStats } from '../../hooks/useAuditTeamMetrics';
 
-/**
- * ProcessOwnerView
- * Main view for Process Owner role
- * - View and select audit cases from Risk Engine
- * - Configure and manage audit case types
- * - View stored cases for audit execution
- */
+function ProcessOwnerDashboard() {
+  const stats = useSidebarStats();
+
+  return (
+    <RoleDashboardShell
+      summaryMetrics={[
+        {
+          id: 'cases',
+          title: 'Audit cases',
+          value: stats.cases,
+          subtitle: 'cases available for selection',
+          color: 'blue',
+          progress: Math.min(100, stats.cases * 5),
+        },
+        {
+          id: 'plans',
+          title: 'Active plans',
+          value: stats.plans,
+          subtitle: 'plans in the system',
+          color: 'amber',
+          progress: Math.min(100, stats.plans * 20),
+        },
+        {
+          id: 'assigned',
+          title: 'Assignments',
+          value: stats.assigned,
+          subtitle: 'cases assigned for execution',
+          color: 'teal',
+          progress: Math.min(100, stats.assigned * 10),
+        },
+      ]}
+      bottomMetrics={[
+        { id: 'cases', label: 'Total cases', value: stats.cases, color: 'blue' },
+        { id: 'plans', label: 'Active plans', value: stats.plans, color: 'amber' },
+        { id: 'assigned', label: 'Assigned', value: stats.assigned, color: 'teal' },
+      ]}
+    />
+  );
+}
 
 function ProcessOwnerView() {
-  const [currentView, setCurrentView] = useState('cases');
+  const [currentView, setCurrentView] = useState('dashboard');
 
   const renderContent = () => {
     switch (currentView) {
+      case 'dashboard':
+        return <ProcessOwnerDashboard />;
       case 'cases':
         return <AuditCaseSelectionView />;
       case 'requests':
@@ -31,142 +67,20 @@ function ProcessOwnerView() {
         return <AuditCaseTypesConfigView />;
       case 'case-assignment':
         return <CaseAssignmentView />;
+      case 'configuration':
+        return <ConfigurationView />;
       default:
-        return <AuditCaseSelectionView />;
+        return <ProcessOwnerDashboard />;
     }
   };
 
   return (
-    <div style={{ display: 'flex', height: '100vh' }}>
-      {/* Sidebar */}
-      <Sidebar currentView={currentView} onNavigate={setCurrentView} userRole="process_owner" />
-
-      {/* Main Content */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#0f1419' }}>
-        {/* Top Bar */}
-        <TopBar title={getViewTitle(currentView)} />
-
-        {/* Navigation Tabs */}
-        <div style={{
-          background: '#1c2128',
-          borderBottom: '1px solid #30363d',
-          padding: '0',
-          display: 'flex',
-          gap: '0'
-        }}>
-          <button
-            onClick={() => setCurrentView('cases')}
-            style={{
-              flex: 1,
-              padding: '16px 20px',
-              background: currentView === 'cases' ? '#0f1419' : 'transparent',
-              color: currentView === 'cases' ? '#4a8fd9' : '#8b949e',
-              border: 'none',
-              borderBottom: currentView === 'cases' ? '3px solid #4a8fd9' : 'none',
-              fontSize: '13px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-          >
-            <i className="fas fa-list-check"></i> Audit Case Selection
-          </button>
-
-          <button
-            onClick={() => setCurrentView('requests')}
-            style={{
-              flex: 1,
-              padding: '16px 20px',
-              background: currentView === 'requests' ? '#0f1419' : 'transparent',
-              color: currentView === 'requests' ? '#4a8fd9' : '#8b949e',
-              border: 'none',
-              borderBottom: currentView === 'requests' ? '3px solid #4a8fd9' : 'none',
-              fontSize: '13px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-          >
-            <i className="fas fa-inbox"></i> Requests for Audit
-          </button>
-
-          <button
-            onClick={() => setCurrentView('stored-cases')}
-            style={{
-              flex: 1,
-              padding: '16px 20px',
-              background: currentView === 'stored-cases' ? '#0f1419' : 'transparent',
-              color: currentView === 'stored-cases' ? '#4a8fd9' : '#8b949e',
-              border: 'none',
-              borderBottom: currentView === 'stored-cases' ? '3px solid #4a8fd9' : 'none',
-              fontSize: '13px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-          >
-            <i className="fas fa-folder-open"></i> Stored Cases
-          </button>
-
-          <button
-            onClick={() => setCurrentView('case-types')}
-            style={{
-              flex: 1,
-              padding: '16px 20px',
-              background: currentView === 'case-types' ? '#0f1419' : 'transparent',
-              color: currentView === 'case-types' ? '#4a8fd9' : '#8b949e',
-              border: 'none',
-              borderBottom: currentView === 'case-types' ? '3px solid #4a8fd9' : 'none',
-              fontSize: '13px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-          >
-            <i className="fas fa-cogs"></i> Case Types Config
-          </button>
-
-          <button
-            onClick={() => setCurrentView('case-assignment')}
-            style={{
-              flex: 1,
-              padding: '16px 20px',
-              background: currentView === 'case-assignment' ? '#0f1419' : 'transparent',
-              color: currentView === 'case-assignment' ? '#4a8fd9' : '#8b949e',
-              border: 'none',
-              borderBottom: currentView === 'case-assignment' ? '3px solid #4a8fd9' : 'none',
-              fontSize: '13px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-          >
-            <i className="fas fa-tasks"></i> Case Assignment
-          </button>
-        </div>
-
-        {/* Content Area */}
-        <div style={{
-          flex: 1,
-          overflowY: 'auto',
-          background: '#0f1419'
-        }}>
-          {renderContent()}
-        </div>
-      </div>
-    </div>
+    <ProtectedRoute requiredRoles={['process_owner']}>
+      <RoleLayout currentView={currentView} onNavigate={setCurrentView}>
+        {renderContent()}
+      </RoleLayout>
+    </ProtectedRoute>
   );
-}
-
-function getViewTitle(view) {
-  const titles = {
-    'cases': 'Audit Case Selection - Risk Engine Cases',
-    'requests': 'Requests for Audit - Directorates & External Stakeholders',
-    'stored-cases': 'Stored Cases - Ready for Audit Execution',
-    'case-types': 'Audit Case Types Configuration',
-    'case-assignment': 'Case Assignment & Workflow Management'
-  };
-  return titles[view] || 'Process Owner Dashboard';
 }
 
 export default ProcessOwnerView;

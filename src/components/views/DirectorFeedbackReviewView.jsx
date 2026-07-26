@@ -70,17 +70,17 @@ function DirectorFeedbackReviewView() {
 
         <div className="section-title"><i className="fas fa-comment-dots"></i> Regional Feedback from {selectedRegionFeedback.region}</div>
         {feedback?.status === 'SUBMITTED' ? (
-          <div style={{ background: '#c8e6c9', color: '#1b5e20', padding: '16px', borderRadius: '8px', marginBottom: '20px', borderLeft: '4px solid #388e3c' }}>
-            <p><strong><i className="fas fa-check-circle"></i> Feedback Submitted</strong></p>
-            <p style={{ marginTop: '8px', lineHeight: '1.6', fontSize: '14px', color: '#1b5e20' }}>
+          <div className="bg-green-100 dark:bg-green-900 text-green-900 dark:text-green-200 p-4 rounded mb-5 border-l-4 border-green-500 dark:border-green-600">
+            <p className="font-bold mb-0"><i className="fas fa-check-circle"></i> Feedback Submitted</p>
+            <p className="mt-2 leading-relaxed text-sm text-green-900 dark:text-green-300">
               Regional Director has reviewed tax center feedback and submitted regional capacity adjustments.
             </p>
-            <p style={{ marginTop: '12px', fontSize: '12px', color: '#555' }}>
+            <p className="mt-3 text-xs text-gray-600 dark:text-gray-400">
               <i className="fas fa-clock"></i> Submitted: {new Date(feedback.submittedAt).toLocaleString()}
             </p>
           </div>
         ) : (
-          <div style={{ background: '#0f1419', color: '#f0f6fc', padding: '16px', borderRadius: '8px', marginBottom: '20px' }}>
+          <div className="bg-slate-800 dark:bg-slate-700 text-gray-200 dark:text-gray-300 p-4 rounded mb-5">
             <i className="fas fa-hourglass-half"></i> Feedback pending from {selectedRegionFeedback.region}
           </div>
         )}
@@ -89,12 +89,12 @@ function DirectorFeedbackReviewView() {
         <div className="table-container">
           <table>
             <thead>
-              <tr style={{ background: '#1e2a3a', borderBottom: '2px solid #2d3d4d' }}>
-                <th style={{ color: '#4a8fd9' }}>AUDIT TYPE</th>
-                <th style={{ color: '#4a8fd9', textAlign: 'center' }}>ALLOCATED TO REGION</th>
-                <th style={{ color: '#4a8fd9', textAlign: 'center' }}>TAX CENTERS CAN DELIVER</th>
-                <th style={{ color: '#4a8fd9', textAlign: 'center' }}>REGIONAL OVERRIDE</th>
-                <th style={{ color: '#4a8fd9', textAlign: 'center' }}>VARIANCE</th>
+              <tr className="bg-slate-800 dark:bg-slate-700 border-b-2 border-slate-600 dark:border-slate-500">
+                <th className="text-blue-500 dark:text-blue-400">AUDIT TYPE</th>
+                <th className="text-blue-500 dark:text-blue-400 text-center">ALLOCATED TO REGION</th>
+                <th className="text-blue-500 dark:text-blue-400 text-center">TAX CENTERS CAN DELIVER</th>
+                <th className="text-blue-500 dark:text-blue-400 text-center">REGIONAL OVERRIDE</th>
+                <th className="text-blue-500 dark:text-blue-400 text-center">VARIANCE</th>
               </tr>
             </thead>
             <tbody>
@@ -105,36 +105,33 @@ function DirectorFeedbackReviewView() {
                 const variance = override - allocated;
                 
                 return (
-                  <tr key={type} style={{ background: variance < 0 ? '#3a1a1a' : '#1a3a1a' }}>
+                  <tr key={type} className={variance < 0 ? 'bg-red-950 dark:bg-red-900' : 'bg-green-950 dark:bg-green-900'}>
                     <td><strong>{auditTypeLabels[type]}</strong></td>
-                    <td style={{ textAlign: 'center' }}>{allocated}</td>
-                    <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{canDeliver}</td>
-                    <td style={{ textAlign: 'center', fontWeight: 'bold', color: '#1976d2' }}>{override}</td>
-                    <td style={{ 
-                      textAlign: 'center',
-                      fontWeight: 'bold',
-                      color: variance < 0 ? '#ff5252' : variance > 0 ? '#4caf50' : '#999'
-                    }}>
+                    <td className="text-center">{allocated}</td>
+                    <td className="text-center font-bold">{canDeliver}</td>
+                    <td className="text-center font-bold text-blue-500 dark:text-blue-400">{override}</td>
+                    <td className={`text-center font-bold ${
+                      variance < 0 ? 'text-red-400 dark:text-red-300' : variance > 0 ? 'text-green-400 dark:text-green-300' : 'text-gray-500'
+                    }`}>
                       {variance > 0 ? '+' : ''}{variance}
                     </td>
                   </tr>
                 );
               })}
-              <tr style={{ background: '#0f1419', fontWeight: 'bold' }}>
+              <tr className="bg-slate-900 dark:bg-slate-800 font-bold">
                 <td>TOTAL</td>
-                <td style={{ textAlign: 'center' }}>
+                <td className="text-center">
                   {auditTypes.reduce((sum, type) => sum + (allocatedTotals[type] || 0), 0)}
                 </td>
-                <td style={{ textAlign: 'center' }}>
+                <td className="text-center">
                   {auditTypes.reduce((sum, type) => sum + (proposedTotals[type]?.canDeliver || 0), 0)}
                 </td>
-                <td style={{ textAlign: 'center' }}>
+                <td className="text-center">
                   {auditTypes.reduce((sum, type) => sum + (proposedTotals[type]?.canDeliver || 0), 0)}
                 </td>
-                <td style={{
-                  textAlign: 'center',
-                  color: (auditTypes.reduce((sum, type) => sum + (proposedTotals[type]?.canDeliver || 0), 0) - auditTypes.reduce((sum, type) => sum + (allocatedTotals[type] || 0), 0)) < 0 ? '#ff5252' : '#4caf50'
-                }}>
+                <td className={`text-center ${
+                  (auditTypes.reduce((sum, type) => sum + (proposedTotals[type]?.canDeliver || 0), 0) - auditTypes.reduce((sum, type) => sum + (allocatedTotals[type] || 0), 0)) < 0 ? 'text-red-400 dark:text-red-300' : 'text-green-400 dark:text-green-300'
+                }`}>
                   {(auditTypes.reduce((sum, type) => sum + (proposedTotals[type]?.canDeliver || 0), 0) - auditTypes.reduce((sum, type) => sum + (allocatedTotals[type] || 0), 0)) > 0 ? '+' : ''}
                   {auditTypes.reduce((sum, type) => sum + (proposedTotals[type]?.canDeliver || 0), 0) - auditTypes.reduce((sum, type) => sum + (allocatedTotals[type] || 0), 0)}
                 </td>
@@ -222,7 +219,11 @@ function DirectorFeedbackReviewView() {
 
         {submittedCount > 0 && (
           <>
-            <div style={{ background: submittedCount === totalRegions ? '#c8e6c9' : '#0f14193e0', padding: '16px', borderRadius: '8px', marginTop: '20px', marginBottom: '20px', borderLeft: `4px solid ${submittedCount === totalRegions ? '#388e3c' : '#ffb74d'}` }}>
+            <div className={`p-4 rounded mt-5 mb-5 border-l-4 ${
+              submittedCount === totalRegions 
+                ? 'bg-green-100 dark:bg-green-900 text-green-900 dark:text-green-200 border-green-500 dark:border-green-600'
+                : 'bg-yellow-50 dark:bg-yellow-900 text-yellow-900 dark:text-yellow-200 border-yellow-500 dark:border-yellow-600'
+            }`}>
               <i className={`fas ${submittedCount === totalRegions ? 'fa-check-circle' : 'fa-info-circle'}`}></i> 
               <strong> {submittedCount === totalRegions ? 'All Regional Feedback Received' : `Partial Feedback: ${submittedCount}/${totalRegions} Regions`}</strong> 
               {submittedCount === totalRegions 
@@ -278,9 +279,9 @@ function DirectorFeedbackReviewView() {
           </thead>
           <tbody>
             {plans.length === 0 ? (
-              <tr><td colSpan="7" style={{ textAlign: 'center', padding: '40px' }}>
-                <i className="fas fa-inbox" style={{ fontSize: '48px', color: '#ccc' }}></i>
-                <br />No plans with regional feedback
+              <tr><td colSpan="7" className="text-center py-10">
+                <i className="fas fa-inbox text-gray-400 text-4xl block mb-4"></i>
+                <span>No plans with regional feedback</span>
               </td></tr>
             ) : (
               plans.map(plan => {
@@ -293,10 +294,9 @@ function DirectorFeedbackReviewView() {
                     <td>{plan.totalVolume}</td>
                     <td>{totalRegions}</td>
                     <td>
-                      <span style={{ 
-                        color: submittedCount === totalRegions ? '#388e3c' : '#4a8fd9',
-                        fontWeight: 'bold'
-                      }}>
+                      <span className={`font-bold ${
+                        submittedCount === totalRegions ? 'text-green-500 dark:text-green-400' : 'text-blue-500 dark:text-blue-400'
+                      }`}>
                         {submittedCount}/{totalRegions}
                       </span>
                     </td>

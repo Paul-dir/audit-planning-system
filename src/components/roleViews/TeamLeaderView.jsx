@@ -4,6 +4,7 @@ import RoleLayout from '../layouts/RoleLayout';
 import TeamLeaderDashboard from '../dashboards/TeamLeaderDashboard';
 import AuditCasesListView from '../views/AuditCasesListView';
 import ConfigurationView from '../views/ConfigurationView';
+import CaseAssignmentView from '../views/CaseAssignmentView';
 
 function TeamLeaderView() {
   const [currentView, setCurrentView] = useState('dashboard');
@@ -13,9 +14,10 @@ function TeamLeaderView() {
       case 'dashboard':
         return <TeamLeaderDashboard />;
       case 'team-cases':
-      case 'assign-cases':
       case 'team-progress':
         return <AuditCasesListView />;
+      case 'case-assignment':
+        return <CaseAssignmentView />;
       case 'configuration':
         return <ConfigurationView />;
       default:

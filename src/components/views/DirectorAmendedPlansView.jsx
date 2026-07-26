@@ -144,14 +144,8 @@ function DirectorAmendedPlansView({ currentView }) {
         <div className="section-title">
           <i className="fas fa-info-circle"></i> Regional Feedback Summary
         </div>
-        <div style={{
-          background: '#c8e6c9', color: '#1b5e20',
-          padding: '16px',
-          borderRadius: '8px',
-          marginBottom: '20px',
-          border: '2px solid #388e3c'
-        }}>
-          <p style={{ color: '#0c4a6e', margin: 0, color: '#2e7d32' }}>
+        <div className="bg-green-100 dark:bg-green-900 text-green-900 dark:text-green-200 p-4 rounded mb-5 border-2 border-green-500 dark:border-green-600">
+          <p className="text-slate-700 dark:text-slate-300 m-0 text-green-900 dark:text-green-200">
             <strong>Submitted by:</strong> {feedback.submittedBy}
             <br />
             <strong>Tax Centers:</strong> {feedback.taxCenterCount} of {feedback.totalTaxCenters} provided feedback
@@ -164,15 +158,15 @@ function DirectorAmendedPlansView({ currentView }) {
         <div className="section-title">
           <i className="fas fa-chart-bar"></i> Planning Team's Amended Regional Capacity
         </div>
-        <div className="table-container" style={{ marginBottom: '20px' }}>
+        <div className="table-container mb-5">
           <table>
             <thead>
-              <tr style={{ background: '#1e2a3a', borderBottom: '2px solid #2d3d4d' }}>
-                <th style={{ color: '#4a8fd9', textAlign: 'left' }}>AUDIT TYPE</th>
-                <th style={{ color: '#4a8fd9', textAlign: 'center' }}>ORIGINAL ALLOCATED</th>
-                <th style={{ color: '#4a8fd9', textAlign: 'center' }}>REGIONAL DIRECTOR SAID</th>
-                <th style={{ color: '#4a8fd9', textAlign: 'center' }}>PLANNING TEAM AMENDED TO</th>
-                <th style={{ color: '#4a8fd9', textAlign: 'center' }}>VARIANCE FROM ALLOCATED</th>
+              <tr className="bg-slate-800 dark:bg-slate-700 border-b-2 border-slate-600 dark:border-slate-500">
+                <th className="text-blue-500 dark:text-blue-400 text-left">AUDIT TYPE</th>
+                <th className="text-blue-500 dark:text-blue-400 text-center">ORIGINAL ALLOCATED</th>
+                <th className="text-blue-500 dark:text-blue-400 text-center">REGIONAL DIRECTOR SAID</th>
+                <th className="text-blue-500 dark:text-blue-400 text-center">PLANNING TEAM AMENDED TO</th>
+                <th className="text-blue-500 dark:text-blue-400 text-center">VARIANCE FROM ALLOCATED</th>
               </tr>
             </thead>
             <tbody>
@@ -191,36 +185,33 @@ function DirectorAmendedPlansView({ currentView }) {
                 const variance = plannintTeamAmended - allocated;
                 
                 return (
-                  <tr key={type} style={{ background: variance < 0 ? '#3a1a1a' : '#1a3a1a' }}>
+                  <tr key={type} className={variance < 0 ? 'bg-red-950 dark:bg-red-900' : 'bg-green-950 dark:bg-green-900'}>
                     <td><strong>{auditTypeLabels[type]}</strong></td>
-                    <td style={{ textAlign: 'center', fontWeight: 'bold', color: '#4a8fd9' }}>{allocated}</td>
-                    <td style={{ textAlign: 'center', background: '#e3f2fd', color: '#0c4a6e' }}>{regionalDirectorSaid}</td>
-                    <td style={{ textAlign: 'center', fontWeight: 'bold', color: '#1976d2' }}>{plannintTeamAmended}</td>
-                    <td style={{
-                      textAlign: 'center',
-                      fontWeight: 'bold',
-                      color: variance < 0 ? '#ff5252' : variance > 0 ? '#4caf50' : '#999'
-                    }}>
+                    <td className="text-center font-bold text-blue-500 dark:text-blue-400">{allocated}</td>
+                    <td className="text-center bg-blue-50 dark:bg-blue-950 text-slate-900 dark:text-slate-100">{regionalDirectorSaid}</td>
+                    <td className="text-center font-bold text-blue-600 dark:text-blue-500">{plannintTeamAmended}</td>
+                    <td className={`text-center font-bold ${
+                      variance < 0 ? 'text-red-400 dark:text-red-300' : variance > 0 ? 'text-green-400 dark:text-green-300' : 'text-gray-500 dark:text-gray-400'
+                    }`}>
                       {variance > 0 ? '+' : ''}{variance}
                     </td>
                   </tr>
                 );
               })}
-              <tr style={{ background: '#0f1419', fontWeight: 'bold' }}>
+              <tr className="bg-slate-900 dark:bg-slate-800 font-bold">
                 <td>TOTAL</td>
-                <td style={{ textAlign: 'center' }}>
+                <td className="text-center">
                   {auditTypes.reduce((sum, type) => sum + (feedback.aggregated?.[type]?.allocated || 0), 0)}
                 </td>
-                <td style={{ textAlign: 'center', background: '#e3f2fd', color: '#0c4a6e' }}>
+                <td className="text-center bg-blue-50 dark:bg-blue-950 text-slate-900 dark:text-slate-100">
                   {auditTypes.reduce((sum, type) => sum + (feedback.aggregated?.[type]?.canDeliver || 0), 0)}
                 </td>
-                <td style={{ textAlign: 'center', color: '#1976d2' }}>
+                <td className="text-center text-blue-600 dark:text-blue-500">
                   {auditTypes.reduce((sum, type) => sum + (feedback.aggregated?.[type]?.canDeliver || 0), 0)}
                 </td>
-                <td style={{
-                  textAlign: 'center',
-                  color: (auditTypes.reduce((sum, type) => sum + (feedback.aggregated?.[type]?.canDeliver || 0), 0) - auditTypes.reduce((sum, type) => sum + (feedback.aggregated?.[type]?.allocated || 0), 0)) < 0 ? '#ff5252' : '#4caf50'
-                }}>
+                <td className={`text-center ${
+                  (auditTypes.reduce((sum, type) => sum + (feedback.aggregated?.[type]?.canDeliver || 0), 0) - auditTypes.reduce((sum, type) => sum + (feedback.aggregated?.[type]?.allocated || 0), 0)) < 0 ? 'text-red-400 dark:text-red-300' : 'text-green-400 dark:text-green-300'
+                }`}>
                   {(auditTypes.reduce((sum, type) => sum + (feedback.aggregated?.[type]?.canDeliver || 0), 0) - auditTypes.reduce((sum, type) => sum + (feedback.aggregated?.[type]?.allocated || 0), 0)) > 0 ? '+' : ''}
                   {auditTypes.reduce((sum, type) => sum + (feedback.aggregated?.[type]?.canDeliver || 0), 0) - auditTypes.reduce((sum, type) => sum + (feedback.aggregated?.[type]?.allocated || 0), 0)}
                 </td>
@@ -229,15 +220,9 @@ function DirectorAmendedPlansView({ currentView }) {
           </table>
         </div>
 
-        <div style={{
-          background: '#e3f2fd', color: '#0c4a6e',
-          padding: '16px',
-          borderRadius: '8px',
-          marginBottom: '20px',
-          border: '1px solid #1976d2'
-        }}>
+        <div className="bg-blue-50 dark:bg-blue-900 text-slate-900 dark:text-slate-100 p-4 rounded mb-5 border border-blue-400 dark:border-blue-600">
           <strong><i className="fas fa-lightbulb"></i> Review Notes:</strong>
-          <p style={{ color: '#0c4a6e', margin: '8px 0 0 0', fontSize: '13px' }}>
+          <p className="text-slate-700 dark:text-slate-300 m-2 text-xs">
             The Planning Team has reviewed regional feedback and adjusted regional capacity based on organizational priorities and constraints. 
             These amendments are now ready for your approval to send to Senior Management for final authorization.
           </p>
@@ -271,29 +256,29 @@ function DirectorAmendedPlansView({ currentView }) {
         <div className="section-title">
           <i className="fas fa-map"></i> Regional Amendments
         </div>
-        <div className="table-container" style={{ marginBottom: '20px' }}>
+        <div className="table-container mb-5">
           <table>
             <thead>
-              <tr style={{ background: '#1e2a3a', borderBottom: '2px solid #2d3d4d' }}>
-                <th style={{ color: '#4a8fd9' }}>REGION</th>
-                <th style={{ color: '#4a8fd9', textAlign: 'center' }}>TAX CENTERS</th>
-                <th style={{ color: '#4a8fd9', textAlign: 'center' }}>FEEDBACK STATUS</th>
-                <th style={{ color: '#4a8fd9', textAlign: 'center' }}>SUBMITTED</th>
-                <th style={{ color: '#4a8fd9' }}>ACTION</th>
+              <tr className="bg-slate-800 dark:bg-slate-700 border-b-2 border-slate-600 dark:border-slate-500">
+                <th className="text-blue-500 dark:text-blue-400">REGION</th>
+                <th className="text-blue-500 dark:text-blue-400 text-center">TAX CENTERS</th>
+                <th className="text-blue-500 dark:text-blue-400 text-center">FEEDBACK STATUS</th>
+                <th className="text-blue-500 dark:text-blue-400 text-center">SUBMITTED</th>
+                <th className="text-blue-500 dark:text-blue-400">ACTION</th>
               </tr>
             </thead>
             <tbody>
               {selectedPlan.regionalFeedback.map((feedback, idx) => (
                 <tr key={idx}>
                   <td><strong>{feedback.region}</strong></td>
-                  <td style={{ textAlign: 'center' }}>{feedback.totalTaxCenters}</td>
-                  <td style={{ textAlign: 'center' }}>
+                  <td className="text-center">{feedback.totalTaxCenters}</td>
+                  <td className="text-center">
                     <Badge 
                       status={feedback.status === 'SUBMITTED' ? 'Submitted' : 'Pending'} 
                       className={feedback.status === 'SUBMITTED' ? 'director-approved' : 'pending'} 
                     />
                   </td>
-                  <td style={{ textAlign: 'center', fontSize: '12px', color: '#a0aec0' }}>
+                  <td className="text-center text-xs text-gray-500 dark:text-gray-400">
                     {new Date(feedback.submittedAt).toLocaleDateString()}
                   </td>
                   <td>
@@ -312,15 +297,9 @@ function DirectorAmendedPlansView({ currentView }) {
           </table>
         </div>
 
-        <div style={{
-          background: '#0f1419', color: '#f0f6fc',
-          padding: '16px',
-          borderRadius: '8px',
-          marginBottom: '20px',
-          border: '2px solid #ffb74d'
-        }}>
-          <strong style={{ color: '#f57f17' }}><i className="fas fa-info-circle"></i> Decision Required:</strong>
-          <p style={{ color: '#0c4a6e', margin: '8px 0 0 0', fontSize: '13px', color: '#f57f17' }}>
+        <div className="bg-slate-900 dark:bg-slate-800 text-yellow-500 dark:text-yellow-400 p-4 rounded mb-5 border-2 border-yellow-500 dark:border-yellow-600">
+          <strong className="text-yellow-600 dark:text-yellow-400"><i className="fas fa-info-circle"></i> Decision Required:</strong>
+          <p className="text-yellow-600 dark:text-yellow-400 m-2 text-xs">
             Review the amended regional capacities for all regions. You can approve and send to Senior Management, or send back for further amendments.
           </p>
         </div>
@@ -349,19 +328,8 @@ function DirectorAmendedPlansView({ currentView }) {
     <div>
       {/* Plan Selector Dropdown */}
       {plans && plans.length > 1 && (
-        <div style={{
-          background: '#0f1419', color: '#f0f6fc',
-          padding: '16px',
-          borderRadius: '8px',
-          marginBottom: '24px',
-          border: '3px solid #4a8fd9',
-          display: 'flex',
-          gap: '16px',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          boxShadow: '0 3px 10px rgba(255, 152, 0, 0.4)'
-        }}>
-          <label style={{ fontSize: '14px', fontWeight: '700', color: '#4a8fd9', whiteSpace: 'nowrap' }}>
+        <div className="bg-slate-950 dark:bg-slate-900 text-gray-100 dark:text-gray-200 p-4 rounded mb-6 border-4 border-blue-500 dark:border-blue-600 flex gap-4 items-center flex-wrap shadow-lg shadow-yellow-500/40">
+          <label className="text-sm font-bold text-blue-500 dark:text-blue-400 whitespace-nowrap">
             <i className="fas fa-file-alt"></i> QUICK SELECT:
           </label>
           <select
@@ -370,17 +338,7 @@ function DirectorAmendedPlansView({ currentView }) {
               const plan = plans.find(p => p.id === e.target.value);
               if (plan) setSelectedPlan(plan);
             }}
-            style={{
-              padding: '12px 16px',
-              borderRadius: '6px',
-              border: '2px solid #4a8fd9',
-              fontSize: '14px',
-              fontWeight: '700',
-              cursor: 'pointer',
-              background: '#0f1419',
-              minWidth: '240px',
-              color: '#2d3d4d'
-            }}
+            className="px-4 py-3 rounded border-2 border-blue-500 dark:border-blue-400 text-sm font-bold cursor-pointer bg-slate-950 dark:bg-slate-900 min-w-60 text-slate-400 dark:text-slate-300"
           >
             <option value="">-- Select a plan to review --</option>
             {plans.map(plan => (
@@ -389,7 +347,7 @@ function DirectorAmendedPlansView({ currentView }) {
               </option>
             ))}
           </select>
-          <span style={{ fontSize: '12px', color: '#d84315', fontWeight: '600' }}>
+          <span className="text-xs text-red-500 dark:text-red-400 font-semibold">
             {plans.length} amended plan(s) waiting
           </span>
         </div>
@@ -400,36 +358,36 @@ function DirectorAmendedPlansView({ currentView }) {
       </div>
 
       {plans.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px 20px', background: '#f8f9fc', color: '#0c4a6e', borderRadius: '8px' }}>
-          <i className="fas fa-inbox" style={{ fontSize: '48px', color: '#ccc', marginBottom: '20px' }}></i>
+        <div className="text-center py-16 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg">
+          <i className="fas fa-inbox text-gray-400 dark:text-gray-600 text-4xl block mb-5"></i>
           <h3>No Amended Plans</h3>
-          <p style={{ color: '#a0aec0' }}>There are no amended plans from the Planning Team awaiting your review.</p>
+          <p className="text-gray-500 dark:text-gray-400">There are no amended plans from the Planning Team awaiting your review.</p>
         </div>
       ) : (
         <div className="table-container">
           <table>
             <thead>
-              <tr style={{ background: '#1e2a3a', borderBottom: '2px solid #2d3d4d' }}>
-                <th style={{ color: '#4a8fd9' }}>PLAN ID</th>
-                <th style={{ color: '#4a8fd9', textAlign: 'center' }}>VERSION</th>
-                <th style={{ color: '#4a8fd9', textAlign: 'center' }}>FISCAL YEAR</th>
-                <th style={{ color: '#4a8fd9', textAlign: 'center' }}>REGIONS</th>
-                <th style={{ color: '#4a8fd9', textAlign: 'center' }}>STATUS</th>
-                <th style={{ color: '#4a8fd9', textAlign: 'center' }}>SUBMITTED</th>
-                <th style={{ color: '#4a8fd9' }}>ACTION</th>
+              <tr className="bg-slate-800 dark:bg-slate-700 border-b-2 border-slate-600 dark:border-slate-500">
+                <th className="text-blue-500 dark:text-blue-400">PLAN ID</th>
+                <th className="text-blue-500 dark:text-blue-400 text-center">VERSION</th>
+                <th className="text-blue-500 dark:text-blue-400 text-center">FISCAL YEAR</th>
+                <th className="text-blue-500 dark:text-blue-400 text-center">REGIONS</th>
+                <th className="text-blue-500 dark:text-blue-400 text-center">STATUS</th>
+                <th className="text-blue-500 dark:text-blue-400 text-center">SUBMITTED</th>
+                <th className="text-blue-500 dark:text-blue-400">ACTION</th>
               </tr>
             </thead>
             <tbody>
               {plans.map(plan => (
-                <tr key={plan.id} style={{ background: '#f8f9fc', color: '#0c4a6e' }}>
+                <tr key={plan.id} className="bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100">
                   <td><strong>{plan.id}</strong></td>
-                  <td style={{ textAlign: 'center' }}>v{plan.version}</td>
-                  <td style={{ textAlign: 'center' }}>{plan.fiscalYear}</td>
-                  <td style={{ textAlign: 'center' }}>{plan.regionalFeedback.length}</td>
-                  <td style={{ textAlign: 'center' }}>
+                  <td className="text-center">v{plan.version}</td>
+                  <td className="text-center">{plan.fiscalYear}</td>
+                  <td className="text-center">{plan.regionalFeedback.length}</td>
+                  <td className="text-center">
                     <Badge status={plan.status.replace(/_/g, ' ')} className="pending" />
                   </td>
-                  <td style={{ textAlign: 'center', fontSize: '12px', color: '#a0aec0' }}>
+                  <td className="text-center text-xs text-gray-500 dark:text-gray-400">
                     {new Date(plan.lastModified).toLocaleDateString()}
                   </td>
                   <td>

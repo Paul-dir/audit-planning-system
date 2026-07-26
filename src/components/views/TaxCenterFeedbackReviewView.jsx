@@ -5,7 +5,8 @@ import { useRegional } from '../../context/RegionalContext';
 
 /**
  * TaxCenterFeedbackReviewView - Regional Director reviews all tax center feedback
- * Aggregates feedback from all tax centers in the region
+ * Displays aggregated feedback from all tax centers in the region with dark mode support.
+ * Allows regional directors to adjust capacity overrides and submit to senior management.
  */
 function TaxCenterFeedbackReviewView({ currentView, selectedPlan: propSelectedPlan, plans: propPlans, onPlanChange }) {
   const { assignedRegion, selectedRegion: contextSelectedRegion } = useRegional();
@@ -14,19 +15,17 @@ function TaxCenterFeedbackReviewView({ currentView, selectedPlan: propSelectedPl
   const selectedRegion = contextSelectedRegion || assignedRegion;
   
   const [plan, setPlan] = useState(null);
-  const [allPlans, setAllPlans] = useState([]); // All plans with allocations
+  const [allPlans, setAllPlans] = useState([]);
   const [selectedPlanId, setSelectedPlanId] = useState(propSelectedPlan || null);
   const [feedbackList, setFeedbackList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [regionalCapacityOverrides, setRegionalCapacityOverrides] = useState({});
 
-  // Reload feedback when region or plan changes
   useEffect(() => {
     loadFeedback();
   }, [selectedRegion, selectedPlanId]);
 
-  // Also reload when component mounts (fresh view)
   useEffect(() => {
     loadFeedback();
   }, []);
@@ -47,8 +46,6 @@ function TaxCenterFeedbackReviewView({ currentView, selectedPlan: propSelectedPl
       return;
     }
 
-    // Find ALL APPROVED plans with regional allocations for this region
-    // Regional directors can only see plans that have been approved by Director
     const plansWithAllocations = data.plans.filter(p => {
       const hasRegionalAllocation = p.regionalAllocation && p.regionalAllocation[selectedRegion];
       const isApproved = p.status === 'APPROVED' || p.status === 'DIRECTOR_APPROVED' || p.status === 'AWAITING_REGIONAL_FEEDBACK' || p.status === 'FEEDBACK_COLLECTED';
@@ -67,15 +64,12 @@ function TaxCenterFeedbackReviewView({ currentView, selectedPlan: propSelectedPl
     console.log('Found', plansWithAllocations.length, 'APPROVED plans with regional allocations for region:', selectedRegion);
     setAllPlans(plansWithAllocations);
 
-    // Determine which plan to load
     let planToLoad = null;
 
     if (selectedPlanId) {
-      // User selected a specific plan
       planToLoad = plansWithAllocations.find(p => p.id === selectedPlanId);
       console.log('Loading user-selected plan:', selectedPlanId);
     } else if (plansWithAllocations.length > 0) {
-      // Auto-select first plan
       planToLoad = plansWithAllocations[0];
       setSelectedPlanId(planToLoad.id);
       console.log('Auto-selecting first plan:', planToLoad.id);
@@ -84,18 +78,14 @@ function TaxCenterFeedbackReviewView({ currentView, selectedPlan: propSelectedPl
     if (planToLoad) {
       setPlan(planToLoad);
       
-      // Use regional allocations (all tax centers report on this regional total)
       const regionalAllocations = planToLoad.regionalAllocation[selectedRegion];
       const regionFeedback = planToLoad.taxCenterFeedback?.[selectedRegion] || {};
       
       console.log('Region feedback keys:', Object.keys(regionFeedback));
       console.log('Regional allocation:', regionalAllocations);
       
-      // Get tax center names from feedback (all tax centers that might submit)
-      // Fallback to generating standard names if needed
       let taxCenterNames = Object.keys(regionFeedback);
       if (taxCenterNames.length === 0) {
-        // Generate standard tax center names for this region
         taxCenterNames = [
           `${selectedRegion} TC1`,
           `${selectedRegion} TC2`,
@@ -103,7 +93,6 @@ function TaxCenterFeedbackReviewView({ currentView, selectedPlan: propSelectedPl
         ];
       }
       
-      // Build feedback list with regional allocation + feedback (if available)
       const feedbackData = [];
       
       taxCenterNames.forEach((taxCenterName) => {
@@ -113,7 +102,7 @@ function TaxCenterFeedbackReviewView({ currentView, selectedPlan: propSelectedPl
         
         feedbackData.push({
           taxCenterName,
-          allocation: regionalAllocations,  // All tax centers see same regional allocation
+          allocation: regionalAllocations,
           feedback: feedback || null,
           status: feedback ? 'received' : 'pending'
         });
@@ -122,7 +111,6 @@ function TaxCenterFeedbackReviewView({ currentView, selectedPlan: propSelectedPl
       setFeedbackList(feedbackData);
       console.log('Feedback list set with', feedbackData.length, 'items');
 
-      // Check if regional capacity overrides exist for THIS plan
       const existingSubmission = planToLoad.regionalFeedback?.find(
         f => f.region === selectedRegion && f.status === 'SUBMITTED'
       );
@@ -132,7 +120,6 @@ function TaxCenterFeedbackReviewView({ currentView, selectedPlan: propSelectedPl
         setRegionalCapacityOverrides(existingSubmission.aggregated);
         setSubmitted(true);
       } else {
-        // Initialize overrides with aggregated sums
         const auditTypes = ['desk_audit', 'field_audit', 'joint_audit', 'transfer_pricing', 'comprehensive', 'issue_audit'];
         const initialOverrides = {};
 
@@ -141,9 +128,7 @@ function TaxCenterFeedbackReviewView({ currentView, selectedPlan: propSelectedPl
           let totalCanDeliver = 0;
           
           feedbackData.forEach(item => {
-            // Add allocated from the allocation
             totalAllocated += parseInt(item.allocation[auditType]) || 0;
-            // Add can deliver from feedback
             if (item.feedback && item.feedback[auditType]) {
               totalCanDeliver += parseInt(item.feedback[auditType].canDeliver) || 0;
             }
@@ -164,12 +149,10 @@ function TaxCenterFeedbackReviewView({ currentView, selectedPlan: propSelectedPl
     setLoading(false);
   };
 
-  // Aggregate feedback from all tax centers
   const aggregateFeedback = () => {
     const auditTypes = ['desk_audit', 'field_audit', 'joint_audit', 'transfer_pricing', 'comprehensive', 'issue_audit'];
     const aggregated = {};
 
-    // For each audit type, sum up the allocated and can deliver
     auditTypes.forEach(auditType => {
       let totalAllocated = 0;
       let totalCanDeliver = 0;
@@ -196,7 +179,6 @@ function TaxCenterFeedbackReviewView({ currentView, selectedPlan: propSelectedPl
     return aggregated;
   };
 
-  // Handle regional capacity override
   const handleCapacityOverride = (auditType, value) => {
     setRegionalCapacityOverrides(prev => ({
       ...prev,
@@ -207,7 +189,6 @@ function TaxCenterFeedbackReviewView({ currentView, selectedPlan: propSelectedPl
     }));
   };
 
-  // Send aggregated feedback to Director
   const handleSendFeedback = () => {
     if (!window.confirm(`Send aggregated feedback from ${selectedRegion} to Director?`)) {
       return;
@@ -219,12 +200,10 @@ function TaxCenterFeedbackReviewView({ currentView, selectedPlan: propSelectedPl
     if (planIndex >= 0) {
       const currentPlan = data.plans[planIndex];
 
-      // Initialize regional feedback if needed
       if (!currentPlan.regionalFeedback) {
         currentPlan.regionalFeedback = [];
       }
 
-      // Check if this region already submitted
       const existingIndex = currentPlan.regionalFeedback.findIndex(
         f => f.region === selectedRegion && f.status === 'SUBMITTED'
       );
@@ -235,7 +214,6 @@ function TaxCenterFeedbackReviewView({ currentView, selectedPlan: propSelectedPl
         return;
       }
 
-      // Create regional feedback object with regional capacity overrides
       const regionalFeedback = {
         region: selectedRegion,
         status: 'SUBMITTED',
@@ -246,15 +224,12 @@ function TaxCenterFeedbackReviewView({ currentView, selectedPlan: propSelectedPl
         submittedBy: 'Regional Director'
       };
 
-      // Add to array
       currentPlan.regionalFeedback.push(regionalFeedback);
 
-      // Update plan status if all regions submitted
       if (!currentPlan.status || currentPlan.status === 'AWAITING_REGIONAL_FEEDBACK') {
         currentPlan.status = 'FEEDBACK_COLLECTED';
       }
 
-      // Save
       saveData(data);
 
       setSubmitted(true);
@@ -263,17 +238,17 @@ function TaxCenterFeedbackReviewView({ currentView, selectedPlan: propSelectedPl
   };
 
   if (loading) {
-    return <div style={{ padding: '20px' }}>Loading feedback...</div>;
+    return <div className="p-5">Loading feedback...</div>;
   }
 
   if (!plan || feedbackList.length === 0) {
     return (
-      <div style={{ padding: '24px' }}>
+      <div className="p-6">
         <div className="detail-header">
           <h2>No Allocations Sent Yet</h2>
         </div>
-        <p>No allocations have been sent to tax centers in {selectedRegion} yet.</p>
-        <p style={{ fontSize: '12px', color: '#a0aec0', marginTop: '12px' }}>
+        <p className="text-text-mid dark:text-text-mid">No allocations have been sent to tax centers in {selectedRegion} yet.</p>
+        <p className="text-xs text-text-mid dark:text-text-mid mt-3">
           <strong>Next step</strong>: Regional director must allocate cases to tax centers first.
         </p>
       </div>
@@ -294,24 +269,15 @@ function TaxCenterFeedbackReviewView({ currentView, selectedPlan: propSelectedPl
   const totalCount = feedbackList.length;
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div className="p-6">
       {/* Refresh Button */}
-      <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'flex-end' }}>
+      <div className="mb-4 flex justify-end">
         <button 
           onClick={() => {
             console.log('Manually refreshing feedback...');
             loadFeedback();
           }}
-          style={{
-            padding: '8px 16px',
-            borderRadius: '6px',
-            border: '1px solid #1976d2',
-            background: '#e3f2fd', color: '#0c4a6e',
-            color: '#1976d2',
-            cursor: 'pointer',
-            fontSize: '13px',
-            fontWeight: '500'
-          }}
+          className="px-4 py-2 rounded border border-blue bg-blue/10 dark:bg-blue/10 text-blue dark:text-blue hover:bg-blue/20 dark:hover:bg-blue/20 cursor-pointer text-xs font-medium transition-colors"
         >
           <i className="fas fa-redo"></i> Refresh Data
         </button>
@@ -319,25 +285,14 @@ function TaxCenterFeedbackReviewView({ currentView, selectedPlan: propSelectedPl
 
       {/* Header */}
       <div className="detail-header">
-        <h2><i className="fas fa-comments"></i> Tax Center Feedback Collection - {selectedRegion}</h2>
+        <h2 className="flex items-center gap-2"><i className="fas fa-comments"></i> Tax Center Feedback Collection - {selectedRegion}</h2>
         <Badge status={`${receivedCount}/${totalCount} responses`} className={receivedCount === totalCount ? 'director-approved' : 'pending'} />
       </div>
 
       {/* Plan Selector */}
       {allPlans && allPlans.length > 1 && (
-        <div style={{
-          background: '#0f1419', color: '#f0f6fc',
-          padding: '16px',
-          borderRadius: '8px',
-          marginBottom: '24px',
-          border: '3px solid #4a8fd9',
-          display: 'flex',
-          gap: '16px',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          boxShadow: '0 3px 10px rgba(255, 152, 0, 0.4)'
-        }}>
-          <label style={{ fontSize: '14px', fontWeight: '700', color: '#4a8fd9', whiteSpace: 'nowrap' }}>
+        <div className="bg-ink dark:bg-ink text-text-hi dark:text-text-hi p-4 rounded mb-6 border-l-4 border-blue dark:border-blue shadow-md flex gap-4 items-center flex-wrap">
+          <label className="text-sm font-bold text-blue dark:text-blue whitespace-nowrap">
             <i className="fas fa-file-alt"></i> CHOOSE PLAN:
           </label>
           <select
@@ -348,17 +303,7 @@ function TaxCenterFeedbackReviewView({ currentView, selectedPlan: propSelectedPl
               setSelectedPlanId(newPlanId);
               if (onPlanChange) onPlanChange(newPlanId);
             }}
-            style={{
-              padding: '12px 16px',
-              borderRadius: '6px',
-              border: '2px solid #4a8fd9',
-              fontSize: '14px',
-              fontWeight: '700',
-              cursor: 'pointer',
-              background: '#0f1419',
-              minWidth: '240px',
-              color: '#2d3d4d'
-            }}
+            className="mt-0 px-4 py-3 rounded border-2 border-blue dark:border-blue font-bold cursor-pointer bg-ink dark:bg-ink w-60 text-text-mid dark:text-text-mid"
           >
             <option value="">-- Select a plan --</option>
             {allPlans.map(planOption => {
@@ -370,16 +315,16 @@ function TaxCenterFeedbackReviewView({ currentView, selectedPlan: propSelectedPl
               );
             })}
           </select>
-          <div style={{ fontSize: '12px', color: '#d84315', fontWeight: '600' }}>
+          <div className="text-xs text-coral dark:text-coral font-semibold">
             {selectedPlanId ? (
               <>
-                <div><i className="fas fa-check-circle" style={{ color: '#4caf50' }}></i> {selectedPlanId} selected</div>
-                <div style={{ fontSize: '11px', color: '#999', marginTop: '2px' }}>Switch to collect feedback for different plan</div>
+                <div><i className="fas fa-check-circle text-teal dark:text-teal"></i> {selectedPlanId} selected</div>
+                <div className="text-xs text-text-mid dark:text-text-mid mt-0.5">Switch to collect feedback for different plan</div>
               </>
             ) : (
               <>
                 <div><i className="fas fa-info-circle"></i> {allPlans.length} plan(s) available</div>
-                <div style={{ fontSize: '11px', color: '#999', marginTop: '2px' }}>Select to begin collecting feedback</div>
+                <div className="text-xs text-text-mid dark:text-text-mid mt-0.5">Select to begin collecting feedback</div>
               </>
             )}
           </div>
@@ -387,29 +332,25 @@ function TaxCenterFeedbackReviewView({ currentView, selectedPlan: propSelectedPl
       )}
 
       {/* Plan Info */}
-      <div style={{ background: '#e3f2fd', color: '#0c4a6e', padding: '16px', borderRadius: '8px', marginBottom: '24px', border: '1px solid #1976d2', color: '#0c4a6e' }}>
-        <strong><i className="fas fa-inbox"></i> Feedback Status</strong>
-        <p style={{ color: '#0c4a6e', margin: '8px 0 0 0', fontSize: '13px' }}>
+      <div className="bg-blue/10 dark:bg-blue/10 text-text-primary dark:text-text-primary p-4 rounded mb-6 border border-blue dark:border-blue">
+        <strong className="flex items-center gap-2"><i className="fas fa-inbox"></i> Feedback Status</strong>
+        <p className="text-text-mid dark:text-text-mid mt-2 text-xs">
           Collected feedback from {receivedCount} of {totalCount} tax centers for {plan.name || 'Annual Audit Plan'}.
         </p>
       </div>
 
       {/* Feedback Summary */}
-      <div className="section-title" style={{ marginBottom: '12px' }}>
+      <div className="section-title mb-3">
         <i className="fas fa-list"></i> Tax Center Responses
       </div>
 
       {feedbackList.map((item, idx) => (
-        <div key={idx} style={{
-          background: '#f8f9fc', color: '#0c4a6e',
-          padding: '16px',
-          borderRadius: '8px',
-          marginBottom: '16px',
-          border: item.status === 'received' ? '2px solid #4caf50' : '2px solid #ffb74d'
-        }}>
+        <div key={idx} className={`bg-panel dark:bg-panel p-4 rounded mb-4 border-2 ${
+          item.status === 'received' ? 'border-teal dark:border-teal' : 'border-gold dark:border-gold'
+        }`}>
           {/* Tax Center Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <h3 style={{ margin: 0, fontSize: '16px' }}>
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="m-0 text-base flex items-center gap-2">
               <i className="fas fa-building"></i> {item.taxCenterName}
             </h3>
             <Badge 
@@ -421,15 +362,15 @@ function TaxCenterFeedbackReviewView({ currentView, selectedPlan: propSelectedPl
           {item.feedback ? (
             <>
               {/* Feedback Table */}
-              <div className="table-container" style={{ marginBottom: '12px' }}>
-                <table style={{ fontSize: '13px' }}>
+              <div className="table-container mb-3">
+                <table className="w-full text-xs">
                   <thead>
-                    <tr style={{ background: '#1e2a3a' }}>
-                      <th style={{ textAlign: 'left', color: '#4a8fd9' }}>AUDIT TYPE</th>
-                      <th style={{ textAlign: 'center', color: '#4a8fd9' }}>ALLOCATED</th>
-                      <th style={{ textAlign: 'center', color: '#4a8fd9' }}>CAN DELIVER</th>
-                      <th style={{ textAlign: 'center', color: '#4a8fd9' }}>VARIANCE</th>
-                      <th style={{ textAlign: 'left', color: '#4a8fd9' }}>NOTES</th>
+                    <tr className="bg-ink dark:bg-ink">
+                      <th className="text-left text-blue dark:text-blue p-2">AUDIT TYPE</th>
+                      <th className="text-center text-blue dark:text-blue p-2">ALLOCATED</th>
+                      <th className="text-center text-blue dark:text-blue p-2">CAN DELIVER</th>
+                      <th className="text-center text-blue dark:text-blue p-2">VARIANCE</th>
+                      <th className="text-left text-blue dark:text-blue p-2">NOTES</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -440,20 +381,14 @@ function TaxCenterFeedbackReviewView({ currentView, selectedPlan: propSelectedPl
                       const variance = canDeliver - allocated;
                       
                       return (
-                        <tr key={typeIdx} style={{
-                          background: variance < 0 ? '#3a1a1a' : '#1a3a1a'
-                        }}>
-                          <td><strong>{auditTypeLabels[auditType]}</strong></td>
-                          <td style={{ textAlign: 'center' }}>{allocated}</td>
-                          <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{canDeliver}</td>
-                          <td style={{ 
-                            textAlign: 'center', 
-                            fontWeight: 'bold',
-                            color: variance < 0 ? '#ff5252' : '#4caf50'
-                          }}>
+                        <tr key={typeIdx} className={variance < 0 ? 'bg-danger/10 dark:bg-danger/10' : 'bg-teal/10 dark:bg-teal/10'}>
+                          <td className="p-2"><strong>{auditTypeLabels[auditType]}</strong></td>
+                          <td className="text-center p-2">{allocated}</td>
+                          <td className="text-center font-bold p-2">{canDeliver}</td>
+                          <td className={`text-center font-bold p-2 ${variance < 0 ? 'text-danger dark:text-danger' : 'text-teal dark:text-teal'}`}>
                             {variance > 0 ? '+' : ''}{variance}
                           </td>
-                          <td style={{ fontSize: '12px', color: '#a0aec0' }}>
+                          <td className="text-xs text-text-mid dark:text-text-mid p-2">
                             {fbItem?.notes || '-'}
                           </td>
                         </tr>
@@ -464,39 +399,28 @@ function TaxCenterFeedbackReviewView({ currentView, selectedPlan: propSelectedPl
               </div>
 
               {/* Variance Summary */}
-              <div style={{
-                background: '#1e2a3a',
-                padding: '12px',
-                borderRadius: '6px',
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr 1fr',
-                gap: '12px',
-                fontSize: '12px'
-              }}>
+              <div className="bg-ink dark:bg-ink p-3 rounded grid grid-cols-3 gap-3 text-xs">
                 <div>
-                  <p style={{ color: '#a0aec0', margin: 0 }}>Total Allocated</p>
-                  <p style={{ fontWeight: 'bold', fontSize: '14px', margin: '4px 0 0 0' }}>
+                  <p className="text-text-mid dark:text-text-mid m-0">Total Allocated</p>
+                  <p className="font-bold text-sm m-0 mt-1 text-text-hi dark:text-text-hi">
                     {Object.values(item.allocation).reduce((sum, v) => sum + (parseInt(v) || 0), 0)}
                   </p>
                 </div>
                 <div>
-                  <p style={{ color: '#a0aec0', margin: 0 }}>Can Deliver</p>
-                  <p style={{ fontWeight: 'bold', fontSize: '14px', margin: '4px 0 0 0' }}>
+                  <p className="text-text-mid dark:text-text-mid m-0">Can Deliver</p>
+                  <p className="font-bold text-sm m-0 mt-1 text-text-hi dark:text-text-hi">
                     {Object.values(item.feedback)
                       .reduce((sum, fb) => sum + (parseInt(fb?.canDeliver) || 0), 0)}
                   </p>
                 </div>
                 <div>
-                  <p style={{ color: '#a0aec0', margin: 0 }}>Total Variance</p>
-                  <p style={{
-                    fontWeight: 'bold',
-                    fontSize: '14px',
-                    margin: '4px 0 0 0',
-                    color: Object.values(item.feedback)
+                  <p className="text-text-mid dark:text-text-mid m-0">Total Variance</p>
+                  <p className={`font-bold text-sm m-0 mt-1 ${
+                    Object.values(item.feedback)
                       .reduce((sum, fb) => sum + (parseInt(fb?.canDeliver) || 0), 0) <
                       Object.values(item.allocation).reduce((sum, v) => sum + (parseInt(v) || 0), 0)
-                      ? '#ff5252' : '#4caf50'
-                  }}>
+                      ? 'text-danger dark:text-danger' : 'text-teal dark:text-teal'
+                  }`}>
                     {Object.values(item.feedback)
                       .reduce((sum, fb) => sum + (parseInt(fb?.canDeliver) || 0), 0) -
                       Object.values(item.allocation).reduce((sum, v) => sum + (parseInt(v) || 0), 0)}
@@ -505,12 +429,12 @@ function TaxCenterFeedbackReviewView({ currentView, selectedPlan: propSelectedPl
               </div>
 
               {/* Submission Time */}
-              <div style={{ marginTop: '8px', fontSize: '12px', color: '#999' }}>
+              <div className="mt-2 text-xs text-text-mid dark:text-text-mid">
                 Submitted: {new Date(item.feedback.submittedAt).toLocaleString()}
               </div>
             </>
           ) : (
-            <div style={{ padding: '12px', background: '#0f14193cd', borderRadius: '4px', color: '#856404' }}>
+            <div className="p-3 bg-gold/10 dark:bg-gold/10 rounded text-gold dark:text-gold">
               <i className="fas fa-clock"></i> Awaiting feedback from this tax center...
             </div>
           )}
@@ -520,36 +444,29 @@ function TaxCenterFeedbackReviewView({ currentView, selectedPlan: propSelectedPl
       {/* Aggregated Summary */}
       {receivedCount === totalCount && (
         <>
-        <div style={{
-          background: '#c8e6c9', color: '#1b5e20',
-          padding: '16px',
-          borderRadius: '8px',
-          marginTop: '24px',
-          border: '2px solid #388e3c',
-          textAlign: 'center'
-        }}>
-          <strong style={{ color: '#2e7d32' }}>
+        <div className="bg-teal/10 dark:bg-teal/10 text-teal dark:text-teal p-4 rounded mt-6 border-2 border-teal dark:border-teal text-center">
+          <strong className="flex items-center justify-center gap-2">
             <i className="fas fa-check-circle"></i> All Tax Centers Have Responded
           </strong>
-          <p style={{ color: '#0c4a6e', margin: '8px 0 0 0', fontSize: '13px', color: '#2e7d32' }}>
+          <p className="text-teal dark:text-teal mt-2 text-xs">
             You can now review the feedback and send aggregated response to Director.
           </p>
         </div>
 
         {/* Aggregated Feedback Table */}
-        <div style={{ marginTop: '24px' }}>
-          <div className="section-title" style={{ marginBottom: '12px' }}>
+        <div className="mt-6">
+          <div className="section-title mb-3">
             <i className="fas fa-chart-bar"></i> Aggregated Regional Feedback
           </div>
           <div className="table-container">
-            <table style={{ fontSize: '13px' }}>
+            <table className="w-full text-xs">
               <thead>
-                <tr style={{ background: '#1e2a3a' }}>
-                  <th style={{ textAlign: 'left', color: '#4a8fd9' }}>AUDIT TYPE</th>
-                  <th style={{ textAlign: 'center', color: '#4a8fd9' }}>TOTAL ALLOCATED</th>
-                  <th style={{ textAlign: 'center', color: '#4a8fd9' }}>CAN DELIVER</th>
-                  <th style={{ textAlign: 'center', color: '#4a8fd9' }}>VARIANCE</th>
-                  <th style={{ textAlign: 'left', color: '#4a8fd9' }}>TAX CENTER NOTES</th>
+                <tr className="bg-ink dark:bg-ink">
+                  <th className="text-left text-blue dark:text-blue p-2">AUDIT TYPE</th>
+                  <th className="text-center text-blue dark:text-blue p-2">TOTAL ALLOCATED</th>
+                  <th className="text-center text-blue dark:text-blue p-2">CAN DELIVER</th>
+                  <th className="text-center text-blue dark:text-blue p-2">VARIANCE</th>
+                  <th className="text-left text-blue dark:text-blue p-2">TAX CENTER NOTES</th>
                 </tr>
               </thead>
               <tbody>
@@ -564,20 +481,14 @@ function TaxCenterFeedbackReviewView({ currentView, selectedPlan: propSelectedPl
                   };
                   
                   return (
-                    <tr key={idx} style={{
-                      background: data.variance < 0 ? '#3a1a1a' : '#1a3a1a'
-                    }}>
-                      <td><strong>{auditTypeLabels[auditType]}</strong></td>
-                      <td style={{ textAlign: 'center' }}>{data.allocated}</td>
-                      <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{data.canDeliver}</td>
-                      <td style={{ 
-                        textAlign: 'center', 
-                        fontWeight: 'bold',
-                        color: data.variance < 0 ? '#ff5252' : '#4caf50'
-                      }}>
+                    <tr key={idx} className={data.variance < 0 ? 'bg-danger/10 dark:bg-danger/10' : 'bg-teal/10 dark:bg-teal/10'}>
+                      <td className="p-2"><strong>{auditTypeLabels[auditType]}</strong></td>
+                      <td className="text-center p-2">{data.allocated}</td>
+                      <td className="text-center font-bold p-2">{data.canDeliver}</td>
+                      <td className={`text-center font-bold p-2 ${data.variance < 0 ? 'text-danger dark:text-danger' : 'text-teal dark:text-teal'}`}>
                         {data.variance > 0 ? '+' : ''}{data.variance}
                       </td>
-                      <td style={{ fontSize: '12px', color: '#a0aec0' }}>
+                      <td className="text-xs text-text-mid dark:text-text-mid p-2">
                         {data.notes || '-'}
                       </td>
                     </tr>
@@ -589,31 +500,25 @@ function TaxCenterFeedbackReviewView({ currentView, selectedPlan: propSelectedPl
 
           {/* Regional Capacity Adjustment Section */}
           {!submitted && (
-            <div style={{ marginTop: '24px' }}>
-              <div className="section-title" style={{ marginBottom: '12px' }}>
+            <div className="mt-6">
+              <div className="section-title mb-3">
                 <i className="fas fa-sliders-h"></i> Regional Capacity Adjustment
               </div>
-              <div style={{
-                background: '#f0f7ff', color: '#0c4a6e',
-                padding: '16px',
-                borderRadius: '8px',
-                border: '2px solid #1976d2',
-                marginBottom: '16px'
-              }}>
-                <p style={{ color: '#0c4a6e', margin: '0 0 12px 0', fontSize: '13px', color: '#0d47a1' }}>
+              <div className="bg-blue/10 dark:bg-blue/10 text-text-primary dark:text-text-primary p-4 rounded border-2 border-blue dark:border-blue mb-4">
+                <p className="text-text-primary dark:text-text-primary m-0 mb-3 text-xs">
                   <strong>Adjust Regional Capacity:</strong> The system has summed feedback from all tax centers. 
                   You can override these values if needed based on regional constraints.
                 </p>
               </div>
 
-              <div className="table-container" style={{ marginBottom: '16px' }}>
-                <table style={{ fontSize: '13px' }}>
+              <div className="table-container mb-4">
+                <table className="w-full text-xs">
                   <thead>
-                    <tr style={{ background: '#1976d2' }}>
-                      <th style={{ textAlign: 'left', color: '#4a8fd9' }}>AUDIT TYPE</th>
-                      <th style={{ textAlign: 'center', color: '#4a8fd9' }}>TOTAL FROM TAX CENTERS</th>
-                      <th style={{ textAlign: 'center', color: '#4a8fd9' }}>REGIONAL OVERRIDE</th>
-                      <th style={{ textAlign: 'center', color: '#4a8fd9' }}>ADJUSTMENT</th>
+                    <tr className="bg-blue dark:bg-blue">
+                      <th className="text-left text-text-hi dark:text-text-hi p-2">AUDIT TYPE</th>
+                      <th className="text-center text-text-hi dark:text-text-hi p-2">TOTAL FROM TAX CENTERS</th>
+                      <th className="text-center text-text-hi dark:text-text-hi p-2">REGIONAL OVERRIDE</th>
+                      <th className="text-center text-text-hi dark:text-text-hi p-2">ADJUSTMENT</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -624,33 +529,22 @@ function TaxCenterFeedbackReviewView({ currentView, selectedPlan: propSelectedPl
 
                       return (
                         <tr key={idx}>
-                          <td><strong>{auditTypeLabels[auditType]}</strong></td>
-                          <td style={{ textAlign: 'center', fontWeight: 'bold', color: '#1976d2' }}>
+                          <td className="p-2"><strong>{auditTypeLabels[auditType]}</strong></td>
+                          <td className="text-center font-bold text-blue dark:text-blue p-2">
                             {agg.canDeliver || 0}
                           </td>
-                          <td style={{ textAlign: 'center', padding: '8px' }}>
+                          <td className="text-center p-2">
                             <input
                               type="number"
                               value={currentOverride}
                               onChange={(e) => handleCapacityOverride(auditType, e.target.value)}
-                              style={{
-                                width: '70px',
-                                padding: '6px',
-                                border: '2px solid #1976d2',
-                                borderRadius: '4px',
-                                textAlign: 'center',
-                                fontSize: '14px',
-                                fontWeight: 'bold',
-                                background: '#0f1419'
-                              }}
+                              className="w-16 px-2 py-1 border-2 border-blue dark:border-blue rounded text-center text-sm font-bold bg-ink dark:bg-ink text-text-hi dark:text-text-hi"
                               min="0"
                             />
                           </td>
-                          <td style={{
-                            textAlign: 'center',
-                            fontWeight: 'bold',
-                            color: adjustment > 0 ? '#4caf50' : adjustment < 0 ? '#ff5252' : '#999'
-                          }}>
+                          <td className={`text-center font-bold p-2 ${
+                            adjustment > 0 ? 'text-teal dark:text-teal' : adjustment < 0 ? 'text-danger dark:text-danger' : 'text-text-mid dark:text-text-mid'
+                          }`}>
                             {adjustment > 0 ? '+' : ''}{adjustment}
                           </td>
                         </tr>
@@ -663,25 +557,16 @@ function TaxCenterFeedbackReviewView({ currentView, selectedPlan: propSelectedPl
           )}
 
           {/* Submit Button */}
-          <div style={{ marginTop: '16px', display: 'flex', gap: '12px' }}>
+          <div className="mt-4 flex gap-3">
             {!submitted ? (
               <button
-                className="btn btn-success"
+                className="btn btn-success ml-auto"
                 onClick={handleSendFeedback}
-                style={{ marginLeft: 'auto' }}
               >
                 <i className="fas fa-paper-plane"></i> Send Aggregated Feedback to Director
               </button>
             ) : (
-              <div style={{
-                marginLeft: 'auto',
-                padding: '12px 20px',
-                background: '#c8e6c9', color: '#1b5e20',
-                borderRadius: '6px',
-                color: '#2e7d32',
-                fontSize: '13px',
-                fontWeight: '500'
-              }}>
+              <div className="ml-auto px-5 py-3 bg-teal/10 dark:bg-teal/10 text-teal dark:text-teal rounded text-xs font-medium flex items-center gap-2">
                 <i className="fas fa-check-circle"></i> Feedback sent to Director
               </div>
             )}

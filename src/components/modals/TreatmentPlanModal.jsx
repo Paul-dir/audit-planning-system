@@ -2,10 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { loadData, saveData } from '../../utils/data';
 
 /**
- * TreatmentPlanModal - Form modal for attaching/editing treatment plans
- * Includes validation and file attachment support
+ * TreatmentPlanModal Component
+ * Form modal for creating and editing treatment plans for audit cases.
+ * 
+ * Features:
+ * - Plan type selection with 7 audit plan types
+ * - Multi-field form with validation (description, hours, cost, focus areas)
+ * - Focus areas checkbox grid (8 tax compliance topics)
+ * - Support for existing plan editing and deletion
+ * - Auto-calculates character count for description
+ * - Character limits: Description (200-2000 chars)
+ * - Full form validation with error messages
+ * 
+ * @component
+ * @param {boolean} isOpen - Controls modal visibility
+ * @param {string} caseId - ID of the audit case
+ * @param {Function} onClose - Callback to close modal
+ * @param {Function} onSave - Callback when plan is saved
+ * @returns {React.ReactElement|null} Modal overlay with treatment plan form, null if not open
  */
-
 function TreatmentPlanModal({ isOpen, caseId, onClose, onSave }) {
   const [planType, setPlanType] = useState('');
   const [description, setDescription] = useState('');
@@ -162,241 +177,149 @@ function TreatmentPlanModal({ isOpen, caseId, onClose, onSave }) {
   ];
 
   return (
-    <div onClick={handleBackdropClick} style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: 'rgba(0, 0, 0, 0.7)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1100
-    }}>
-      <div onClick={(e) => e.stopPropagation()} style={{
-        background: '#0f1419',
-        borderRadius: '8px',
-        border: '1px solid #30363d',
-        maxWidth: '600px',
-        width: '90%',
-        maxHeight: '90vh',
-        overflow: 'auto',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)'
-      }}>
+    <div 
+      onClick={handleBackdropClick} 
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 dark:bg-black/80"
+    >
+      <div 
+        onClick={(e) => e.stopPropagation()} 
+        className="modal-base w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-lg shadow-2xl"
+      >
         {/* Header */}
-        <div style={{
-          background: '#1c2128',
-          borderBottom: '1px solid #30363d',
-          padding: '16px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          <h2 style={{ margin: '0', fontSize: '16px', fontWeight: '600', color: '#f0f6fc' }}>
+        <div className="modal-header border-b border-border dark:border-border-dark bg-panel dark:bg-panel-dark p-4 flex justify-between items-center">
+          <h2 className="text-lg font-semibold text-text-hi dark:text-text-hi-dark m-0">
             {existingPlan ? 'Edit' : 'Attach'} Treatment Plan
           </h2>
           <button
             onClick={handleClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#8b949e',
-              fontSize: '18px',
-              cursor: 'pointer'
-            }}
+            className="bg-transparent border-0 text-text-mid dark:text-text-mid-dark hover:text-text-hi dark:hover:text-text-hi-dark text-xl cursor-pointer transition-colors"
           >
             ✕
           </button>
         </div>
 
         {/* Form */}
-        <div style={{ padding: '16px' }}>
+        <div className="p-6">
           {/* Plan Type */}
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', color: '#f0f6fc', fontSize: '12px', fontWeight: '600', marginBottom: '6px' }}>
-              Plan Type *
+          <div className="mb-6">
+            <label className="block text-sm font-semibold text-text-hi dark:text-text-hi-dark mb-2">
+              Plan Type <span className="text-red-500">*</span>
             </label>
-            <select value={planType} onChange={(e) => setPlanType(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '8px',
-                border: `1px solid ${errors.planType ? '#ff5252' : '#30363d'}`,
-                borderRadius: '6px',
-                background: '#1c2128',
-                color: '#f0f6fc',
-                fontSize: '12px'
-              }}>
+            <select 
+              value={planType} 
+              onChange={(e) => setPlanType(e.target.value)}
+              className={`form-input w-full ${errors.planType ? 'border-red-500' : ''}`}
+            >
               <option value="">Select a plan type...</option>
               {planTypes.map(type => (
                 <option key={type} value={type}>{type}</option>
               ))}
             </select>
-            {errors.planType && <small style={{ color: '#ff5252' }}>{errors.planType}</small>}
+            {errors.planType && <small className="text-red-500 text-xs mt-1 block">{errors.planType}</small>}
           </div>
 
           {/* Description */}
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', color: '#f0f6fc', fontSize: '12px', fontWeight: '600', marginBottom: '6px' }}>
-              Description ({description.length}/2000 chars) *
+          <div className="mb-6">
+            <label className="block text-sm font-semibold text-text-hi dark:text-text-hi-dark mb-2">
+              Description ({description.length}/2000 chars) <span className="text-red-500">*</span>
             </label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)}
+            <textarea 
+              value={description} 
+              onChange={(e) => setDescription(e.target.value)}
               placeholder="Provide detailed description of audit objectives, scope, and methodology..."
-              style={{
-                width: '100%',
-                minHeight: '100px',
-                padding: '8px',
-                border: `1px solid ${errors.description ? '#ff5252' : '#30363d'}`,
-                borderRadius: '6px',
-                background: '#1c2128',
-                color: '#f0f6fc',
-                fontSize: '12px',
-                fontFamily: 'monospace',
-                resize: 'vertical'
-              }}
+              className={`form-input w-full min-h-[100px] font-mono ${errors.description ? 'border-red-500' : ''}`}
             />
-            {errors.description && <small style={{ color: '#ff5252' }}>{errors.description}</small>}
+            {errors.description && <small className="text-red-500 text-xs mt-1 block">{errors.description}</small>}
           </div>
 
           {/* Estimated Hours */}
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', color: '#f0f6fc', fontSize: '12px', fontWeight: '600', marginBottom: '6px' }}>
-              Estimated Hours *
+          <div className="mb-6">
+            <label className="block text-sm font-semibold text-text-hi dark:text-text-hi-dark mb-2">
+              Estimated Hours <span className="text-red-500">*</span>
             </label>
-            <input type="number" value={estimatedHours} onChange={(e) => setEstimatedHours(e.target.value)}
+            <input 
+              type="number" 
+              value={estimatedHours} 
+              onChange={(e) => setEstimatedHours(e.target.value)}
               placeholder="e.g., 120"
-              style={{
-                width: '100%',
-                padding: '8px',
-                border: `1px solid ${errors.estimatedHours ? '#ff5252' : '#30363d'}`,
-                borderRadius: '6px',
-                background: '#1c2128',
-                color: '#f0f6fc',
-                fontSize: '12px'
-              }}
+              className={`form-input w-full ${errors.estimatedHours ? 'border-red-500' : ''}`}
             />
-            {errors.estimatedHours && <small style={{ color: '#ff5252' }}>{errors.estimatedHours}</small>}
+            {errors.estimatedHours && <small className="text-red-500 text-xs mt-1 block">{errors.estimatedHours}</small>}
           </div>
 
           {/* Estimated Cost */}
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', color: '#f0f6fc', fontSize: '12px', fontWeight: '600', marginBottom: '6px' }}>
+          <div className="mb-6">
+            <label className="block text-sm font-semibold text-text-hi dark:text-text-hi-dark mb-2">
               Estimated Cost (ETB)
             </label>
-            <input type="number" value={estimatedCost} onChange={(e) => setEstimatedCost(e.target.value)}
+            <input 
+              type="number" 
+              value={estimatedCost} 
+              onChange={(e) => setEstimatedCost(e.target.value)}
               placeholder="Optional - cost in ETB"
-              style={{
-                width: '100%',
-                padding: '8px',
-                border: `1px solid ${errors.estimatedCost ? '#ff5252' : '#30363d'}`,
-                borderRadius: '6px',
-                background: '#1c2128',
-                color: '#f0f6fc',
-                fontSize: '12px'
-              }}
+              className={`form-input w-full ${errors.estimatedCost ? 'border-red-500' : ''}`}
             />
           </div>
 
           {/* Key Focus Areas */}
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', color: '#f0f6fc', fontSize: '12px', fontWeight: '600', marginBottom: '6px' }}>
-              Key Focus Areas * {errors.focusAreas && <small style={{ color: '#ff5252' }}>- {errors.focusAreas}</small>}
+          <div className="mb-6">
+            <label className="block text-sm font-semibold text-text-hi dark:text-text-hi-dark mb-2">
+              Key Focus Areas <span className="text-red-500">*</span>
             </label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <div className="grid grid-cols-2 gap-3 mb-2">
               {Object.entries(focusAreas).map(([area, checked]) => (
-                <label key={area} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '12px' }}>
+                <label key={area} className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={checked}
                     onChange={(e) => setFocusAreas({ ...focusAreas, [area]: e.target.checked })}
+                    className="w-4 h-4"
                   />
-                  <span style={{ color: '#f0f6fc' }}>{area}</span>
+                  <span className="text-sm text-text-hi dark:text-text-hi-dark">{area}</span>
                 </label>
               ))}
             </div>
+            {errors.focusAreas && <small className="text-red-500 text-xs mt-1 block">{errors.focusAreas}</small>}
           </div>
 
           {/* Notes */}
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', color: '#f0f6fc', fontSize: '12px', fontWeight: '600', marginBottom: '6px' }}>
+          <div className="mb-6">
+            <label className="block text-sm font-semibold text-text-hi dark:text-text-hi-dark mb-2">
               Additional Notes
             </label>
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)}
+            <textarea 
+              value={notes} 
+              onChange={(e) => setNotes(e.target.value)}
               placeholder="Any additional notes or comments..."
-              style={{
-                width: '100%',
-                minHeight: '60px',
-                padding: '8px',
-                border: '1px solid #30363d',
-                borderRadius: '6px',
-                background: '#1c2128',
-                color: '#f0f6fc',
-                fontSize: '12px',
-                fontFamily: 'monospace',
-                resize: 'vertical'
-              }}
+              className="form-input w-full min-h-[60px] font-mono"
             />
           </div>
         </div>
 
         {/* Footer */}
-        <div style={{
-          background: '#1c2128',
-          borderTop: '1px solid #30363d',
-          padding: '12px 16px',
-          display: 'flex',
-          gap: '8px',
-          justifyContent: 'space-between'
-        }}>
+        <div className="modal-footer border-t border-border dark:border-border-dark bg-panel dark:bg-panel-dark p-4 flex items-center justify-between gap-3">
           <div>
             {existingPlan && (
               <button
                 onClick={handleDelete}
-                style={{
-                  padding: '8px 14px',
-                  background: '#ff5252',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '6px',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  cursor: 'pointer'
-                }}
+                className="btn btn-danger"
               >
-                <i className="fas fa-trash"></i> Delete
+                <i className="fas fa-trash mr-1"></i>Delete
               </button>
             )}
           </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div className="flex gap-3">
             <button
               onClick={handleClose}
-              style={{
-                padding: '8px 14px',
-                background: '#30363d',
-                color: '#f0f6fc',
-                border: 'none',
-                borderRadius: '6px',
-                fontSize: '12px',
-                fontWeight: '600',
-                cursor: 'pointer'
-              }}
+              className="btn btn-outline"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
-              style={{
-                padding: '8px 14px',
-                background: '#4caf50',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '6px',
-                fontSize: '12px',
-                fontWeight: '600',
-                cursor: 'pointer'
-              }}
+              className="btn btn-success"
             >
-              <i className="fas fa-save"></i> Save Plan
+              <i className="fas fa-save mr-1"></i>Save Plan
             </button>
           </div>
         </div>

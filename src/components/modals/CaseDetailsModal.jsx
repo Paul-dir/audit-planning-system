@@ -2,10 +2,24 @@ import React, { useState } from 'react';
 import RiskProfilePanel from '../panels/RiskProfilePanel';
 
 /**
- * CaseDetailsModal - Portal modal showing complete case information
- * Displays risk profiling and allows treatment plan attachment
+ * CaseDetailsModal Component
+ * Portal modal showing complete case information with risk profiling and treatment plans.
+ * 
+ * Features:
+ * - Taxpayer information display (name, TIN, business type, tax center)
+ * - Audit information (type, estimated hours, revenue at risk, case source)
+ * - Risk profile panel integration
+ * - Treatment plan display (if attached) with details, costs, and focus areas
+ * - Attach plan action for cases without treatment plans
+ * - Sticky header and footer for easy navigation
+ * 
+ * @component
+ * @param {boolean} isOpen - Whether modal is visible
+ * @param {Object} caseData - Complete case object with all details
+ * @param {Function} onClose - Callback to close modal
+ * @param {Function} onAttachPlan - Callback when user clicks attach plan
+ * @returns {React.ReactElement|null} Modal overlay or null if not open
  */
-
 function CaseDetailsModal({ isOpen, caseData, onClose, onAttachPlan }) {
   const [showTreatmentForm, setShowTreatmentForm] = useState(false);
 
@@ -18,133 +32,88 @@ function CaseDetailsModal({ isOpen, caseData, onClose, onAttachPlan }) {
   };
 
   return (
-    <div onClick={handleBackdropClick} style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: 'rgba(0, 0, 0, 0.7)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000
-    }}>
-      <div onClick={(e) => e.stopPropagation()} style={{
-        background: '#0f1419',
-        borderRadius: '8px',
-        border: '1px solid #30363d',
-        maxWidth: '700px',
-        width: '90%',
-        maxHeight: '80vh',
-        overflow: 'auto',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)'
-      }}>
+    <div 
+      onClick={handleBackdropClick}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 dark:bg-black/80"
+    >
+      <div 
+        onClick={(e) => e.stopPropagation()}
+        className="modal-base w-full max-w-2xl max-h-[80vh] overflow-y-auto bg-panel dark:bg-panel-dark border border-border dark:border-border-dark"
+      >
         {/* Header */}
-        <div style={{
-          background: '#1c2128',
-          borderBottom: '1px solid #30363d',
-          padding: '16px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          position: 'sticky',
-          top: 0,
-          zIndex: 1001
-        }}>
+        <div className="sticky top-0 z-10 border-b border-border dark:border-border-dark bg-panel dark:bg-panel-dark px-6 py-4 flex justify-between items-start">
           <div>
-            <h2 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '600', color: '#f0f6fc' }}>
+            <h2 className="text-base font-semibold text-text-hi dark:text-text-hi-dark mb-1">
               {caseData.id}
             </h2>
-            <small style={{ color: '#8b949e' }}>
+            <small className="text-text-mid dark:text-text-mid-dark">
               {caseData.taxpayerName}
             </small>
           </div>
           <button
             onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#8b949e',
-              fontSize: '18px',
-              cursor: 'pointer',
-              padding: '4px 8px'
-            }}
+            className="text-text-mid dark:text-text-mid-dark hover:text-text-hi dark:hover:text-text-hi-dark text-xl leading-none transition-colors"
           >
             ✕
           </button>
         </div>
 
         {/* Content */}
-        <div style={{ padding: '16px' }}>
+        <div className="p-6 space-y-4">
           {/* Taxpayer Information */}
-          <div style={{
-            background: '#1c2128',
-            borderRadius: '8px',
-            padding: '12px',
-            marginBottom: '16px',
-            border: '1px solid #30363d'
-          }}>
-            <h3 style={{ margin: '0 0 12px 0', fontSize: '13px', fontWeight: '600', color: '#f0f6fc' }}>
-              <i className="fas fa-user"></i> Taxpayer Information
+          <div className="card-base p-4 space-y-3">
+            <h3 className="text-sm font-semibold text-text-hi dark:text-text-hi-dark">
+              <i className="fas fa-user mr-2 text-text-mid dark:text-text-mid-dark"></i>
+              Taxpayer Information
             </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '12px' }}>
+            <div className="grid grid-cols-2 gap-4 text-xs">
               <div>
-                <small style={{ color: '#8b949e', display: 'block' }}>NAME</small>
-                <strong style={{ color: '#f0f6fc' }}>{caseData.taxpayerName}</strong>
+                <small className="text-text-mid dark:text-text-mid-dark block mb-1">NAME</small>
+                <strong className="text-text-hi dark:text-text-hi-dark">{caseData.taxpayerName}</strong>
               </div>
               <div>
-                <small style={{ color: '#8b949e', display: 'block' }}>TIN</small>
-                <strong style={{ color: '#f0f6fc' }}>{caseData.tin}</strong>
+                <small className="text-text-mid dark:text-text-mid-dark block mb-1">TIN</small>
+                <strong className="text-text-hi dark:text-text-hi-dark">{caseData.tin}</strong>
               </div>
               <div>
-                <small style={{ color: '#8b949e', display: 'block' }}>BUSINESS TYPE</small>
-                <strong style={{ color: '#f0f6fc' }}>{caseData.businessType || 'N/A'}</strong>
+                <small className="text-text-mid dark:text-text-mid-dark block mb-1">BUSINESS TYPE</small>
+                <strong className="text-text-hi dark:text-text-hi-dark">{caseData.businessType || 'N/A'}</strong>
               </div>
               <div>
-                <small style={{ color: '#8b949e', display: 'block' }}>TAX CENTER</small>
-                <strong style={{ color: '#f0f6fc' }}>{caseData.taxCenter}</strong>
+                <small className="text-text-mid dark:text-text-mid-dark block mb-1">TAX CENTER</small>
+                <strong className="text-text-hi dark:text-text-hi-dark">{caseData.taxCenter}</strong>
               </div>
             </div>
           </div>
 
           {/* Audit Information */}
-          <div style={{
-            background: '#1c2128',
-            borderRadius: '8px',
-            padding: '12px',
-            marginBottom: '16px',
-            border: '1px solid #30363d'
-          }}>
-            <h3 style={{ margin: '0 0 12px 0', fontSize: '13px', fontWeight: '600', color: '#f0f6fc' }}>
-              <i className="fas fa-file-alt"></i> Audit Information
+          <div className="card-base p-4 space-y-3">
+            <h3 className="text-sm font-semibold text-text-hi dark:text-text-hi-dark">
+              <i className="fas fa-file-alt mr-2 text-text-mid dark:text-text-mid-dark"></i>
+              Audit Information
             </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '12px' }}>
+            <div className="grid grid-cols-2 gap-4 text-xs">
               <div>
-                <small style={{ color: '#8b949e', display: 'block' }}>AUDIT TYPE</small>
-                <strong style={{ color: '#f0f6fc' }}>{caseData.auditType}</strong>
+                <small className="text-text-mid dark:text-text-mid-dark block mb-1">AUDIT TYPE</small>
+                <strong className="text-text-hi dark:text-text-hi-dark">{caseData.auditType}</strong>
               </div>
               <div>
-                <small style={{ color: '#8b949e', display: 'block' }}>EST. HOURS</small>
-                <strong style={{ color: '#f0f6fc' }}>{caseData.estimatedHours} hrs</strong>
+                <small className="text-text-mid dark:text-text-mid-dark block mb-1">EST. HOURS</small>
+                <strong className="text-text-hi dark:text-text-hi-dark">{caseData.estimatedHours} hrs</strong>
               </div>
               <div>
-                <small style={{ color: '#8b949e', display: 'block' }}>REVENUE AT RISK</small>
-                <strong style={{ color: '#f0f6fc' }}>
+                <small className="text-text-mid dark:text-text-mid-dark block mb-1">REVENUE AT RISK</small>
+                <strong className="text-text-hi dark:text-text-hi-dark">
                   {((caseData.revenueAtRisk || 0) / 1000000).toFixed(1)}M ETB
                 </strong>
               </div>
               <div>
-                <small style={{ color: '#8b949e', display: 'block' }}>CASE SOURCE</small>
-                <span style={{
-                  background: caseData.createdFrom === 'AUDIT_REQUEST' ? '#ff9800' : '#4a8fd9',
-                  color: '#fff',
-                  padding: '3px 6px',
-                  borderRadius: '3px',
-                  fontSize: '11px',
-                  fontWeight: 'bold',
-                  display: 'inline-block'
-                }}>
+                <small className="text-text-mid dark:text-text-mid-dark block mb-1">CASE SOURCE</small>
+                <span className={`inline-block px-2 py-1 rounded text-xs font-bold text-white ${
+                  caseData.createdFrom === 'AUDIT_REQUEST' 
+                    ? 'bg-orange-500' 
+                    : 'bg-blue-500'
+                }`}>
                   {caseData.createdFrom === 'AUDIT_REQUEST' ? '🔔 Audit Request' : '⚙️ Risk Engine'}
                 </span>
               </div>
@@ -156,53 +125,43 @@ function CaseDetailsModal({ isOpen, caseData, onClose, onAttachPlan }) {
 
           {/* Treatment Plan Section */}
           {caseData.treatmentPlan && (
-            <div style={{
-              background: '#1c2128',
-              borderRadius: '8px',
-              padding: '12px',
-              marginBottom: '16px',
-              border: '1px solid #30363d',
-              borderLeft: '3px solid #4caf50'
-            }}>
-              <h3 style={{ margin: '0 0 12px 0', fontSize: '13px', fontWeight: '600', color: '#f0f6fc' }}>
-                <i className="fas fa-file-contract"></i> Treatment Plan
+            <div className="card-base p-4 space-y-3 border-l-4 border-teal-500">
+              <h3 className="text-sm font-semibold text-text-hi dark:text-text-hi-dark">
+                <i className="fas fa-file-contract mr-2 text-teal-500"></i>
+                Treatment Plan
               </h3>
-              <div style={{ fontSize: '12px' }}>
-                <div style={{ marginBottom: '8px' }}>
-                  <small style={{ color: '#8b949e', display: 'block' }}>PLAN TYPE</small>
-                  <strong style={{ color: '#f0f6fc' }}>{caseData.treatmentPlan.planType}</strong>
+              <div className="text-xs space-y-3">
+                <div>
+                  <small className="text-text-mid dark:text-text-mid-dark block mb-1">PLAN TYPE</small>
+                  <strong className="text-text-hi dark:text-text-hi-dark">{caseData.treatmentPlan.planType}</strong>
                 </div>
-                <div style={{ marginBottom: '8px' }}>
-                  <small style={{ color: '#8b949e', display: 'block' }}>DESCRIPTION</small>
-                  <p style={{ color: '#f0f6fc', margin: '4px 0', lineHeight: '1.4', fontSize: '11px' }}>
+                <div>
+                  <small className="text-text-mid dark:text-text-mid-dark block mb-1">DESCRIPTION</small>
+                  <p className="text-text-mid dark:text-text-mid-dark leading-relaxed">
                     {caseData.treatmentPlan.description}
                   </p>
                 </div>
-                <div style={{ marginBottom: '8px' }}>
-                  <small style={{ color: '#8b949e', display: 'block' }}>ESTIMATED HOURS</small>
-                  <strong style={{ color: '#f0f6fc' }}>{caseData.treatmentPlan.estimatedHours} hrs</strong>
+                <div>
+                  <small className="text-text-mid dark:text-text-mid-dark block mb-1">ESTIMATED HOURS</small>
+                  <strong className="text-text-hi dark:text-text-hi-dark">{caseData.treatmentPlan.estimatedHours} hrs</strong>
                 </div>
                 {caseData.treatmentPlan.estimatedCost && (
-                  <div style={{ marginBottom: '8px' }}>
-                    <small style={{ color: '#8b949e', display: 'block' }}>ESTIMATED COST</small>
-                    <strong style={{ color: '#f0f6fc' }}>
+                  <div>
+                    <small className="text-text-mid dark:text-text-mid-dark block mb-1">ESTIMATED COST</small>
+                    <strong className="text-text-hi dark:text-text-hi-dark">
                       {caseData.treatmentPlan.estimatedCost.toLocaleString()} ETB
                     </strong>
                   </div>
                 )}
                 {caseData.treatmentPlan.keyFocusAreas && caseData.treatmentPlan.keyFocusAreas.length > 0 && (
                   <div>
-                    <small style={{ color: '#8b949e', display: 'block', marginBottom: '4px' }}>KEY FOCUS AREAS</small>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                    <small className="text-text-mid dark:text-text-mid-dark block mb-2">KEY FOCUS AREAS</small>
+                    <div className="flex flex-wrap gap-2">
                       {caseData.treatmentPlan.keyFocusAreas.map((area, idx) => (
-                        <span key={idx} style={{
-                          background: '#4a8fd9',
-                          color: '#fff',
-                          padding: '3px 8px',
-                          borderRadius: '3px',
-                          fontSize: '10px',
-                          fontWeight: 'bold'
-                        }}>
+                        <span 
+                          key={idx} 
+                          className="bg-blue-500 text-white px-2 py-1 rounded text-xs font-bold"
+                        >
                           {area}
                         </span>
                       ))}
@@ -215,62 +174,26 @@ function CaseDetailsModal({ isOpen, caseData, onClose, onAttachPlan }) {
 
           {/* No Treatment Plan */}
           {!caseData.treatmentPlan && (
-            <div style={{
-              background: '#1c2128',
-              borderRadius: '8px',
-              padding: '12px',
-              marginBottom: '16px',
-              border: '1px solid #30363d',
-              textAlign: 'center',
-              color: '#8b949e',
-              fontSize: '12px'
-            }}>
-              <i className="fas fa-info-circle"></i> No treatment plan attached yet
+            <div className="card-base p-4 text-center text-text-mid dark:text-text-mid-dark text-xs">
+              <i className="fas fa-info-circle mr-2"></i>
+              No treatment plan attached yet
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div style={{
-          background: '#1c2128',
-          borderTop: '1px solid #30363d',
-          padding: '12px 16px',
-          display: 'flex',
-          gap: '8px',
-          justifyContent: 'flex-end',
-          position: 'sticky',
-          bottom: 0,
-          zIndex: 1001
-        }}>
+        <div className="sticky bottom-0 z-10 border-t border-border dark:border-border-dark bg-panel dark:bg-panel-dark px-6 py-3 flex gap-2 justify-end">
           <button
             onClick={onClose}
-            style={{
-              padding: '8px 14px',
-              background: '#30363d',
-              color: '#f0f6fc',
-              border: 'none',
-              borderRadius: '6px',
-              fontSize: '12px',
-              fontWeight: '600',
-              cursor: 'pointer'
-            }}
+            className="btn btn-outline text-sm"
           >
             Close
           </button>
           <button
             onClick={() => onAttachPlan && onAttachPlan(caseData.id)}
-            style={{
-              padding: '8px 14px',
-              background: '#4caf50',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '6px',
-              fontSize: '12px',
-              fontWeight: '600',
-              cursor: 'pointer'
-            }}
+            className="btn btn-success text-sm"
           >
-            <i className="fas fa-plus"></i> Attach Plan
+            <i className="fas fa-plus mr-1"></i>Attach Plan
           </button>
         </div>
       </div>

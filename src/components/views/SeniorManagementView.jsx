@@ -113,19 +113,8 @@ function SeniorManagementView({ currentView }) {
     <div>
       {/* Plan Selector */}
       {plans && plans.length > 1 && (
-        <div style={{
-          background: '#1a2332',
-          padding: '16px',
-          borderRadius: '8px',
-          marginBottom: '24px',
-          border: '3px solid #4a8fd9',
-          display: 'flex',
-          gap: '16px',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          boxShadow: '0 3px 10px rgba(0, 212, 255, 0.2)'
-        }}>
-          <label style={{ fontSize: '14px', fontWeight: '700', color: '#4a8fd9', whiteSpace: 'nowrap' }}>
+        <div className="bg-slate-900 dark:bg-slate-800 p-4 rounded mb-6 border-4 border-blue-500 dark:border-blue-600 flex gap-4 items-center flex-wrap shadow-lg shadow-blue-500/20">
+          <label className="text-sm font-bold text-blue-500 dark:text-blue-400 whitespace-nowrap">
             <i className="fas fa-file-alt"></i> QUICK SELECT:
           </label>
           <select
@@ -134,17 +123,7 @@ function SeniorManagementView({ currentView }) {
               const plan = plans.find(p => p.id === e.target.value);
               if (plan) setSelectedPlan(plan);
             }}
-            style={{
-              padding: '12px 16px',
-              borderRadius: '6px',
-              border: '2px solid #4a8fd9',
-              fontSize: '14px',
-              fontWeight: '700',
-              cursor: 'pointer',
-              background: '#0f1419',
-              minWidth: '240px',
-              color: '#2d3d4d'
-            }}
+            className="px-4 py-3 rounded border-2 border-blue-500 dark:border-blue-400 text-sm font-bold cursor-pointer bg-slate-950 dark:bg-slate-900 min-w-60 text-slate-400 dark:text-slate-300"
           >
             <option value="">-- Select a plan to review --</option>
             {plans.map(plan => (
@@ -153,7 +132,7 @@ function SeniorManagementView({ currentView }) {
               </option>
             ))}
           </select>
-          <span style={{ fontSize: '12px', color: '#4a8fd9', fontWeight: '600' }}>
+          <span className="text-xs text-blue-500 dark:text-blue-400 font-semibold">
             {plans.length} plan(s) in review
           </span>
         </div>
@@ -180,9 +159,9 @@ function SeniorManagementView({ currentView }) {
           </thead>
           <tbody>
             {plans.length === 0 ? (
-              <tr><td colSpan="6" style={{ textAlign: 'center', padding: '40px' }}>
-                <i className="fas fa-inbox" style={{ fontSize: '48px', color: '#ccc' }}></i>
-                <br />No audit plans for Senior Management review
+              <tr><td colSpan="6" className="text-center py-10">
+                <i className="fas fa-inbox text-gray-400 dark:text-gray-600 text-4xl block mb-4"></i>
+                <span>No audit plans for Senior Management review</span>
               </td></tr>
             ) : (
               plans.map(plan => {
@@ -207,9 +186,9 @@ function SeniorManagementView({ currentView }) {
         </table>
       </div>
 
-      <div style={{ background: '#e3f2fd', color: '#0c4a6e', padding: '16px', borderRadius: '8px', marginTop: '20px', border: '1px solid #1976d2' }}>
+      <div className="bg-blue-50 dark:bg-blue-900 text-slate-900 dark:text-slate-100 p-4 rounded mt-5 border border-blue-400 dark:border-blue-600">
         <strong><i className="fas fa-info-circle"></i> Senior Management Review</strong>
-        <p style={{ color: '#0c4a6e', margin: '8px 0 0 0', fontSize: '13px', lineHeight: '1.6' }}>
+        <p className="text-slate-700 dark:text-slate-300 m-2 text-xs leading-relaxed">
           As the Risk Management Committee, your approval is required for all amended audit plans before they can be finalized 
           and sent to auditors at tax centers for cascading to audit cases. Review each plan carefully, check alignment with 
           strategic priorities, and ensure adequate resource allocation before approving.

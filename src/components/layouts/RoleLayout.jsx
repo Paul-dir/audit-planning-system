@@ -4,24 +4,27 @@ import TopBar from '../TopBar';
 import { useAuth } from '../../context/AuthContext';
 
 /**
- * RoleLayout Component
- * Provides consistent layout for each role with their specific sidebar and topbar
+ * Shared role layout — fixed sidebar, workspace header, scrollable content.
  */
 function RoleLayout({ children, currentView, onNavigate }) {
   const { authContext } = useAuth();
+  const role = authContext?.role;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <Sidebar 
-        currentRole={authContext?.role} 
+    <div className="flex min-h-screen bg-[#0d131a]">
+      <Sidebar
+        currentRole={role}
         currentView={currentView}
         onNavigate={onNavigate}
       />
-      <div className="main" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <TopBar currentRole={authContext?.role} authContext={authContext} />
-        <div style={{ flex: 1, overflow: 'auto', padding: '24px' }}>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <TopBar
+          currentRole={role}
+          onNavigate={onNavigate}
+        />
+        <main className="flex-1 overflow-auto p-6 lg:p-8">
           {children}
-        </div>
+        </main>
       </div>
     </div>
   );

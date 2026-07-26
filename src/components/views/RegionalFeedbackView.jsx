@@ -13,8 +13,12 @@ import { useRegional } from '../../context/RegionalContext';
 import { useAuth } from '../../context/AuthContext';
 
 /**
- * RegionalFeedbackView - With Plan Selection at Each View
- * Allows selection of which plan to work with at any point
+ * RegionalFeedbackView - Regional Director Feedback Management
+ * With Plan Selection at Each View - allows selection of which plan to work with at any point.
+ * Provides access to plan review, tax center allocation, feedback collection, and risk analysis.
+ * 
+ * @component
+ * @returns {React.ReactElement} Regional feedback management interface
  */
 
 function RegionalFeedbackView({ currentView }) {
@@ -145,10 +149,10 @@ function RegionalFeedbackView({ currentView }) {
 
   // Main menu view - shows all options for the selected region
   return (
-    <div style={{ padding: '24px' }}>
-      <div className="action-bar" style={{ marginBottom: '24px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <label style={{ fontSize: '14px', fontWeight: '500', color: '#2d3d4d' }}>
+    <div className="min-h-screen bg-ink dark:bg-ink p-8">
+      <div className="flex items-center gap-3 mb-6 flex-wrap">
+        <div className="flex gap-3 items-center">
+          <label className="text-sm font-medium text-text-mid dark:text-text-mid">
             <i className="fas fa-map-pin"></i> Region:
           </label>
           <select
@@ -156,14 +160,7 @@ function RegionalFeedbackView({ currentView }) {
             onChange={(e) => {
               setContextRegion(e.target.value);
             }}
-            style={{
-              padding: '8px 12px',
-              borderRadius: '6px',
-              border: '1px solid #ddd',
-              fontSize: '14px',
-              cursor: 'pointer',
-              background: '#0f1419'
-            }}
+            className="px-3 py-2 rounded-lg border border-border dark:border-border bg-ink dark:bg-panel text-text-hi dark:text-text-hi text-sm cursor-pointer"
           >
             {regions.map(region => (
               <option key={region} value={region}>
@@ -174,8 +171,8 @@ function RegionalFeedbackView({ currentView }) {
         </div>
 
         {plans.length > 0 && (
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <label style={{ fontSize: '14px', fontWeight: '500', color: '#2d3d4d' }}>
+          <div className="flex gap-3 items-center">
+            <label className="text-sm font-medium text-text-mid dark:text-text-mid">
               <i className="fas fa-file-alt"></i> Plan:
             </label>
             <select
@@ -183,16 +180,7 @@ function RegionalFeedbackView({ currentView }) {
               onChange={(e) => {
                 setSelectedPlan(e.target.value);
               }}
-              style={{
-                padding: '8px 12px',
-                borderRadius: '6px',
-                border: '2px solid #1976d2',
-                fontSize: '14px',
-                fontWeight: '500',
-                cursor: 'pointer',
-                background: '#0f1419',
-                minWidth: '150px'
-              }}
+              className="px-3 py-2 rounded-lg border-2 border-blue dark:border-blue bg-ink dark:bg-panel text-text-hi dark:text-text-hi text-sm font-medium cursor-pointer min-w-[150px]"
             >
               <option value="">Select a plan...</option>
               {/* Show PENDING allocations first */}
@@ -220,9 +208,9 @@ function RegionalFeedbackView({ currentView }) {
         )}
       </div>
 
-      <div className="detail-header">
-        <h2><i className="fas fa-map-pin"></i> Regional Director - {selectedRegion}</h2>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+      <div className="flex items-center gap-3 pl-4 border-l-4 border-gold dark:border-gold my-6">
+        <h2 className="text-2xl font-bold"><i className="fas fa-map-pin"></i> Regional Director - {selectedRegion}</h2>
+        <div className="flex gap-2 items-center ml-auto">
           {selectedPlan && selectedPlanStatus && (
             <>
               <Badge 
@@ -258,20 +246,13 @@ function RegionalFeedbackView({ currentView }) {
         />
       </div>
 
-      <div className="section-title"><i className="fas fa-tasks"></i> Available Actions</div>
+      <div className="section-title mb-6"><i className="fas fa-tasks"></i> Available Actions</div>
       
       {!selectedPlan ? (
-        <div style={{
-          background: '#0f1419', color: '#f0f6fc',
-          padding: '20px',
-          borderRadius: '8px',
-          border: '2px solid #ffb74d',
-          textAlign: 'center',
-          marginBottom: '24px'
-        }}>
-          <i className="fas fa-info-circle" style={{ fontSize: '24px', color: '#4a8fd9', marginBottom: '12px', display: 'block' }}></i>
-          <h3 style={{ margin: '8px 0', color: '#f57f17' }}>Select a Plan to Continue</h3>
-          <p style={{ color: '#0c4a6e', margin: '8px 0', fontSize: '13px', color: '#f57f17' }}>
+        <div className="bg-ink dark:bg-ink border-2 border-gold dark:border-gold rounded-lg p-5 mb-6 text-center">
+          <i className="fas fa-info-circle text-2xl text-blue dark:text-blue mb-3 block"></i>
+          <h3 className="m-2 text-gold dark:text-gold">Select a Plan to Continue</h3>
+          <p className="text-gold dark:text-gold m-2 text-xs">
             Please select a plan from the dropdown above to access regional director functions.
           </p>
         </div>
@@ -279,97 +260,65 @@ function RegionalFeedbackView({ currentView }) {
         <div></div>
       )}
       
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: '16px',
-        marginBottom: '24px',
-        opacity: selectedPlan ? 1 : 0.5,
-        pointerEvents: selectedPlan ? 'auto' : 'none'
-      }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6" style={{ opacity: selectedPlan ? 1 : 0.5, pointerEvents: selectedPlan ? 'auto' : 'none' }}>
         {/* Review Plan Button */}
-        <div style={{
-          background: '#e3f2fd', color: '#0c4a6e',
-          padding: '20px',
-          borderRadius: '8px',
-          border: '1px solid #1976d2',
-          textAlign: 'center'
-        }}>
-          <i className="fas fa-clipboard-list" style={{ fontSize: '32px', color: '#1976d2', marginBottom: '12px', display: 'block' }}></i>
-          <h3 style={{ margin: '8px 0' }}>Review Plan</h3>
-          <p style={{ color: '#0c4a6e', margin: '8px 0', fontSize: '13px', color: '#a0aec0' }}>
+        <div className="bg-blue-50 dark:bg-blue-900 border border-blue dark:border-blue rounded-lg p-5 text-center">
+          <i className="fas fa-clipboard-list text-3xl text-blue dark:text-blue mb-3 block"></i>
+          <h3 className="m-2">Review Plan</h3>
+          <p className="text-text-mid dark:text-text-mid m-2 text-xs">
             View and review the audit plan from Director
           </p>
           <button 
-            className="btn btn-primary"
+            className="btn btn-primary mt-3"
             onClick={() => setViewMode('plan')}
-            style={{ marginTop: '12px' }}
           >
             <i className="fas fa-eye"></i> Review
           </button>
         </div>
 
         {/* Allocate Button */}
-        <div style={{
-          background: '#f3e5f5',
-          padding: '20px',
-          borderRadius: '8px',
-          border: '1px solid #9c27b0',
-          textAlign: 'center'
-        }}>
-          <i className="fas fa-tasks" style={{ fontSize: '32px', color: '#9c27b0', marginBottom: '12px', display: 'block' }}></i>
-          <h3 style={{ margin: '8px 0' }}>Allocate to Tax Centers</h3>
-          <p style={{ color: '#0c4a6e', margin: '8px 0', fontSize: '13px', color: '#a0aec0' }}>
+        <div className="bg-purple-50 dark:bg-purple-900 border border-purple-600 dark:border-purple-500 rounded-lg p-5 text-center">
+          <i className="fas fa-tasks text-3xl text-purple-600 dark:text-purple-400 mb-3 block"></i>
+          <h3 className="m-2">Allocate to Tax Centers</h3>
+          <p className="text-text-mid dark:text-text-mid m-2 text-xs">
             Distribute audit work to your 3 tax centers
           </p>
           <button 
-            className="btn btn-primary"
+            className="btn mt-3"
             onClick={() => setViewMode('allocation')}
-            style={{ marginTop: '12px', background: '#9c27b0' }}
+            style={{ background: '#9c27b0' }}
           >
             <i className="fas fa-share"></i> Allocate
           </button>
         </div>
 
         {/* Risk Engine Button */}
-        <div style={{
-          background: '#0f1419', color: '#f0f6fc',
-          padding: '20px',
-          borderRadius: '8px',
-          border: '1px solid #4a8fd9',
-          textAlign: 'center'
-        }}>
-          <i className="fas fa-chart-line" style={{ fontSize: '32px', color: '#4a8fd9', marginBottom: '12px', display: 'block' }}></i>
-          <h3 style={{ margin: '8px 0' }}>Risk Engine</h3>
-          <p style={{ color: '#0c4a6e', margin: '8px 0', fontSize: '13px', color: '#a0aec0' }}>
+        <div className="bg-ink dark:bg-panel border border-blue dark:border-blue rounded-lg p-5 text-center">
+          <i className="fas fa-chart-line text-3xl text-blue dark:text-blue mb-3 block"></i>
+          <h3 className="m-2 text-text-hi dark:text-text-hi">Risk Engine</h3>
+          <p className="text-text-mid dark:text-text-mid m-2 text-xs">
             Analyze risk data for your region
           </p>
           <button 
-            className="btn btn-primary"
+            className="btn mt-3"
             onClick={() => setViewMode('risk-engine')}
-            style={{ marginTop: '12px', background: '#4a8fd9' }}
+            style={{ background: '#4a8fd9' }}
           >
             <i className="fas fa-globe"></i> Analyze
           </button>
         </div>
 
         {/* Feedback Button */}
-        <div style={{
-          background: '#1a3a1a',
-          padding: '20px',
-          borderRadius: '8px',
-          border: '1px solid #4caf50',
-          textAlign: 'center'
-        }}>
-          <i className="fas fa-comments" style={{ fontSize: '32px', color: '#4caf50', marginBottom: '12px', display: 'block' }}></i>
-          <h3 style={{ margin: '8px 0' }}>Tax Center Feedback</h3>
-          <p style={{ color: '#0c4a6e', margin: '8px 0', fontSize: '13px', color: '#a0aec0' }}>
+        <div className="bg-green-900 dark:bg-green-900 border border-teal dark:border-teal rounded-lg p-5 text-center">
+          <i className="fas fa-comments text-3xl text-teal dark:text-teal mb-3 block"></i>
+          <h3 className="m-2 text-text-hi dark:text-text-hi">Tax Center Feedback</h3>
+          <p className="text-text-mid dark:text-text-mid m-2 text-xs">
             Collect feedback from tax centers
           </p>
           <button 
-            className="btn btn-primary"
+            className="btn mt-3"
             onClick={() => setViewMode('feedback-collection')}
-            style={{ marginTop: '12px', background: '#4caf50' }}
+            style={{ background: '#4caf50' }}
           >
             <i className="fas fa-inbox"></i> Collect
           </button>
@@ -377,20 +326,14 @@ function RegionalFeedbackView({ currentView }) {
 
         {/* Acknowledge Finalized Plan Button */}
         {selectedPlan && (
-          <div style={{
-            background: '#c8e6c9', color: '#1b5e20',
-            padding: '20px',
-            borderRadius: '8px',
-            border: '2px solid #388e3c',
-            textAlign: 'center'
-          }}>
-            <i className="fas fa-check-double" style={{ fontSize: '32px', color: '#388e3c', marginBottom: '12px', display: 'block' }}></i>
-            <h3 style={{ margin: '8px 0' }}>Acknowledge & Deploy Plan</h3>
-            <p style={{ color: '#0c4a6e', margin: '8px 0', fontSize: '13px', color: '#a0aec0' }}>
+          <div className="bg-green-50 dark:bg-green-900 border-2 border-teal dark:border-teal rounded-lg p-5 text-center">
+            <i className="fas fa-check-double text-3xl text-teal dark:text-teal mb-3 block"></i>
+            <h3 className="m-2">Acknowledge & Deploy Plan</h3>
+            <p className="text-text-mid dark:text-text-mid m-2 text-xs">
               Confirm receipt and deploy finalized plan to your 3 tax centers
             </p>
             <button 
-              className="btn btn-success"
+              className="btn btn-success mt-3"
               onClick={() => {
                 const data = loadData();
                 const plan = data.plans.find(p => p.id === selectedPlan);
@@ -434,7 +377,6 @@ function RegionalFeedbackView({ currentView }) {
                   alert('Plan must be in FINALIZED status to acknowledge and deploy');
                 }
               }}
-              style={{ marginTop: '12px' }}
             >
               <i className="fas fa-share-alt"></i> Acknowledge & Deploy
             </button>
@@ -442,14 +384,9 @@ function RegionalFeedbackView({ currentView }) {
         )}
       </div>
 
-      <div style={{
-        background: '#e3f2fd', color: '#0c4a6e',
-        padding: '16px',
-        borderRadius: '8px',
-        border: '1px solid #1976d2'
-      }}>
+      <div className="bg-blue-50 dark:bg-blue-900 border border-blue dark:border-blue rounded-lg p-4">
         <strong><i className="fas fa-info-circle"></i> Regional Director Workflow</strong>
-        <ol style={{ margin: '12px 0 0 0', paddingLeft: '20px', fontSize: '13px', lineHeight: '1.8' }}>
+        <ol className="m-3 ml-5 text-xs leading-relaxed list-decimal">
           <li>Review the annual audit plan from Director</li>
           <li>Allocate audit types to your 3 tax centers</li>
           <li>Tax centers will provide feedback on capacity</li>
