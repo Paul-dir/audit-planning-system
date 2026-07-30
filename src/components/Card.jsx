@@ -57,15 +57,15 @@ function Card({
 
   return (
     <div className={`${baseClasses} p-6`}>
-      <div className="flex items-start justify-between">
-        <div className="space-y-2">
-          <h3 className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
+      <div className="flex items-start justify-between gap-2">
+        <div className="space-y-2 flex-1 min-w-0">
+          <h3 className="text-[10px] font-semibold uppercase tracking-widest text-slate-500 break-words line-clamp-2">
             {title}
           </h3>
-          <div className="font-serif text-3xl font-bold text-slate-100">{number}</div>
+          <div className="font-serif text-2xl font-bold text-slate-100 break-words">{number}</div>
         </div>
         {icon && (
-          <div className="text-xl text-slate-600">
+          <div className="text-lg text-slate-600 flex-shrink-0">
             <i className={icon} />
           </div>
         )}

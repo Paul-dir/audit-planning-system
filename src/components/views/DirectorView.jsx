@@ -120,66 +120,83 @@ function DirectorView({ currentView }) {
         />
         
         {/* DIRECTOR DECISION PANEL */}
-        <div className="bg-slate-950 dark:bg-slate-950 border-2 border-blue-500 dark:border-blue-400 rounded-lg p-5 mt-6 text-white">
-          <h3 className="m-0 mb-4">
-            <i className="fas fa-gavel"></i> Director Actions & Decisions
-          </h3>
-          
-          {canApprove && (
-            <div className="mb-4 p-3 bg-slate-900 dark:bg-slate-800 rounded border border-blue-600 dark:border-blue-500">
-              <p className="text-gray-300 dark:text-gray-400 m-0 mb-3 text-xs">
-                <strong>Step 1: Plan Review</strong><br/>
-                Review the plan details above. Do you approve this allocation plan, or should the Audit Team revise it?
-              </p>
-              <div className="flex gap-2">
-                <button 
-                  className="btn btn-success" 
-                  onClick={() => { handleApprove(selectedPlan.id); setSelectedPlan(null); }}
-                >
-                  <i className="fas fa-check-circle"></i> Approve Plan
-                </button>
-                <button 
-                  className="btn btn-warning" 
-                  onClick={() => { handleRequestRevision(selectedPlan.id); setSelectedPlan(null); }}
-                >
-                  <i className="fas fa-redo"></i> Request Revision
-                </button>
+        <div className="mt-8 rounded-2xl border border-slate-800 bg-gradient-to-r from-slate-900 via-slate-900/95 to-slate-900 p-6 shadow-2xl backdrop-blur-xl">
+          <div className="flex items-center justify-between border-b border-slate-800/80 pb-4 mb-6">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-indigo-500/20 bg-indigo-500/10 text-indigo-400">
+                <i className="fas fa-gavel text-sm"></i>
+              </div>
+              <div>
+                <h3 className="text-sm font-extrabold uppercase tracking-widest text-slate-200">
+                  Director Actions & Decisions Panel
+                </h3>
+                <p className="text-xs text-slate-400">Governance controls and stage authorizations for this audit plan</p>
               </div>
             </div>
-          )}
+            <Badge status={getStatusDisplay(selectedPlan.status)} className={getBadgeClass(selectedPlan.status)} />
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {canApprove && (
+              <>
+                <button 
+                  className="group flex flex-col items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-5 hover:bg-emerald-900/40 hover:border-emerald-500/60 transition-all duration-200 shadow-lg"
+                  onClick={() => { handleApprove(selectedPlan.id); setSelectedPlan(null); }}
+                >
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 group-hover:scale-110 transition-transform">
+                    <i className="fas fa-check-circle text-2xl"></i>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs font-extrabold tracking-wider text-emerald-400">APPROVE PLAN</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">Validate & authorize for regional phase</p>
+                  </div>
+                </button>
 
-          {canSendToRegions && !isAwaitingRegionalFeedback && (
-            <div className="mb-4 p-3 bg-slate-900 dark:bg-slate-800 rounded border border-blue-600 dark:border-blue-500">
-              <p className="text-gray-300 dark:text-gray-400 m-0 mb-3 text-xs">
-                <strong>Step 2: Send to Regions for Feedback</strong><br/>
-                Plan is approved. Now send it to each region for their feedback before proceeding to Senior Management.
-              </p>
+                <button 
+                  className="group flex flex-col items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-amber-950/20 p-5 hover:bg-amber-900/40 hover:border-amber-500/60 transition-all duration-200 shadow-lg"
+                  onClick={() => { handleRequestRevision(selectedPlan.id); setSelectedPlan(null); }}
+                >
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-400 group-hover:scale-110 transition-transform">
+                    <i className="fas fa-rotate-left text-2xl"></i>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs font-extrabold tracking-wider text-amber-400">REQUEST REVISION</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">Return to Planning Team with notes</p>
+                  </div>
+                </button>
+              </>
+            )}
+
+            {canSendToRegions && !isAwaitingRegionalFeedback && (
               <button 
-                className="btn btn-primary" 
+                className="group flex flex-col items-center justify-center gap-2 rounded-xl border border-blue-500/30 bg-blue-950/20 p-5 hover:bg-blue-900/40 hover:border-blue-500/60 transition-all duration-200 shadow-lg"
                 onClick={() => { setShowSelectRegionsModal(true); }}
               >
-                <i className="fas fa-paper-plane"></i> Send to Regions for Feedback
+                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 group-hover:scale-110 transition-transform">
+                  <i className="fas fa-paper-plane text-xl"></i>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs font-extrabold tracking-wider text-blue-400">DISPATCH TO REGIONS</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Distribute allocation to tax centers</p>
+                </div>
               </button>
-            </div>
-          )}
+            )}
 
-          {isAwaitingRegionalFeedback && (
-            <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900 rounded border border-blue-400 dark:border-blue-600">
-              <p className="text-blue-900 dark:text-blue-200 m-0 text-xs">
-                <i className="fas fa-clock"></i> <strong>Waiting for Regional Feedback</strong><br/>
-                This plan has been sent to regions. Waiting for all regional feedback to be submitted.
-              </p>
-            </div>
-          )}
+            {isAwaitingRegionalFeedback && (
+              <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-cyan-500/30 bg-cyan-950/20 p-5 shadow-lg">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-400">
+                  <i className="fas fa-spinner animate-spin text-2xl"></i>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs font-extrabold tracking-wider text-cyan-300">AWAITING REGIONAL FEEDBACK</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Regional directors are reviewing plan</p>
+                </div>
+              </div>
+            )}
 
-          {canSendToSeniorManagement && hasRegionalFeedback && (
-            <div className="mb-4 p-3 bg-green-100 dark:bg-green-900 rounded border border-green-400 dark:border-green-600">
-              <p className="text-green-900 dark:text-green-200 m-0 mb-3 text-xs">
-                <strong>Step 3: Send to Senior Management</strong><br/>
-                All regional feedback has been collected. Plan is ready for Senior Management final approval.
-              </p>
+            {canSendToSeniorManagement && hasRegionalFeedback && (
               <button 
-                className="btn btn-success" 
+                className="group flex flex-col items-center justify-center gap-2 rounded-xl border border-indigo-500/30 bg-indigo-950/20 p-5 hover:bg-indigo-900/40 hover:border-indigo-500/60 transition-all duration-200 shadow-lg"
                 onClick={() => { 
                   const notes = prompt('Enter notes for Senior Management (optional):');
                   if (notes !== null) {
@@ -187,48 +204,35 @@ function DirectorView({ currentView }) {
                   }
                 }}
               >
-                <i className="fas fa-arrow-up"></i> Send to Senior Management
-              </button>
-            </div>
-          )}
-
-          {selectedPlan.status === 'SENIOR_MANAGEMENT_REJECTED' && (
-            <div className="mb-4 p-4 bg-red-950 dark:bg-red-900 rounded border-4 border-red-500 dark:border-red-600">
-              <p className="text-red-700 dark:text-red-300 m-0 mb-3 text-sm font-semibold">
-                <i className="fas fa-exclamation-circle"></i> Plan Rejected by Senior Management
-              </p>
-              <p className="text-gray-400 dark:text-gray-300 my-2 text-xs">
-                This plan was rejected and needs revision before resubmission. Review the rejection feedback and make necessary changes.
-              </p>
-              {selectedPlan.approvalHistory && selectedPlan.approvalHistory.length > 0 && (
-                <div className="bg-slate-900 dark:bg-slate-800 p-3 rounded text-xs text-gray-400 dark:text-gray-300 max-h-30 overflow-auto my-3">
-                  <strong>Rejection Feedback:</strong>
-                  <p className="text-gray-300 dark:text-gray-400 mt-2 mb-0">
-                    {selectedPlan.approvalHistory[selectedPlan.approvalHistory.length - 1]?.notes || 'No specific feedback provided'}
-                  </p>
+                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-400 group-hover:scale-110 transition-transform">
+                  <i className="fas fa-[#10B981] fa-arrow-up-from-bracket text-2xl"></i>
                 </div>
-              )}
+                <div className="text-center">
+                  <p className="text-xs font-extrabold tracking-wider text-indigo-300">ESCALATE TO SR. MANAGEMENT</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Submit with collected feedback</p>
+                </div>
+              </button>
+            )}
+
+            {selectedPlan.status === 'SENIOR_MANAGEMENT_REJECTED' && (
               <button 
-                className="btn btn-warning" 
+                className="group flex flex-col items-center justify-center gap-2 rounded-xl border border-rose-500/30 bg-rose-950/20 p-5 hover:bg-rose-900/40 hover:border-rose-500/60 transition-all duration-200 shadow-lg"
                 onClick={() => { handleResubmitRejectedPlan(selectedPlan.id); }}
               >
-                <i className="fas fa-redo"></i> Revise & Resubmit to Senior Management
+                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-rose-500/30 bg-rose-500/10 text-rose-400 group-hover:scale-110 transition-transform">
+                  <i className="fas fa-arrow-rotate-right text-2xl"></i>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs font-extrabold tracking-wider text-rose-400">RESUBMIT REVISED PLAN</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Re-escalate for final approval</p>
+                </div>
               </button>
-            </div>
-          )}
+            )}
 
-          {selectedPlan.status === 'SENIOR_MANAGEMENT_APPROVED' && (
-            <div className="mb-4 p-4 bg-green-100 dark:bg-green-900 rounded border-2 border-green-500 dark:border-green-600">
-              <p className="text-green-900 dark:text-green-200 m-0 mb-3 text-sm font-semibold">
-                <i className="fas fa-check"></i> Plan Approved by Senior Management
-              </p>
-              <p className="text-green-800 dark:text-green-300 my-2 text-xs">
-                The plan has been approved by Senior Management. Send it to each region for final distribution to tax centers.
-              </p>
+            {selectedPlan.status === 'SENIOR_MANAGEMENT_APPROVED' && (
               <button 
-                className="btn btn-success" 
+                className="group flex flex-col items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-5 hover:bg-emerald-900/40 hover:border-emerald-500/60 transition-all duration-200 shadow-lg"
                 onClick={() => { 
-                  // Finalize and send to all regions
                   const data = loadData();
                   const plan = data.plans.find(p => p.id === selectedPlan.id);
                   if (plan) {
@@ -255,15 +259,44 @@ function DirectorView({ currentView }) {
                   }
                 }}
               >
-                <i className="fas fa-paper-plane"></i> Finalize & Send to All Regions
+                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 group-hover:scale-110 transition-transform">
+                  <i className="fas fa-trophy text-2xl"></i>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs font-extrabold tracking-wider text-emerald-400">FINALIZE & DEPLOY</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Authorize final plan for execution</p>
+                </div>
               </button>
-            </div>
-          )}
+            )}
 
-          {!canApprove && !canSendToRegions && !canSendToSeniorManagement && selectedPlan.status !== 'SENIOR_MANAGEMENT_REJECTED' && selectedPlan.status !== 'SENIOR_MANAGEMENT_APPROVED' && (
-            <div className="p-3 bg-slate-800 dark:bg-slate-700 rounded border border-gray-600 dark:border-gray-500">
-              <p className="text-gray-400 dark:text-gray-300 m-0 text-xs">
-                <i className="fas fa-info-circle"></i> No actions available for this plan status.
+            {selectedPlan.status === 'FINALIZED' && (
+              <div className="col-span-full rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-4 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
+                    <i className="fas fa-check-double text-lg"></i>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-emerald-300">Plan Status: Finalized & Fully Authorized</h4>
+                    <p className="text-xs text-slate-400 mt-0.5">This plan has passed all governance reviews and is active for nationwide audit operations.</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => alert(`Exporting execution package for Plan ${selectedPlan.id}`)}
+                  className="inline-flex items-center gap-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3.5 py-2 text-xs font-bold text-emerald-300 hover:bg-emerald-500/20 transition-all"
+                >
+                  <i className="fas fa-file-export"></i> Export Package
+                </button>
+              </div>
+            )}
+          </div>
+
+          {selectedPlan.status === 'SENIOR_MANAGEMENT_REJECTED' && selectedPlan.approvalHistory && selectedPlan.approvalHistory.length > 0 && (
+            <div className="mt-4 rounded-xl border border-rose-500/30 bg-rose-950/20 p-4">
+              <p className="text-xs font-bold text-rose-400 mb-1 flex items-center gap-2">
+                <i className="fas fa-circle-exclamation"></i> Rejection Feedback:
+              </p>
+              <p className="text-xs text-slate-300 font-mono">
+                {selectedPlan.approvalHistory[selectedPlan.approvalHistory.length - 1]?.notes || 'No specific feedback provided'}
               </p>
             </div>
           )}
@@ -292,9 +325,9 @@ function DirectorView({ currentView }) {
   // If viewing risk engine mode
   if (viewMode === 'risk-engine') {
     return (
-      <div>
-        <div className="action-bar">
-          <button className="btn btn-outline" onClick={() => setViewMode('plans')}>
+      <div className="space-y-6">
+        <div className="mb-6">
+          <button className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800 transition-colors" onClick={() => setViewMode('plans')}>
             <i className="fas fa-arrow-left"></i> Back to Plans
           </button>
         </div>
@@ -306,9 +339,9 @@ function DirectorView({ currentView }) {
   // If viewing feedback mode, show the feedback review view
   if (viewMode === 'feedback') {
     return (
-      <div>
-        <div className="action-bar">
-          <button className="btn btn-outline" onClick={() => setViewMode('plans')}>
+      <div className="space-y-6">
+        <div className="mb-6">
+          <button className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800 transition-colors" onClick={() => setViewMode('plans')}>
             <i className="fas fa-arrow-left"></i> Back to Plans
           </button>
         </div>
@@ -320,9 +353,9 @@ function DirectorView({ currentView }) {
   // If viewing amended plans mode, show the amended plans review view
   if (viewMode === 'amended-plans') {
     return (
-      <div>
-        <div className="action-bar">
-          <button className="btn btn-outline" onClick={() => setViewMode('plans')}>
+      <div className="space-y-6">
+        <div className="mb-6">
+          <button className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800 transition-colors" onClick={() => setViewMode('plans')}>
             <i className="fas fa-arrow-left"></i> Back to Dashboard
           </button>
         </div>
@@ -337,96 +370,110 @@ function DirectorView({ currentView }) {
     const sendingPlans = plans.filter(p => p.status === 'AWAITING_REGIONAL_FEEDBACK' || p.status === 'FEEDBACK_COLLECTED');
 
     return (
-      <div>
-        <div className="action-bar">
-          <button className="btn btn-outline" onClick={() => setViewMode('plans')}>
+      <div className="space-y-6">
+        <div className="mb-6">
+          <button className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800 transition-colors" onClick={() => setViewMode('plans')}>
             <i className="fas fa-arrow-left"></i> Back to Plans
           </button>
         </div>
 
-        <div className="detail-header">
-          <h2><i className="fas fa-envelope"></i> Send Plans to Regions for Feedback</h2>
-          <Badge status="Director Level" className="director-approved" />
+        <div className="space-y-2">
+          <h2 className="text-2xl font-bold text-slate-100"><i className="fas fa-envelope"></i> Send Plans to Regions for Feedback</h2>
+          <p className="text-sm text-slate-400">Director Level</p>
         </div>
 
-        <div className="section-title"><i className="fas fa-check-circle"></i> Approved Plans Ready to Send</div>
-        <div className="table-container mb-6">
-          <table>
-            <thead>
-              <tr>
-                <th>Plan ID</th>
-                <th>Fiscal Year</th>
-                <th>Total Cases</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {approvedPlans.length === 0 ? (
-                <tr><td colSpan="5" className="text-center py-10">
-                  <i className="fas fa-inbox text-gray-400 text-4xl block mb-4"></i>
-                  <span>No approved plans ready to send</span>
-                </td></tr>
-              ) : (
-                approvedPlans.map(plan => (
-                  <tr key={plan.id}>
-                    <td><strong>{plan.id}</strong></td>
-                    <td>{plan.fiscalYear}</td>
-                    <td>{plan.totalVolume}</td>
-                    <td><Badge status={getStatusDisplay(plan.status)} className={getBadgeClass(plan.status)} /></td>
-                    <td>
-                      <button 
-                        className="btn btn-sm btn-primary" 
-                        onClick={() => { setSelectedPlan(plan); setShowSelectRegionsModal(true); }}
-                      >
-                        <i className="fas fa-paper-plane"></i> Send to Regions
-                      </button>
+        <div>
+          <div className="mb-3 flex items-center gap-2">
+            <i className="fas fa-check-circle text-emerald-500"></i>
+            <h3 className="text-lg font-semibold text-slate-100">Approved Plans Ready to Send</h3>
+          </div>
+          <div className="overflow-x-auto rounded-xl border border-slate-800/80 bg-[#161f28]">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b border-slate-800/80 bg-slate-900/50">
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Plan ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Fiscal Year</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Total Cases</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {approvedPlans.length === 0 ? (
+                  <tr>
+                    <td colSpan="5" className="px-6 py-12 text-center">
+                      <i className="fas fa-inbox mb-4 block text-4xl text-slate-600"></i>
+                      <span className="text-slate-400">No approved plans ready to send</span>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  approvedPlans.map(plan => (
+                    <tr key={plan.id} className="border-b border-slate-800/50 hover:bg-slate-900/30 transition-colors">
+                      <td className="px-6 py-4"><strong className="text-slate-100">{plan.id}</strong></td>
+                      <td className="px-6 py-4 text-slate-300">{plan.fiscalYear}</td>
+                      <td className="px-6 py-4 text-slate-300">{plan.totalVolume}</td>
+                      <td className="px-6 py-4"><Badge status={getStatusDisplay(plan.status)} className={getBadgeClass(plan.status)} /></td>
+                      <td className="px-6 py-4">
+                        <button 
+                          className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-3 py-2 text-xs font-medium text-white hover:bg-primary-700 transition-colors" 
+                          onClick={() => { setSelectedPlan(plan); setShowSelectRegionsModal(true); }}
+                        >
+                          <i className="fas fa-paper-plane"></i> Send to Regions
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        <div className="section-title"><i className="fas fa-clock"></i> Plans with Regional Feedback</div>
-        <div className="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Plan ID</th>
-                <th>Fiscal Year</th>
-                <th>Status</th>
-                <th>Regions Sent To</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sendingPlans.length === 0 ? (
-                <tr><td colSpan="5" className="text-center py-10">
-                  <i className="fas fa-inbox text-gray-400 text-4xl block mb-4"></i>
-                  <span>No plans waiting for feedback</span>
-                </td></tr>
-              ) : (
-                sendingPlans.map(plan => (
-                  <tr key={plan.id}>
-                    <td><strong>{plan.id}</strong></td>
-                    <td>{plan.fiscalYear}</td>
-                    <td><Badge status={getStatusDisplay(plan.status)} className={getBadgeClass(plan.status)} /></td>
-                    <td>{plan.regionsSentTo?.join(', ') || 'All Regions'}</td>
-                    <td>
-                      <button 
-                        className="btn btn-sm btn-info"
-                        onClick={() => setSelectedPlan(plan)}
-                      >
-                        <i className="fas fa-eye"></i> View
-                      </button>
+        <div>
+          <div className="mb-3 flex items-center gap-2">
+            <i className="fas fa-clock text-amber-500"></i>
+            <h3 className="text-lg font-semibold text-slate-100">Plans with Regional Feedback</h3>
+          </div>
+          <div className="overflow-x-auto rounded-xl border border-slate-800/80 bg-[#161f28]">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b border-slate-800/80 bg-slate-900/50">
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Plan ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Fiscal Year</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Regions Sent To</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sendingPlans.length === 0 ? (
+                  <tr>
+                    <td colSpan="5" className="px-6 py-12 text-center">
+                      <i className="fas fa-inbox mb-4 block text-4xl text-slate-600"></i>
+                      <span className="text-slate-400">No plans waiting for feedback</span>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  sendingPlans.map(plan => (
+                    <tr key={plan.id} className="border-b border-slate-800/50 hover:bg-slate-900/30 transition-colors">
+                      <td className="px-6 py-4"><strong className="text-slate-100">{plan.id}</strong></td>
+                      <td className="px-6 py-4 text-slate-300">{plan.fiscalYear}</td>
+                      <td className="px-6 py-4"><Badge status={getStatusDisplay(plan.status)} className={getBadgeClass(plan.status)} /></td>
+                      <td className="px-6 py-4 text-slate-300">{plan.regionsSentTo?.join(', ') || 'All Regions'}</td>
+                      <td className="px-6 py-4">
+                        <button 
+                          className="inline-flex items-center gap-2 rounded-lg bg-slate-700 px-3 py-2 text-xs font-medium text-slate-100 hover:bg-slate-600 transition-colors"
+                          onClick={() => setSelectedPlan(plan)}
+                        >
+                          <i className="fas fa-eye"></i> View
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {showSelectRegionsModal && selectedPlan && (
@@ -448,46 +495,49 @@ function DirectorView({ currentView }) {
     const approvedPlans = plans.filter(p => p.status === 'DIRECTOR_APPROVED');
 
     return (
-      <div>
-        <div className="action-bar">
-          <button className="btn btn-outline" onClick={() => setViewMode('plans')}>
+      <div className="space-y-6">
+        <div className="mb-6">
+          <button className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800 transition-colors" onClick={() => setViewMode('plans')}>
             <i className="fas fa-arrow-left"></i> Back to Dashboard
           </button>
         </div>
 
-        <div className="detail-header">
-          <h2><i className="fas fa-check-circle"></i> Approved Plans</h2>
-          <Badge status={`${approvedPlans.length} plans`} className="director-approved" />
+        <div className="space-y-2">
+          <h2 className="text-2xl font-bold text-slate-100"><i className="fas fa-check-circle"></i> Approved Plans</h2>
+          <p className="text-sm text-slate-400">{approvedPlans.length} plans</p>
         </div>
 
-        <div className="table-container">
-          <table>
+        <div className="overflow-x-auto rounded-xl border border-slate-800/80 bg-[#161f28]">
+          <table className="w-full border-collapse">
             <thead>
-              <tr>
-                <th>Plan ID</th>
-                <th>Fiscal Year</th>
-                <th>Total Cases</th>
-                <th>Approval Date</th>
-                <th>Status</th>
-                <th>Action</th>
+              <tr className="border-b border-slate-800/80 bg-slate-900/50">
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Plan ID</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Fiscal Year</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Total Cases</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Approval Date</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Action</th>
               </tr>
             </thead>
             <tbody>
               {approvedPlans.length === 0 ? (
-                <tr><td colSpan="6" style={{ textAlign: 'center', padding: '40px' }}>
-                  <i className="fas fa-inbox" style={{ fontSize: '48px', color: '#ccc' }}></i>
-                  <br />No approved plans yet
-                </td></tr>
+                <tr>
+                  <td colSpan="6" className="px-6 py-12 text-center">
+                    <i className="fas fa-inbox mb-4 block text-4xl text-slate-600"></i>
+                    <br />
+                    <span className="text-slate-400">No approved plans yet</span>
+                  </td>
+                </tr>
               ) : (
                 approvedPlans.map(plan => (
-                  <tr key={plan.id}>
-                    <td><strong>{plan.id}</strong></td>
-                    <td>{plan.fiscalYear}</td>
-                    <td>{plan.totalVolume}</td>
-                    <td>{plan.approvalHistory?.find(a => a.action === 'DIRECTOR_APPROVED')?.date?.split('T')[0] || '-'}</td>
-                    <td><Badge status={getStatusDisplay(plan.status)} className={getBadgeClass(plan.status)} /></td>
-                    <td>
-                      <button className="btn btn-sm btn-info" onClick={() => setSelectedPlan(plan)}>
+                  <tr key={plan.id} className="border-b border-slate-800/50 hover:bg-slate-900/30 transition-colors">
+                    <td className="px-6 py-4"><strong className="text-slate-100">{plan.id}</strong></td>
+                    <td className="px-6 py-4 text-slate-300">{plan.fiscalYear}</td>
+                    <td className="px-6 py-4 text-slate-300">{plan.totalVolume}</td>
+                    <td className="px-6 py-4 text-slate-300">{plan.approvalHistory?.find(a => a.action === 'DIRECTOR_APPROVED')?.date?.split('T')[0] || '-'}</td>
+                    <td className="px-6 py-4"><Badge status={getStatusDisplay(plan.status)} className={getBadgeClass(plan.status)} /></td>
+                    <td className="px-6 py-4">
+                      <button className="inline-flex items-center gap-2 rounded-lg bg-slate-700 px-3 py-2 text-xs font-medium text-slate-100 hover:bg-slate-600 transition-colors" onClick={() => setSelectedPlan(plan)}>
                         <i className="fas fa-eye"></i> View
                       </button>
                     </td>
@@ -506,46 +556,49 @@ function DirectorView({ currentView }) {
     const finalizedPlans = plans.filter(p => p.status === 'FINALIZED');
 
     return (
-      <div>
-        <div className="action-bar">
-          <button className="btn btn-outline" onClick={() => setViewMode('plans')}>
+      <div className="space-y-6">
+        <div className="mb-6">
+          <button className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800 transition-colors" onClick={() => setViewMode('plans')}>
             <i className="fas fa-arrow-left"></i> Back to Dashboard
           </button>
         </div>
 
-        <div className="detail-header">
-          <h2><i className="fas fa-flag-checkered"></i> Finalized Plans</h2>
-          <Badge status={`${finalizedPlans.length} plans`} className="director-approved" />
+        <div className="space-y-2">
+          <h2 className="text-2xl font-bold text-slate-100"><i className="fas fa-flag-checkered"></i> Finalized Plans</h2>
+          <p className="text-sm text-slate-400">{finalizedPlans.length} plans</p>
         </div>
 
-        <div className="table-container">
-          <table>
+        <div className="overflow-x-auto rounded-xl border border-slate-800/80 bg-[#161f28]">
+          <table className="w-full border-collapse">
             <thead>
-              <tr>
-                <th>Plan ID</th>
-                <th>Fiscal Year</th>
-                <th>Total Cases</th>
-                <th>Finalized Date</th>
-                <th>Status</th>
-                <th>Action</th>
+              <tr className="border-b border-slate-800/80 bg-slate-900/50">
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Plan ID</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Fiscal Year</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Total Cases</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Finalized Date</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Action</th>
               </tr>
             </thead>
             <tbody>
               {finalizedPlans.length === 0 ? (
-                <tr><td colSpan="6" style={{ textAlign: 'center', padding: '40px' }}>
-                  <i className="fas fa-inbox" style={{ fontSize: '48px', color: '#ccc' }}></i>
-                  <br />No finalized plans yet
-                </td></tr>
+                <tr>
+                  <td colSpan="6" className="px-6 py-12 text-center">
+                    <i className="fas fa-inbox mb-4 block text-4xl text-slate-600"></i>
+                    <br />
+                    <span className="text-slate-400">No finalized plans yet</span>
+                  </td>
+                </tr>
               ) : (
                 finalizedPlans.map(plan => (
-                  <tr key={plan.id}>
-                    <td><strong>{plan.id}</strong></td>
-                    <td>{plan.fiscalYear}</td>
-                    <td>{plan.totalVolume}</td>
-                    <td>{plan.approvalHistory?.find(a => a.action === 'FINALIZED')?.date?.split('T')[0] || '-'}</td>
-                    <td><Badge status={getStatusDisplay(plan.status)} className={getBadgeClass(plan.status)} /></td>
-                    <td>
-                      <button className="btn btn-sm btn-info" onClick={() => setSelectedPlan(plan)}>
+                  <tr key={plan.id} className="border-b border-slate-800/50 hover:bg-slate-900/30 transition-colors">
+                    <td className="px-6 py-4"><strong className="text-slate-100">{plan.id}</strong></td>
+                    <td className="px-6 py-4 text-slate-300">{plan.fiscalYear}</td>
+                    <td className="px-6 py-4 text-slate-300">{plan.totalVolume}</td>
+                    <td className="px-6 py-4 text-slate-300">{plan.approvalHistory?.find(a => a.action === 'FINALIZED')?.date?.split('T')[0] || '-'}</td>
+                    <td className="px-6 py-4"><Badge status={getStatusDisplay(plan.status)} className={getBadgeClass(plan.status)} /></td>
+                    <td className="px-6 py-4">
+                      <button className="inline-flex items-center gap-2 rounded-lg bg-slate-700 px-3 py-2 text-xs font-medium text-slate-100 hover:bg-slate-600 transition-colors" onClick={() => setSelectedPlan(plan)}>
                         <i className="fas fa-eye"></i> View
                       </button>
                     </td>
@@ -570,12 +623,12 @@ function DirectorView({ currentView }) {
   };
 
   return (
-    <div>
-      <div className="detail-header">
-        <h2><i className="fas fa-building"></i> Director Dashboard - Plan Management</h2>
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <h2 className="text-2xl font-bold text-slate-100"><i className="fas fa-building"></i> Director Dashboard - Plan Management</h2>
       </div>
 
-      <div className="cards">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card title="Under Review" number={stats.underReview} icon="fas fa-hourglass-half" />
         <Card title="Approved by Me" number={stats.approved} icon="fas fa-check-circle" />
         <Card title="Awaiting Feedback" number={stats.awaitingFeedback} icon="fas fa-clock" />
@@ -584,77 +637,81 @@ function DirectorView({ currentView }) {
         <Card title="Finalized" number={stats.finalized} icon="fas fa-flag-checkered" />
       </div>
 
-      <div className="action-bar mb-6 gap-3">
-        <div></div>
-        <div className="flex gap-2 flex-wrap">
-          <button 
-            className="btn btn-primary"
-            onClick={() => setViewMode('send-feedback')}
-            title="Send approved plans to regions for feedback"
-          >
-            <i className="fas fa-paper-plane"></i> Send to Regions ({stats.approved})
-          </button>
-          <button 
-            className="btn btn-info"
-            onClick={() => setViewMode('feedback')}
-            title="Review feedback from regional directors"
-          >
-            <i className="fas fa-comments"></i> Review Feedback ({stats.feedbackCollected})
-          </button>
-          <button 
-            className="btn btn-secondary"
-            onClick={() => setViewMode('approved-plans')}
-            title="View all approved plans"
-          >
-            <i className="fas fa-check-circle"></i> Approved Plans
-          </button>
-          <button 
-            className="btn btn-secondary"
-            onClick={() => setViewMode('finalized')}
-            title="View finalized plans"
-          >
-            <i className="fas fa-flag-checkered"></i> Finalized Plans
-          </button>
-        </div>
+      <div className="mb-6 flex flex-wrap gap-3">
+        <button 
+          className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 transition-colors"
+          onClick={() => setViewMode('send-feedback')}
+          title="Send approved plans to regions for feedback"
+        >
+          <i className="fas fa-paper-plane"></i> Send to Regions ({stats.approved})
+        </button>
+        <button 
+          className="inline-flex items-center gap-2 rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-slate-100 hover:bg-slate-600 transition-colors"
+          onClick={() => setViewMode('feedback')}
+          title="Review feedback from regional directors"
+        >
+          <i className="fas fa-comments"></i> Review Feedback ({stats.feedbackCollected})
+        </button>
+        <button 
+          className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800 transition-colors"
+          onClick={() => setViewMode('approved-plans')}
+          title="View all approved plans"
+        >
+          <i className="fas fa-check-circle"></i> Approved Plans
+        </button>
+        <button 
+          className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800 transition-colors"
+          onClick={() => setViewMode('finalized')}
+          title="View finalized plans"
+        >
+          <i className="fas fa-flag-checkered"></i> Finalized Plans
+        </button>
       </div>
 
-      <div className="section-title"><i className="fas fa-clipboard-check"></i> Plans for Review</div>
-      <div className="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Plan ID</th>
-              <th>Fiscal Year</th>
-              <th>Total Cases</th>
-              <th>Created Date</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {plans.length === 0 ? (
-              <tr><td colSpan="6" className="text-center py-10">
-                <i className="fas fa-inbox text-gray-400 text-4xl block mb-4"></i>
-                <span>No plans submitted for review</span>
-              </td></tr>
-            ) : (
-              plans.map(plan => (
-                <tr key={plan.id}>
-                  <td><strong>{plan.id}</strong></td>
-                  <td>{plan.fiscalYear}</td>
-                  <td>{plan.totalVolume}</td>
-                  <td>{plan.createdDate?.split('T')[0] || '-'}</td>
-                  <td><Badge status={getStatusDisplay(plan.status)} className={getBadgeClass(plan.status)} /></td>
-                  <td>
-                    <button className="btn btn-sm btn-info" onClick={() => setSelectedPlan(plan)}>
-                      <i className="fas fa-eye"></i> View
-                    </button>
+      <div>
+        <div className="mb-3 flex items-center gap-2">
+          <i className="fas fa-clipboard-check text-slate-400"></i>
+          <h3 className="text-lg font-semibold text-slate-100">Plans for Review</h3>
+        </div>
+        <div className="overflow-x-auto rounded-xl border border-slate-800/80 bg-[#161f28]">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="border-b border-slate-800/80 bg-slate-900/50">
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Plan ID</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Fiscal Year</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Total Cases</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Created Date</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {plans.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="px-6 py-12 text-center">
+                    <i className="fas fa-inbox mb-4 block text-4xl text-slate-600"></i>
+                    <span className="text-slate-400">No plans submitted for review</span>
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                plans.map(plan => (
+                  <tr key={plan.id} className="border-b border-slate-800/50 hover:bg-slate-900/30 transition-colors">
+                    <td className="px-6 py-4"><strong className="text-slate-100">{plan.id}</strong></td>
+                    <td className="px-6 py-4 text-slate-300">{plan.fiscalYear}</td>
+                    <td className="px-6 py-4 text-slate-300">{plan.totalVolume}</td>
+                    <td className="px-6 py-4 text-slate-300">{plan.createdDate?.split('T')[0] || '-'}</td>
+                    <td className="px-6 py-4"><Badge status={getStatusDisplay(plan.status)} className={getBadgeClass(plan.status)} /></td>
+                    <td className="px-6 py-4">
+                      <button className="inline-flex items-center gap-2 rounded-lg bg-slate-700 px-3 py-2 text-xs font-medium text-slate-100 hover:bg-slate-600 transition-colors" onClick={() => setSelectedPlan(plan)}>
+                        <i className="fas fa-eye"></i> View
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {showSelectRegionsModal && selectedPlan && (

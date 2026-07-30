@@ -19,10 +19,7 @@ export const WORKSPACE_CONFIG = {
     title: 'Tax center management',
     subtitle: 'Capacity planning, case cascade, and execution oversight',
   },
-  cascade_audit_team: {
-    title: 'Cascade audit team workspace',
-    subtitle: 'Plan-to-case cascade and regional case prioritization',
-  },
+
   team_leader: {
     title: 'Team leader workspace',
     subtitle: 'Team case assignments and execution progress',
@@ -35,10 +32,7 @@ export const WORKSPACE_CONFIG = {
     title: 'Senior management review',
     subtitle: 'Executive approval and strategic oversight',
   },
-  process_owner: {
-    title: 'Process owner workspace',
-    subtitle: 'Audit case lifecycle and request management',
-  },
+
   directorate_requester: {
     title: 'Requester dashboard',
     subtitle: 'Submit and track audit requests',

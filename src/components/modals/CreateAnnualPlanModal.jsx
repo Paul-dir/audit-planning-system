@@ -40,6 +40,9 @@ function CreateAnnualPlanModal({ onClose }) {
   // ===== CALCULATED TOTALS =====
   const [totalCases, setTotalCases] = useState(0);
   const [totalEffort, setTotalEffort] = useState(0);
+  
+  // ===== PLAN TARGETS =====
+  const [targetAudits, setTargetAudits] = useState(20000);
 
   // ===== STATE FOR SAVE OPERATION =====
   const [pendingSubmit, setPendingSubmit] = useState(null); // 'draft' or 'submit'
@@ -66,29 +69,58 @@ function CreateAnnualPlanModal({ onClose }) {
 
   const initializeRiskData = () => {
     // Mock risk data (in real system, comes from risk engine)
-    const data = loadData();
+    const mockRiskDist = {
+      'desk_audit': 0.50,
+      'field_audit': 0.20,
+      'joint_audit': 0.10,
+      'transfer_pricing': 0.05,
+      'comprehensive': 0.05,
+      'issue_audit': 0.10
+    };
+    
     setRiskData({
       totalTaxpayers: auditConfig.getTotalTaxpayers(),
       riskySuspects: auditConfig.getTotalRiskyTaxpayers(),
       byAuditType: auditConfig.auditTypes.map(type => ({
         id: type.id,
         name: type.name,
-        candidates: Math.round(auditConfig.getTotalRiskyTaxpayers() * auditConfig.riskDistribution.byAuditType[type.id])
+        candidates: Math.round(auditConfig.getTotalRiskyTaxpayers() * (mockRiskDist[type.id] || 0.15))
       }))
     });
   };
 
-  const initializeAuditTypeAllocation = () => {
-    // Fixed allocation values as per user specification
-    const allocation = {
-      'desk_audit': 100,
-      'field_audit': 80,
-      'joint_audit': 60,
-      'transfer_pricing': 40,
-      'comprehensive': 100,
-      'issue_audit': 30
+  const generateDefaultAllocation = (target) => {
+    const allocation = {};
+    const totalRisky = auditConfig.getTotalRiskyTaxpayers();
+    let remaining = target;
+    
+    // Default risk distribution (mock)
+    const mockRiskDist = {
+      'desk_audit': 0.50,
+      'field_audit': 0.20,
+      'joint_audit': 0.10,
+      'transfer_pricing': 0.05,
+      'comprehensive': 0.05,
+      'issue_audit': 0.10
     };
+    
+    auditConfig.auditTypes.forEach((type, index) => {
+      const typeDist = mockRiskDist[type.id] || (1 / auditConfig.auditTypes.length);
+      
+      if (index === auditConfig.auditTypes.length - 1) {
+        allocation[type.id] = remaining; // Assign remainder to last to ensure exact match
+      } else {
+        const typeCount = Math.round(target * typeDist);
+        allocation[type.id] = typeCount;
+        remaining -= typeCount;
+      }
+    });
+    
     setAuditTypeAllocation(allocation);
+  };
+
+  const initializeAuditTypeAllocation = () => {
+    generateDefaultAllocation(20000);
   };
 
   const initializeRegionalAllocation = () => {
@@ -165,7 +197,8 @@ function CreateAnnualPlanModal({ onClose }) {
         auditTypeAllocation,
         regionalAllocation,
         totalCases,
-        totalEffort
+        totalEffort,
+        submitImmediate: true
       });
       alert('Plan submitted to Director for review.');
       onClose();
@@ -219,20 +252,23 @@ function CreateAnnualPlanModal({ onClose }) {
       
       // For each audit type, allocate proportionally to region
       Object.entries(auditTypeAllocation).forEach(([auditType, totalCases]) => {
-        const regionCases = Math.round(totalCases * regionProportion);
-        allocation[region.name][auditType] = regionCases;
+        const defaultRegionCases = Math.round(totalCases * regionProportion);
+        const userOverride = regionalAllocation[region.name]?.[auditType];
+        allocation[region.name][auditType] = userOverride !== undefined ? userOverride : defaultRegionCases;
       });
     });
 
-    // Check for rounding errors and adjust
+    // Check for rounding errors and adjust (only if user hasn't heavily overridden everything)
     Object.entries(auditTypeAllocation).forEach(([auditType, totalCases]) => {
       const totalAllocated = Object.values(allocation).reduce((sum, region) => sum + (region[auditType] || 0), 0);
       const difference = totalCases - totalAllocated;
       
       if (difference !== 0) {
-        // Add difference to first region
-        const firstRegion = auditConfig.regions[0];
-        allocation[firstRegion.name][auditType] = (allocation[firstRegion.name][auditType] || 0) + difference;
+        // Find a region that doesn't have a user override for this type to absorb the difference
+        const flexibleRegion = auditConfig.regions.find(r => regionalAllocation[r.name]?.[auditType] === undefined);
+        if (flexibleRegion) {
+          allocation[flexibleRegion.name][auditType] = (allocation[flexibleRegion.name][auditType] || 0) + difference;
+        }
       }
     });
 
@@ -436,6 +472,28 @@ function CreateAnnualPlanModal({ onClose }) {
                       </div>
                     </div>
                   </div>
+
+                  {/* Target Audits - PURPLE COLOR */}
+                  <div className="group relative">
+                    <label className="block text-base font-bold text-purple-300 mb-3 uppercase tracking-widest flex items-center gap-2 drop-shadow">
+                      <i className="fas fa-bullseye text-purple-400"></i>
+                      Target Auditable Cases
+                    </label>
+                    <input
+                      type="number"
+                      value={targetAudits}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 0;
+                        setTargetAudits(val);
+                        generateDefaultAllocation(val);
+                      }}
+                      className="w-full bg-gradient-to-r from-purple-900/20 to-purple-800/20 border-2 border-purple-400/50 hover:border-purple-400 rounded-xl px-5 py-4 text-purple-100/90 font-semibold focus:border-purple-300 focus:ring-2 focus:ring-purple-300/30 transition-all group-hover:shadow-xl group-hover:shadow-purple-400/30"
+                    />
+                    <p className="text-purple-200 text-sm mt-3 leading-relaxed flex items-start gap-2 bg-purple-400/10 border-2 border-purple-400/30 rounded-xl p-4 font-medium drop-shadow">
+                      <i className="fas fa-chart-pie text-purple-400 mt-0.5 flex-shrink-0"></i>
+                      The system will automatically distribute these {targetAudits.toLocaleString()} cases across audit types and regions based on the Risk Engine's analysis of {auditConfig.getTotalRiskyTaxpayers().toLocaleString()} risky taxpayers.
+                    </p>
+                  </div>
                 </div>
 
                 <div className="flex gap-4 justify-between mt-12 pt-8 border-t-2 border-white/20">
@@ -469,7 +527,7 @@ function CreateAnnualPlanModal({ onClose }) {
                       <h2 className="text-3xl font-serif font-bold text-info-100 drop-shadow-lg">Allocate Cases by Audit Type</h2>
                       <i className="fas fa-list-check text-info-300 text-2xl ml-auto drop-shadow"></i>
                     </div>
-                    <p className="text-info-200 font-medium ml-6 drop-shadow">Risk engine identified <strong className="text-info-100">{auditConfig.getTotalRiskyTaxpayers().toLocaleString()}</strong> risky taxpayers. Allocate them across audit types based on risk analysis.</p>
+                    <p className="text-info-200 font-medium ml-6 drop-shadow">The Risk Engine identified <strong className="text-info-100">{auditConfig.getTotalRiskyTaxpayers().toLocaleString()}</strong> risky taxpayers. The system has automatically distributed your target of <strong className="text-info-100">{targetAudits.toLocaleString()} cases</strong> across audit types based on risk proportions. You may edit these defaults.</p>
                   </div>
                 </div>
 

@@ -111,21 +111,7 @@ export const MOCK_USERS = [
     status: 'active'
   },
 
-  // Cascade Audit Team
-  {
-    id: 'user-015',
-    full_name: 'Dawit Yimer',
-    email: 'dawit.yimer@mor.gov.et',
-    role: 'cascade_audit_team',
-    status: 'active'
-  },
-  {
-    id: 'user-016',
-    full_name: 'Hiwot Kassahun',
-    email: 'hiwot.kassahun@mor.gov.et',
-    role: 'cascade_audit_team',
-    status: 'active'
-  },
+
 
   // Team Leaders
   {

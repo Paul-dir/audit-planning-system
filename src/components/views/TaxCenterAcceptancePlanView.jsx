@@ -31,12 +31,21 @@ function TaxCenterAcceptancePlanView() {
     const regions = [...new Set(data.plans.flatMap(p => Object.keys(p.regionalAllocation || {})))];
     setAllRegions(regions.length > 0 ? regions : ['Oromia', 'SNNPR', 'Addis Ababa', 'Amhara', 'Tigray']);
     
-    const approved = data.plans.filter(p => p.status === 'FINALIZED');
-    setApprovedPlans(approved);
+    // DYNAMIC: Show ALL plans from system (no status filter)
+    // Let loadPlans() handle which ones are actually visible to this tax center
+    console.log('📊 Loading all plans for reference (actual visibility determined by submission records)');
+    setApprovedPlans(data.plans);
   }, []);
 
   useEffect(() => {
     loadPlans();
+    
+    // Auto-refresh every 5 seconds for real-time updates
+    const interval = setInterval(() => {
+      loadPlans();
+    }, 5000);
+    
+    return () => clearInterval(interval);
   }, [selectedRegion, selectedTaxCenter]);
 
   const loadPlans = () => {
@@ -52,24 +61,85 @@ function TaxCenterAcceptancePlanView() {
 
     const data = loadData();
 
-    const submitted = data.plans.filter(p =>
-      p.submittedToTaxCenters &&
-      p.submittedToTaxCenters[selectedRegion] &&
-      p.submittedToTaxCenters[selectedRegion].status === 'SUBMITTED'
-    );
+    // Normalize tax center name format
+    // Format 1: "Addis Ababa TC1" (from auth) → "Addis Ababa-tc1"
+    // Format 2: "Addis Ababa-tc1" (from config) → keep as-is
+    let normalizedTaxCenter = selectedTaxCenter;
+    
+    if (selectedTaxCenter.includes('TC')) {
+      // "Addis Ababa TC1" format → convert to "Addis Ababa-tc1"
+      const parts = selectedTaxCenter.split(' TC');
+      const region = parts[0]; // "Addis Ababa"
+      const tcNum = parts[1]; // "1"
+      normalizedTaxCenter = `${region}-tc${tcNum}`.toLowerCase(); // "addis ababa-tc1"
+    } else if (selectedTaxCenter.includes('-tc')) {
+      // Already in "Addis Ababa-tc1" format
+      normalizedTaxCenter = selectedTaxCenter.toLowerCase();
+    } else {
+      // Fallback: assume it's a region name, convert to standard format
+      normalizedTaxCenter = `${selectedTaxCenter}-tc1`.toLowerCase();
+    }
+
+    console.log('🔍 FILTERING PLANS (DYNAMIC - RUNTIME ONLY):', {
+      selectedRegion,
+      selectedTaxCenter,
+      normalizedTaxCenter,
+      totalPlans: data.plans.length,
+      filterMethod: 'DYNAMIC - Based on submittedToTaxCenters records ONLY (no status check)',
+      allPlans: data.plans.map(p => ({
+        id: p.id,
+        status: p.status,
+        submittedToTaxCenters: p.submittedToTaxCenters ? Object.keys(p.submittedToTaxCenters) : [],
+        regionSubmission: p.submittedToTaxCenters?.[selectedRegion]
+      }))
+    });
+
+    // DYNAMIC FILTER: Show plans based ONLY on runtime submission records
+    // NO hardcoded status checks - status doesn't matter
+    // If a plan has a submittedToTaxCenters record for this region with this tax center, show it
+    const submitted = data.plans.filter(p => {
+      // Must have submission record for this region - THIS IS THE ONLY REQUIREMENT
+      const regionSubmission = p.submittedToTaxCenters?.[selectedRegion];
+      if (!regionSubmission) {
+        console.log(`  ⏭️  ${p.id}: No submission record for region ${selectedRegion} (status: ${p.status})`);
+        return false;
+      }
+      
+      // Must include THIS tax center in the submission list
+      const taxCentersInRegion = regionSubmission.taxCentersInRegion || [];
+      console.log(`  📋 ${p.id}: Tax centers in submission: ${JSON.stringify(taxCentersInRegion)}`);
+      console.log(`  🔍 Checking if ${normalizedTaxCenter} is in list...`);
+      
+      // CRITICAL FIX: Normalize both for case-insensitive comparison
+      const taxCentersLowercase = taxCentersInRegion.map(tc => tc.toLowerCase());
+      const isIncluded = taxCentersLowercase.includes(normalizedTaxCenter.toLowerCase());
+      
+      if (isIncluded) {
+        console.log(`  ✅ ${p.id}: MATCH - ${normalizedTaxCenter} found! (status: ${p.status}) - SHOWING PLAN`);
+      } else {
+        console.log(`  ❌ ${p.id}: NO MATCH - ${normalizedTaxCenter} not in submission list (list: ${JSON.stringify(taxCentersLowercase)})`);
+      }
+      
+      return isIncluded;
+    });
+
+    console.log('✅ TAX CENTER VIEW - Plans Loaded (DYNAMIC):', {
+      region: selectedRegion,
+      taxCenter: selectedTaxCenter,
+      normalizedTaxCenter,
+      submittedPlans: submitted.length,
+      plans: submitted.map(p => ({
+        id: p.id,
+        status: p.status,
+        submittedTo: p.submittedToTaxCenters?.[selectedRegion]?.taxCentersInRegion
+      }))
+    });
 
     setPlans(submitted);
 
     const acceptedStatus = {};
     submitted.forEach(plan => {
-      let taxCenterName = selectedTaxCenter;
-      if (taxCenterName.includes('Tax Center')) {
-        const parts = taxCenterName.split(' ');
-        const tcNum = parts[parts.length - 1];
-        taxCenterName = `${selectedRegion}-tc${tcNum}`;
-      }
-      
-      const taxCenterAcceptance = plan.taxCenterAcceptance?.[selectedRegion]?.[taxCenterName];
+      const taxCenterAcceptance = plan.taxCenterAcceptance?.[selectedRegion]?.[normalizedTaxCenter];
       acceptedStatus[plan.id] = taxCenterAcceptance?.status === 'ACCEPTED' || false;
     });
     setAccepted(acceptedStatus);
@@ -154,6 +224,69 @@ function TaxCenterAcceptancePlanView() {
 
       loadPlans();
     }
+  };
+
+  const handleSendToCascadeTeam = () => {
+    if (!selectedPlan) {
+      alert('❌ No plan selected');
+      return;
+    }
+
+    let taxCenterName = selectedTaxCenter;
+    let taxCenterRegion = selectedRegion;
+
+    if (taxCenterName.includes('Tax Center')) {
+      const parts = taxCenterName.split(' ');
+      const tcNum = parts[parts.length - 1];
+      taxCenterName = `${taxCenterRegion}-tc${tcNum}`;
+    }
+
+    const data = loadData();
+    const plan = data.plans.find(p => p.id === selectedPlan);
+
+    if (!plan) {
+      alert('❌ Plan not found');
+      return;
+    }
+
+    if (plan.taxCenterAcceptance?.[taxCenterRegion]?.[taxCenterName]?.status !== 'ACCEPTED') {
+      alert('❌ Plan must be ACCEPTED before sending to cascade team');
+      return;
+    }
+
+    if (!window.confirm(`Send plan "${selectedPlan}" to Cascade Team for ${taxCenterName}?\n\nThe Cascade Team will use this plan to create audit cases.`)) {
+      return;
+    }
+
+    // Mark plan as sent to cascade team
+    if (!plan.sentToCascadeTeam) {
+      plan.sentToCascadeTeam = {};
+    }
+
+    plan.sentToCascadeTeam[taxCenterRegion] = {
+      [taxCenterName]: {
+        status: 'SENT',
+        sentDate: new Date().toISOString(),
+        sentBy: 'Tax Center Manager',
+        readyForCascade: true
+      }
+    };
+
+    if (!plan.approvalHistory) plan.approvalHistory = [];
+    plan.approvalHistory.push({
+      action: 'SENT_TO_CASCADE_TEAM',
+      by: 'Tax Center Manager',
+      taxCenter: taxCenterName,
+      region: taxCenterRegion,
+      date: new Date().toISOString(),
+      notes: `Plan sent to Cascade Team from ${taxCenterName}. Ready for case creation.`,
+      version: plan.version
+    });
+
+    saveData(data);
+    alert(`✅ Plan sent to Cascade Team!\n\nThe Cascade Team can now start creating audit cases from this plan.`);
+    setSelectedPlanId(null);
+    loadPlans(); // Refresh list
   };
 
   const auditTypes = ['desk_audit', 'field_audit', 'joint_audit', 'transfer_pricing', 'comprehensive', 'issue_audit'];
@@ -359,36 +492,49 @@ function TaxCenterAcceptancePlanView() {
                     </tr>
                   </thead>
                   <tbody>
-                    {planDetails?.taxCenterAllocations && Object.keys(planDetails.taxCenterAllocations).length > 0 ? (
-                      auditTypes.map((auditType, idx) => {
-                        const taxCenterName = selectedTaxCenter.includes('Tax Center')
-                          ? `${selectedRegion}-tc${selectedTaxCenter.split(' ').pop()}`
-                          : selectedTaxCenter;
-                        
-                        let allocated = 0;
-                        const regionAlloc = planDetails.taxCenterAllocations[selectedRegion];
-                        
-                        if (regionAlloc && typeof regionAlloc === 'object') {
-                          const taxCenterAllocation = regionAlloc[taxCenterName];
-                          if (taxCenterAllocation && typeof taxCenterAllocation === 'object') {
-                            allocated = taxCenterAllocation[auditType] || 0;
-                          }
-                        }
-                        
+                    {(() => {
+                      // Normalize tax center name
+                      const taxCenterName = selectedTaxCenter.includes('Tax Center')
+                        ? `${selectedRegion}-tc${selectedTaxCenter.split(' ').pop()}`
+                        : selectedTaxCenter;
+                      
+                      console.log('🔍 TAX CENTER ALLOCATION DISPLAY:', {
+                        selectedRegion,
+                        selectedTaxCenter,
+                        taxCenterName,
+                        hasTaxCenterAllocations: !!planDetails?.taxCenterAllocations,
+                        taxCenterAllocations: planDetails?.taxCenterAllocations,
+                        regionAlloc: planDetails?.taxCenterAllocations?.[selectedRegion],
+                        thisTaxCenterAlloc: planDetails?.taxCenterAllocations?.[selectedRegion]?.[taxCenterName]
+                      });
+                      
+                      // Check if allocations exist
+                      const regionAlloc = planDetails?.taxCenterAllocations?.[selectedRegion];
+                      const taxCenterAlloc = regionAlloc?.[taxCenterName];
+                      
+                      if (!taxCenterAlloc) {
+                        return (
+                          <tr>
+                            <td colSpan="2" className="text-center p-4 text-gold dark:text-gold">
+                              <i className="fas fa-exclamation-triangle"></i> No allocation data set for this tax center yet.
+                              <br/>
+                              <small className="text-xs">Regional Director needs to submit the plan with allocations.</small>
+                            </td>
+                          </tr>
+                        );
+                      }
+                      
+                      // Display allocations
+                      return auditTypes.map((auditType, idx) => {
+                        const allocated = taxCenterAlloc[auditType] || 0;
                         return (
                           <tr key={idx}>
                             <td className="p-2"><strong>{auditTypeLabels[auditType]}</strong></td>
-                            <td className="text-center p-2 font-bold">{typeof allocated === 'number' ? allocated : 0}</td>
+                            <td className="text-center p-2 font-bold text-text-hi dark:text-text-hi">{allocated}</td>
                           </tr>
                         );
-                      })
-                    ) : (
-                      <tr>
-                        <td colSpan="2" className="text-center p-4 text-text-mid dark:text-text-mid">
-                          No allocation data available yet
-                        </td>
-                      </tr>
-                    )}
+                      });
+                    })()}
                   </tbody>
                 </table>
               </div>
@@ -442,18 +588,33 @@ function TaxCenterAcceptancePlanView() {
               {/* Action Bar */}
               <div className="action-bar">
                 <div></div>
-                <button
-                  className="btn btn-success"
-                  onClick={handleAcceptPlan}
-                  disabled={accepted[selectedPlan]}
-                  style={{ 
-                    background: accepted[selectedPlan] ? '#4f5763' : undefined,
-                    opacity: accepted[selectedPlan] ? 0.6 : 1,
-                    cursor: accepted[selectedPlan] ? 'not-allowed' : 'pointer'
-                  }}
-                >
-                  <i className={accepted[selectedPlan] ? 'fas fa-check' : 'fas fa-handshake'}></i> {accepted[selectedPlan] ? 'Plan Locked - Already Accepted' : 'Accept & Lock Plan'}
-                </button>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button
+                    className="btn btn-success"
+                    onClick={handleAcceptPlan}
+                    disabled={accepted[selectedPlan]}
+                    style={{ 
+                      background: accepted[selectedPlan] ? '#4f5763' : undefined,
+                      opacity: accepted[selectedPlan] ? 0.6 : 1,
+                      cursor: accepted[selectedPlan] ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    <i className={accepted[selectedPlan] ? 'fas fa-check' : 'fas fa-handshake'}></i> {accepted[selectedPlan] ? 'Plan Locked - Already Accepted' : 'Accept & Lock Plan'}
+                  </button>
+                  <button
+                    className="btn btn-info"
+                    onClick={handleSendToCascadeTeam}
+                    disabled={!accepted[selectedPlan]}
+                    style={{
+                      background: !accepted[selectedPlan] ? '#4f5763' : undefined,
+                      opacity: !accepted[selectedPlan] ? 0.6 : 1,
+                      cursor: !accepted[selectedPlan] ? 'not-allowed' : 'pointer'
+                    }}
+                    title={!accepted[selectedPlan] ? 'Must accept plan first' : 'Send to Cascade Team for case creation'}
+                  >
+                    <i className="fas fa-share-square"></i> Send to Cascade Team
+                  </button>
+                </div>
               </div>
             </>
           )}

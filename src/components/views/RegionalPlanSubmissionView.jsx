@@ -3,6 +3,8 @@ import Card from '../Card';
 import Badge from '../Badge';
 import { loadData, saveData } from '../../utils/data';
 import { useRegional } from '../../context/RegionalContext';
+import { useAuth } from '../../context/AuthContext';
+import { auditConfig } from '../../config/auditConfig';
 
 /**
  * RegionalPlanSubmissionView - Regional Plan Submission Workflow
@@ -14,7 +16,11 @@ import { useRegional } from '../../context/RegionalContext';
  */
 function RegionalPlanSubmissionView() {
   const { assignedRegion } = useRegional();
-  const [selectedRegion, setSelectedRegion] = useState(assignedRegion || 'Oromia');
+  const { getUserInfo } = useAuth();
+  const userInfo = getUserInfo();
+  
+  // Use authenticated user's assigned region - no selection dropdown
+  const selectedRegion = userInfo?.orgContext?.assignedRegion || assignedRegion || 'Oromia';
   
   const [plans, setPlans] = useState([]);
   const [selectedPlan, setSelectedPlan] = useState(null);
@@ -23,6 +29,7 @@ function RegionalPlanSubmissionView() {
   const [loading, setLoading] = useState(true);
   const [allRegions, setAllRegions] = useState([]);
   const [approvedPlans, setApprovedPlans] = useState([]);
+  const [selectedTaxCenters, setSelectedTaxCenters] = useState([]);
 
   useEffect(() => {
     // Load all regions
@@ -30,9 +37,10 @@ function RegionalPlanSubmissionView() {
     const regions = [...new Set(data.plans.flatMap(p => Object.keys(p.regionalAllocation || {})))];
     setAllRegions(regions.length > 0 ? regions : ['Oromia', 'SNNPR', 'Addis Ababa', 'Amhara', 'Tigray']);
     
-    // Load approved plans for all regions
-    const approved = data.plans.filter(p => p.status === 'FINALIZED');
-    setApprovedPlans(approved);
+    // DYNAMIC: Load ALL plans (no status filter - they might have different statuses)
+    // Regional director can submit any plan with allocation for their region
+    console.log('📊 Loading all plans (dynamic - will filter by region at runtime)');
+    setApprovedPlans(data.plans);
   }, []);
 
   useEffect(() => {
@@ -42,22 +50,40 @@ function RegionalPlanSubmissionView() {
   const loadPlans = () => {
     const data = loadData();
     
-    // Get plans that have been ACKNOWLEDGED by regional director (from Acknowledge Finalized Plans page)
-    // These are the plans ready to be formally submitted to tax centers
-    const finalized = data.plans.filter(p =>
-      p.status === 'FINALIZED' &&
-      p.regionalAllocation &&
-      p.regionalAllocation[selectedRegion] &&
-      p.regionalAcknowledgment &&
-      p.regionalAcknowledgment[selectedRegion] &&
-      p.regionalAcknowledgment[selectedRegion].status === 'ACKNOWLEDGED'
-    );
+    console.log('🔍 REGIONAL SUBMISSION VIEW - Starting load (DYNAMIC - RUNTIME ONLY)...');
+    console.log('📍 Selected Region:', selectedRegion);
+    console.log('📊 Total Plans in System:', data.plans.length);
+    
+    // DYNAMIC: Load ALL plans that have allocation for this region
+    // NO status checks - status doesn't matter, what matters is:
+    // 1. Does the plan have allocation for this region?
+    // 2. Can the regional director submit it?
+    const plansByRegion = data.plans.filter(p => {
+      // Check if this region has allocation (either in regionalAllocation or allocations array)
+      let hasRegionalAlloc = false;
+      if (p.regionalAllocation && p.regionalAllocation[selectedRegion]) {
+        hasRegionalAlloc = true;
+      } else if (p.allocations) {
+        hasRegionalAlloc = p.allocations.some(a => a.region === selectedRegion);
+      }
+      
+      console.log(`Plan ${p.id}:`, {
+        status: p.status,
+        hasRegionalAlloc,
+        regionalAllocation: !!p.regionalAllocation?.[selectedRegion],
+        canSubmit: hasRegionalAlloc
+      });
+      
+      return hasRegionalAlloc;
+    });
 
-    setPlans(finalized);
+    console.log('✅ Plans with allocation for this region:', plansByRegion.length);
+
+    setPlans(plansByRegion);
     
     // Initialize submitted status for all plans
     const submittedStatus = {};
-    finalized.forEach(plan => {
+    plansByRegion.forEach(plan => {
       submittedStatus[plan.id] = plan.submittedToTaxCenters?.[selectedRegion]?.status === 'SUBMITTED' || false;
     });
     setSubmitted(submittedStatus);
@@ -78,7 +104,12 @@ function RegionalPlanSubmissionView() {
       return;
     }
 
-    if (!window.confirm(`Submit ${selectedPlan} to all 3 tax centers in ${selectedRegion}?\n\nTax centers will be notified that an approved plan is available for acceptance.`)) {
+    if (selectedTaxCenters.length === 0) {
+      alert('❌ Please select at least one tax center to send the plan to');
+      return;
+    }
+
+    if (!window.confirm(`Send ${selectedPlan} to ${selectedTaxCenters.length} selected tax center(s) in ${selectedRegion}?\n\nTax Centers: ${selectedTaxCenters.join(', ')}\n\nSelected tax centers will be notified that an approved plan is available for acceptance.`)) {
       return;
     }
 
@@ -93,14 +124,72 @@ function RegionalPlanSubmissionView() {
         plan.submittedToTaxCenters = {};
       }
 
-      // Mark as submitted for this region
+      // Calculate and store allocation for each tax center
+      if (!plan.taxCenterAllocations) {
+        plan.taxCenterAllocations = {};
+      }
+      if (!plan.taxCenterAllocations[selectedRegion]) {
+        plan.taxCenterAllocations[selectedRegion] = {};
+      }
+
+      // Get regional allocation
+      let regionalTotal = 0;
+      if (plan.regionalAllocation && plan.regionalAllocation[selectedRegion]) {
+        if (typeof plan.regionalAllocation[selectedRegion] === 'object') {
+          regionalTotal = Object.values(plan.regionalAllocation[selectedRegion]).reduce((sum, val) => sum + (parseInt(val) || 0), 0);
+        } else {
+          regionalTotal = parseInt(plan.regionalAllocation[selectedRegion]) || 0;
+        }
+      }
+
+      console.log('📤 SUBMITTING TO TAX CENTERS:', {
+        planId: selectedPlan,
+        region: selectedRegion,
+        selectedTaxCenters: selectedTaxCenters,
+        regionalTotal: regionalTotal
+      });
+
+      // Distribute allocation evenly across selected tax centers
+      const numTaxCenters = selectedTaxCenters.length;
+      const allocationPerTaxCenter = Math.floor(regionalTotal / numTaxCenters);
+      
+      selectedTaxCenters.forEach((tc, index) => {
+        // For the last tax center, add any remainder
+        const allocation = index === numTaxCenters - 1 
+          ? regionalTotal - (allocationPerTaxCenter * (numTaxCenters - 1))
+          : allocationPerTaxCenter;
+        
+        // Distribute by audit type if available
+        if (plan.regionalAllocation && plan.regionalAllocation[selectedRegion] && typeof plan.regionalAllocation[selectedRegion] === 'object') {
+          const auditTypeAllocation = {};
+          Object.keys(plan.regionalAllocation[selectedRegion]).forEach(auditType => {
+            const typeTotal = parseInt(plan.regionalAllocation[selectedRegion][auditType]) || 0;
+            const typePerTC = Math.floor(typeTotal / numTaxCenters);
+            auditTypeAllocation[auditType] = index === numTaxCenters - 1
+              ? typeTotal - (typePerTC * (numTaxCenters - 1))
+              : typePerTC;
+          });
+          plan.taxCenterAllocations[selectedRegion][tc] = auditTypeAllocation;
+        } else {
+          plan.taxCenterAllocations[selectedRegion][tc] = allocation;
+        }
+      });
+
+      // Mark as submitted for this region with specific tax centers
       plan.submittedToTaxCenters[selectedRegion] = {
         status: 'SUBMITTED',
         submittedBy: 'Regional Director',
         submittedDate: new Date().toISOString(),
-        submittedTo: 'All Tax Centers',
-        readyForAcceptance: true
+        submittedTo: selectedTaxCenters,
+        taxCentersInRegion: selectedTaxCenters,
+        readyForAcceptance: true,
+        allocationsSet: true
       };
+
+      console.log('✅ PLAN SUBMISSION RECORD:', {
+        submittedToTaxCenters: plan.submittedToTaxCenters[selectedRegion],
+        taxCenterAllocations: plan.taxCenterAllocations[selectedRegion]
+      });
 
       // Add approval history
       if (!plan.approvalHistory) plan.approvalHistory = [];
@@ -109,21 +198,42 @@ function RegionalPlanSubmissionView() {
         by: 'Regional Director',
         region: selectedRegion,
         date: new Date().toISOString(),
-        notes: `Finalized plan officially submitted to all tax centers in ${selectedRegion} for acceptance`,
+        notes: `Finalized plan officially submitted to ${selectedTaxCenters.length} tax centers in ${selectedRegion}: ${selectedTaxCenters.join(', ')}. Allocations distributed.`,
+        taxCenters: selectedTaxCenters,
         version: plan.version
       });
 
+      // CRITICAL: Save data immediately
+      console.log('💾 SAVING DATA TO LOCALSTORAGE...');
       saveData(data);
+      console.log('✅ DATA SAVED SUCCESSFULLY');
+
+      // Verify saved data
+      const verifyData = loadData();
+      const verifyPlan = verifyData.plans.find(p => p.id === selectedPlan);
+      console.log('✔️ VERIFICATION - Data persisted:', {
+        planId: selectedPlan,
+        submittedToTaxCenters: verifyPlan?.submittedToTaxCenters?.[selectedRegion],
+        taxCenterAllocations: verifyPlan?.taxCenterAllocations?.[selectedRegion]
+      });
+
       setSubmitted(prev => ({ ...prev, [selectedPlan]: true }));
       
-      alert(`✅ Plan ${selectedPlan} officially submitted to all tax centers in ${selectedRegion}!\n\nTax centers can now review and accept the plan.`);
+      alert(`✅ Plan ${selectedPlan} officially submitted to selected tax centers in ${selectedRegion}!\n\nTax Centers: ${selectedTaxCenters.join(', ')}\nAllocations distributed evenly.\n\nThey can now review and accept the plan.`);
       
+      setSelectedTaxCenters([]); // Clear selection
       loadPlans();
     }
   };
 
   const getTaxCentersList = () => {
-    // Return 3 tax centers for the region
+    // Get tax centers dynamically from audit config for this region
+    const regionConfig = auditConfig.regions.find(r => r.name === selectedRegion);
+    if (regionConfig && regionConfig.taxCenters) {
+      return regionConfig.taxCenters;
+    }
+    
+    // Fallback: generate tax center names
     return [
       `${selectedRegion}-tc1`,
       `${selectedRegion}-tc2`,
@@ -153,28 +263,22 @@ function RegionalPlanSubmissionView() {
       </div>
 
       <div className="bg-blue-50 dark:bg-blue-900 text-text-hi dark:text-text-hi p-4 rounded-lg mb-6 border border-blue dark:border-blue">
-        <strong><i className="fas fa-info-circle"></i> Regional Director - Formal Submission</strong>
+        <strong><i className="fas fa-info-circle"></i> Regional Director - Send Plan to Tax Centers</strong>
         <p className="text-text-mid dark:text-text-mid mt-2 mb-0 text-xs leading-relaxed">
-          Submit finalized plans you've acknowledged to your 3 tax centers. Tax centers will receive the plan and can formally accept it for implementation. This creates an official handoff.
+          Select which tax centers in your region should receive this finalized plan. Tax centers will review and accept it for implementation.
         </p>
       </div>
 
-      {/* Region Selector */}
-      <div className="mb-6 flex gap-3 items-center">
-        <label className="font-semibold text-xs">Select Region:</label>
-        <select 
-          value={selectedRegion}
-          onChange={(e) => {
-            setSelectedRegion(e.target.value);
-            setSelectedPlan(null);
-            setPlanDetails(null);
-          }}
-          className="px-3 py-2 border border-border dark:border-border rounded-lg bg-panel dark:bg-panel text-text-hi dark:text-text-hi text-xs font-medium cursor-pointer"
-        >
-          {allRegions.map(region => (
-            <option key={region} value={region}>{region}</option>
-          ))}
-        </select>
+      {/* Region Display (No Selector - From Login) */}
+      <div className="mb-6 p-3 bg-panel dark:bg-panel border border-border dark:border-border rounded-lg">
+        <div className="flex gap-8 text-sm items-center">
+          <div>
+            <span className="text-text-mid dark:text-text-mid font-medium">📍 Your Region:</span> <strong className="text-text-hi dark:text-text-hi text-base ml-2">{selectedRegion}</strong>
+          </div>
+          <div className="text-text-mid dark:text-text-mid text-xs">
+            (Region assigned from your login)
+          </div>
+        </div>
       </div>
 
       {/* Approved Plans for this Region */}
@@ -234,9 +338,9 @@ function RegionalPlanSubmissionView() {
       {plans.length === 0 ? (
         <div className="bg-ink dark:bg-ink text-text-hi dark:text-text-hi p-5 rounded-lg border-2 border-gold dark:border-gold text-center mb-6">
           <i className="fas fa-info-circle text-2xl text-blue dark:text-blue mb-3 block"></i>
-          <h3 className="m-2 text-gold dark:text-gold">No Plans Ready for Submission</h3>
+          <h3 className="m-2 text-gold dark:text-gold">No Finalized Plans for Your Region</h3>
           <p className="text-gold dark:text-gold m-2 text-xs">
-            First acknowledge finalized plans using the "Acknowledge Finalized Plans" page, then come here to formally submit them to tax centers.
+            Finalized plans for {selectedRegion} will appear here when the Director finalizes them. You can then select which tax centers should receive each plan.
           </p>
         </div>
       ) : (
@@ -349,24 +453,67 @@ function RegionalPlanSubmissionView() {
                 </table>
               </div>
 
-              {/* Tax Centers List */}
+              {/* Tax Centers List - SELECT WHICH TO SEND TO */}
               <div className="section-title mb-3">
-                <i className="fas fa-building"></i> Tax Centers - Will Receive This Plan
+                <i className="fas fa-building"></i> Select Tax Centers to Send Plan To
+              </div>
+              <div className="bg-gold/10 dark:bg-gold/10 p-3 rounded-lg mb-4 border border-gold dark:border-gold">
+                <p className="text-gold dark:text-gold text-xs m-0">
+                  <i className="fas fa-info-circle"></i> Select which tax centers should receive this plan. Only selected tax centers will be able to accept it.
+                </p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                {getTaxCentersList().map(taxCenter => (
-                  <div
-                    key={taxCenter}
-                    className="bg-panel dark:bg-panel p-4 rounded-lg border border-border dark:border-border text-center"
-                  >
-                    <i className="fas fa-building text-3xl text-teal dark:text-teal mb-3 block"></i>
-                    <h4 className="m-2 text-text-hi dark:text-text-hi">{taxCenter}</h4>
-                    <p className="text-text-mid dark:text-text-mid m-1 text-xs">
-                      Ready to receive plan
-                    </p>
-                  </div>
-                ))}
+                {getTaxCentersList().map(taxCenter => {
+                  const isSelected = selectedTaxCenters.includes(taxCenter);
+                  const isAlreadySent = planDetails?.submittedToTaxCenters?.[selectedRegion]?.taxCentersInRegion?.includes(taxCenter);
+                  
+                  return (
+                    <div
+                      key={taxCenter}
+                      onClick={() => {
+                        if (submitted[selectedPlan]) return; // Can't change after submission
+                        if (isSelected) {
+                          setSelectedTaxCenters(selectedTaxCenters.filter(tc => tc !== taxCenter));
+                        } else {
+                          setSelectedTaxCenters([...selectedTaxCenters, taxCenter]);
+                        }
+                      }}
+                      className={`p-4 rounded-lg border-2 text-center cursor-pointer transition-all ${
+                        isSelected 
+                          ? 'bg-teal/20 dark:bg-teal/20 border-teal dark:border-teal' 
+                          : 'bg-panel dark:bg-panel border-border dark:border-border hover:border-teal dark:hover:border-teal'
+                      } ${submitted[selectedPlan] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      style={{ cursor: submitted[selectedPlan] ? 'not-allowed' : 'pointer' }}
+                    >
+                      <div className="flex items-center justify-center mb-2">
+                        <i className={`fas fa-building text-3xl ${isSelected ? 'text-teal dark:text-teal' : 'text-text-mid dark:text-text-mid'}`}></i>
+                        {isSelected && (
+                          <i className="fas fa-check-circle text-2xl text-teal dark:text-teal ml-2"></i>
+                        )}
+                      </div>
+                      <h4 className={`m-2 ${isSelected ? 'text-teal dark:text-teal font-bold' : 'text-text-hi dark:text-text-hi'}`}>
+                        {taxCenter}
+                      </h4>
+                      <p className="text-text-mid dark:text-text-mid m-1 text-xs">
+                        {isSelected ? '✓ Selected' : 'Click to select'}
+                      </p>
+                      {isAlreadySent && (
+                        <p className="text-teal dark:text-teal m-1 text-xs font-bold">
+                          <i className="fas fa-paper-plane"></i> Already sent
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
+              
+              {selectedTaxCenters.length > 0 && !submitted[selectedPlan] && (
+                <div className="bg-teal/10 dark:bg-teal/10 p-3 rounded-lg mb-4 border border-teal dark:border-teal">
+                  <p className="text-teal dark:text-teal text-sm m-0 font-bold">
+                    <i className="fas fa-check-circle"></i> {selectedTaxCenters.length} Tax Center(s) Selected: {selectedTaxCenters.join(', ')}
+                  </p>
+                </div>
+              )}
 
               {/* Submission Status */}
               {submitted[selectedPlan] ? (
@@ -375,8 +522,13 @@ function RegionalPlanSubmissionView() {
                     <i className="fas fa-check-circle"></i> ✅ Already Submitted
                   </strong>
                   <p className="text-teal dark:text-teal mt-2 mb-0 text-xs">
-                    This plan has been officially submitted to all tax centers. They can now review and accept it.
+                    This plan has been officially submitted to selected tax centers. They can now review and accept it.
                   </p>
+                  {planDetails?.submittedToTaxCenters?.[selectedRegion]?.taxCentersInRegion && (
+                    <p className="text-teal dark:text-teal mt-2 mb-0 text-xs font-bold">
+                      Sent to: {planDetails.submittedToTaxCenters[selectedRegion].taxCentersInRegion.join(', ')}
+                    </p>
+                  )}
                 </div>
               ) : (
                 <div className="bg-ink dark:bg-ink p-4 rounded-lg border-2 border-gold dark:border-gold mb-6">
@@ -384,7 +536,7 @@ function RegionalPlanSubmissionView() {
                     <i className="fas fa-exclamation-triangle"></i> Ready to Submit
                   </strong>
                   <p className="text-gold dark:text-gold mt-2 mb-0 text-xs">
-                    Review the plan details above. When ready, submit to all tax centers for formal acceptance.
+                    Select tax centers above, then click Submit to send the plan to them for formal acceptance.
                   </p>
                 </div>
               )}
@@ -396,9 +548,15 @@ function RegionalPlanSubmissionView() {
                   <button
                     className="btn btn-success"
                     onClick={handleSubmitPlanToTaxCenters}
-                    style={{ background: '#4caf50' }}
+                    disabled={selectedTaxCenters.length === 0}
+                    style={{ 
+                      background: selectedTaxCenters.length === 0 ? '#4f5763' : '#4caf50',
+                      opacity: selectedTaxCenters.length === 0 ? 0.6 : 1,
+                      cursor: selectedTaxCenters.length === 0 ? 'not-allowed' : 'pointer'
+                    }}
+                    title={selectedTaxCenters.length === 0 ? 'Select at least one tax center first' : `Submit to ${selectedTaxCenters.length} tax center(s)`}
                   >
-                    <i className="fas fa-share-alt"></i> Submit Plan to All Tax Centers
+                    <i className="fas fa-share-alt"></i> Submit to {selectedTaxCenters.length || 'Selected'} Tax Center{selectedTaxCenters.length !== 1 ? 's' : ''}
                   </button>
                 ) : (
                   <button
@@ -418,13 +576,13 @@ function RegionalPlanSubmissionView() {
       <div className="bg-blue-50 dark:bg-blue-900 text-text-hi dark:text-text-hi p-4 rounded-lg border border-blue dark:border-blue mt-6">
         <strong><i className="fas fa-info-circle"></i> Workflow Notes</strong>
         <ul className="m-3 ml-5 text-xs leading-relaxed list-decimal">
-          <li>Plans must be ACKNOWLEDGED in "Acknowledge Finalized Plans" first</li>
-          <li>This page shows only acknowledged plans ready for submission</li>
-          <li>This is the formal submission to tax centers</li>
-          <li>Tax centers will see the plan in their "Accept Approved Plan" page</li>
+          <li>Plans must be FINALIZED by Director first</li>
+          <li>This page shows all finalized plans for your region</li>
+          <li>Select which tax centers should receive the plan</li>
+          <li>Selected tax centers will see the plan in their "Accept Approved Plan" page</li>
           <li>Each tax center must formally accept the plan</li>
-          <li>Once all tax centers accept, the plan is locked for execution</li>
-          <li>No conflicts - each submission tracked with timestamp</li>
+          <li>Once a tax center accepts, the Cascade Team can create audit cases</li>
+          <li>Each submission is tracked with timestamp for audit trail</li>
         </ul>
       </div>
     </div>

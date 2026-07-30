@@ -91,7 +91,7 @@ export const auditConfig = {
   // 4. RISK DISTRIBUTION FORMULA (CONFIGURABLE)
   // =====================================================
   riskDistribution: {
-    percentageRisky: 7.8,  // % of all taxpayers considered "risky"
+    percentageRisky: 8.269231,  // % of all taxpayers considered "risky" (yields ~430,000)
     split: {
       critical: 0.05,      // 5% of risky are critical
       high: 0.186,         // 18.6% are high
@@ -146,74 +146,74 @@ export const auditConfig = {
     { 
       id: 'addis_ababa',
       name: 'Addis Ababa', 
-      taxpayers: 2917,
+      taxpayers: 2500000,
       taxCenters: ['Addis Ababa-tc1', 'Addis Ababa-tc2', 'Addis Ababa-tc3'],
-      availableAuditors: 25,
+      availableAuditors: 600,
       availableSkills: {
-        'Basic Analysis': 15,
-        'Fieldwork': 8,
-        'Senior Auditor': 5,
-        'Advanced Analysis': 3,
-        'CAAT': 2,
-        'Transfer Pricing Specialist': 1
+        'Basic Analysis': 300,
+        'Fieldwork': 160,
+        'Senior Auditor': 100,
+        'Advanced Analysis': 60,
+        'CAAT': 40,
+        'Transfer Pricing Specialist': 20
       }
     },
     { 
       id: 'oromia',
       name: 'Oromia', 
-      taxpayers: 2500,
+      taxpayers: 1300000,
       taxCenters: ['Oromia-tc1', 'Oromia-tc2', 'Oromia-tc3'],
-      availableAuditors: 20,
+      availableAuditors: 400,
       availableSkills: {
-        'Basic Analysis': 12,
-        'Fieldwork': 6,
-        'Senior Auditor': 4,
-        'Advanced Analysis': 2
+        'Basic Analysis': 240,
+        'Fieldwork': 120,
+        'Senior Auditor': 80,
+        'Advanced Analysis': 40
       }
     },
     { 
       id: 'amhara',
       name: 'Amhara', 
-      taxpayers: 1833,
+      taxpayers: 750000,
       taxCenters: ['Amhara-tc1', 'Amhara-tc2', 'Amhara-tc3'],
-      availableAuditors: 15,
+      availableAuditors: 250,
       availableSkills: {
-        'Basic Analysis': 10,
-        'Fieldwork': 4,
-        'Senior Auditor': 2
+        'Basic Analysis': 200,
+        'Fieldwork': 80,
+        'Senior Auditor': 40
       }
     },
     { 
       id: 'sidama',
       name: 'Sidama', 
-      taxpayers: 1250,
+      taxpayers: 350000,
       taxCenters: ['Sidama-tc1', 'Sidama-tc2', 'Sidama-tc3'],
-      availableAuditors: 10,
+      availableAuditors: 100,
       availableSkills: {
-        'Basic Analysis': 7,
-        'Fieldwork': 3
+        'Basic Analysis': 140,
+        'Fieldwork': 60
       }
     },
     { 
       id: 'dire_dawa',
       name: 'Dire Dawa', 
-      taxpayers: 1000,
+      taxpayers: 100000,
       taxCenters: ['Dire Dawa-tc1', 'Dire Dawa-tc2', 'Dire Dawa-tc3'],
-      availableAuditors: 8,
+      availableAuditors: 50,
       availableSkills: {
-        'Basic Analysis': 5,
-        'Fieldwork': 2
+        'Basic Analysis': 100,
+        'Fieldwork': 40
       }
     },
     { 
       id: 'somali',
       name: 'Somali', 
-      taxpayers: 917,
+      taxpayers: 200000,
       taxCenters: ['Somali-tc1', 'Somali-tc2', 'Somali-tc3'],
-      availableAuditors: 7,
+      availableAuditors: 100,
       availableSkills: {
-        'Basic Analysis': 4,
-        'Fieldwork': 2
+        'Basic Analysis': 80,
+        'Fieldwork': 40
       }
     }
   ],

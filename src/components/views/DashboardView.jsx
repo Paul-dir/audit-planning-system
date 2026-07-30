@@ -107,7 +107,6 @@ function DashboardView({ currentRole }) {
       director: 'Audit Director',
       regional: 'Regional Director',
       tax_center: 'Tax Center Manager',
-      cascade_audit_team: 'Cascade Audit Team',
       senior_management: 'Senior Management'
     };
     return roleLabels[currentRole] || 'User';
@@ -151,36 +150,26 @@ function DashboardView({ currentRole }) {
   };
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div className="px-6 py-6">
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+      <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 style={{ fontSize: '32px', fontWeight: '700', margin: '0 0 8px 0', color: 'var(--text-primary)' }}>
+          <h1 className="text-4xl font-bold mb-2 text-text-primary dark:text-text-hi">
             Dashboard
           </h1>
-          <p style={{ fontSize: '14px', color: 'var(--text-muted)', margin: 0 }}>
+          <p className="text-base text-text-muted dark:text-text-mid">
             Overview of all planning activities and your workload
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+        <div className="flex gap-lg items-center">
           {/* Region Selector for Regional Directors */}
           {currentRole === 'regional' && (
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-muted)' }}>Region:</label>
+            <div className="flex gap-sm items-center">
+              <label className="text-xs font-semibold text-text-muted dark:text-text-mid">Region:</label>
               <select
                 value={currentRegion || ''}
                 onChange={(e) => handleRegionChange(e.target.value)}
-                style={{
-                  padding: '8px 12px',
-                  border: '1px solid var(--border)',
-                  borderRadius: '6px',
-                  background: 'var(--card)',
-                  color: 'var(--text-primary)',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  minWidth: '150px'
-                }}
+                className="px-3 py-2 border border-neutral-300 dark:border-border-dark rounded-sm bg-white dark:bg-card text-text-primary dark:text-text-hi text-sm font-semibold cursor-pointer min-w-[150px]"
               >
                 <option value="">-- Select Region --</option>
                 {['Oromia', 'SNNPR', 'Addis Ababa', 'Amhara', 'Tigray'].map(region => (
@@ -189,14 +178,14 @@ function DashboardView({ currentRole }) {
               </select>
             </div>
           )}
-          <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
+          <div className="text-base text-text-muted dark:text-text-mid">
             {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
           </div>
         </div>
       </div>
 
       {/* KPI Cards */}
-      <div className="cards" style={{ marginBottom: '32px' }}>
+      <div className="cards mb-8">
         <Card title="My Open Tasks" number={stats.myOpenTasks} icon="fas fa-tasks" />
         <Card title="Pending Review" number={stats.pendingReview} icon="fas fa-inbox" />
         <Card title="Under Review" number={stats.underReview} icon="fas fa-eye" />
@@ -204,57 +193,51 @@ function DashboardView({ currentRole }) {
       </div>
 
       {/* Recent Plans & Activity */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+      <div className="grid grid-cols-2 gap-6 mb-6">
         {/* Recent Plans */}
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: '700', margin: 0, color: 'var(--text-primary)' }}>
-              <i className="fas fa-history" style={{ marginRight: '8px', color: 'var(--primary)' }}></i>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold text-text-primary dark:text-text-hi">
+              <i className="fas fa-history mr-2 text-primary dark:text-blue-400"></i>
               Recent Plans
             </h2>
-            <a href="#" style={{ fontSize: '12px', color: 'var(--primary)', textDecoration: 'none', fontWeight: '600' }}>
+            <a href="#" className="text-xs text-primary dark:text-blue-400 no-underline font-semibold">
               View all →
             </a>
           </div>
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '16px' }}>
+          <p className="text-xs text-text-muted dark:text-text-mid mb-4">
             Latest audit plans that have been updated in the system.
           </p>
 
           {recentPlans.length === 0 ? (
-            <div style={{
-              background: 'var(--card)',
-              padding: '32px',
-              borderRadius: '12px',
-              textAlign: 'center',
-              border: '1px solid var(--border)'
-            }}>
-              <p style={{ color: 'var(--text-muted)', margin: 0 }}>No plans available</p>
+            <div className="bg-white dark:bg-card px-8 py-8 rounded-lg text-center border border-neutral-200 dark:border-border-dark">
+              <p className="text-text-muted dark:text-text-mid m-0">No plans available</p>
             </div>
           ) : (
             <div className="table-container">
               <table>
                 <thead>
                   <tr>
-                    <th style={{ textAlign: 'left' }}>PLAN ID</th>
-                    <th style={{ textAlign: 'left' }}>PLAN NAME</th>
-                    <th style={{ textAlign: 'center' }}>PERIOD</th>
-                    <th style={{ textAlign: 'left' }}>STATUS</th>
-                    <th style={{ textAlign: 'right' }}>UPDATED</th>
+                    <th className="text-left">PLAN ID</th>
+                    <th className="text-left">PLAN NAME</th>
+                    <th className="text-center">PERIOD</th>
+                    <th className="text-left">STATUS</th>
+                    <th className="text-right">UPDATED</th>
                   </tr>
                 </thead>
                 <tbody>
                   {recentPlans.map((plan, idx) => (
                     <tr key={idx}>
                       <td><strong>{plan.id}</strong></td>
-                      <td style={{ fontSize: '13px' }}>{plan.name || `FY ${plan.fiscalYear} Plan`}</td>
-                      <td style={{ textAlign: 'center', fontSize: '12px' }}>{plan.fiscalYear}</td>
+                      <td className="text-sm">{plan.name || `FY ${plan.fiscalYear} Plan`}</td>
+                      <td className="text-center text-xs">{plan.fiscalYear}</td>
                       <td>
                         <Badge 
                           status={plan.status} 
                           className={getStatusBadgeClass(plan.status)} 
                         />
                       </td>
-                      <td style={{ textAlign: 'right', fontSize: '12px', color: 'var(--text-muted)' }}>
+                      <td className="text-right text-xs text-text-muted dark:text-text-mid">
                         {formatDate(plan.lastModified || plan.createdDate)}
                       </td>
                     </tr>
@@ -267,86 +250,44 @@ function DashboardView({ currentRole }) {
 
         {/* Recent Activity */}
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: '700', margin: 0, color: 'var(--text-primary)' }}>
-              <i className="fas fa-clock" style={{ marginRight: '8px', color: 'var(--primary)' }}></i>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold text-text-primary dark:text-text-hi">
+              <i className="fas fa-clock mr-2 text-primary dark:text-blue-400"></i>
               Recent Activity
             </h2>
-            <a href="#" style={{ fontSize: '12px', color: 'var(--primary)', textDecoration: 'none', fontWeight: '600' }}>
+            <a href="#" className="text-xs text-primary dark:text-blue-400 no-underline font-semibold">
               View all →
             </a>
           </div>
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '16px' }}>
+          <p className="text-xs text-text-muted dark:text-text-mid mb-4">
             Latest actions and updates in audit planning.
           </p>
 
           {activities.length === 0 ? (
-            <div style={{
-              background: 'var(--card)',
-              padding: '32px',
-              borderRadius: '12px',
-              textAlign: 'center',
-              border: '1px solid var(--border)'
-            }}>
-              <p style={{ color: 'var(--text-muted)', margin: 0 }}>No activities yet</p>
+            <div className="bg-white dark:bg-card px-8 py-8 rounded-lg text-center border border-neutral-200 dark:border-border-dark">
+              <p className="text-text-muted dark:text-text-mid m-0">No activities yet</p>
             </div>
           ) : (
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px'
-            }}>
+            <div className="flex flex-col gap-3">
               {activities.map((activity, idx) => (
                 <div
                   key={idx}
-                  style={{
-                    display: 'flex',
-                    gap: '12px',
-                    padding: '12px',
-                    background: 'var(--card)',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border)',
-                    alignItems: 'flex-start'
-                  }}
+                  className="flex gap-3 p-3 bg-white dark:bg-card rounded-md border border-neutral-200 dark:border-border-dark items-start"
                 >
-                  <div style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '50%',
-                    background: activity.status.includes('APPROVED') 
-                      ? 'rgba(59, 130, 246, 0.1)' 
-                      : 'rgba(59, 130, 246, 0.1)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0
-                  }}>
+                  <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-950 flex items-center justify-center flex-shrink-0">
                     <i 
                       className={`fas ${getActivityIcon(activity.event)}`}
                       style={{ color: getActivityColor(activity.status), fontSize: '14px' }}
                     ></i>
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      margin: '0 0 4px 0',
-                      color: 'var(--text-primary)'
-                    }}>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold mb-1 text-text-primary dark:text-text-hi">
                       {activity.event}
                     </p>
-                    <p style={{
-                      fontSize: '11px',
-                      color: 'var(--text-muted)',
-                      margin: '0 0 4px 0'
-                    }}>
+                    <p className="text-xs text-text-muted dark:text-text-mid mb-1">
                       {activity.ref}
                     </p>
-                    <p style={{
-                      fontSize: '10px',
-                      color: 'var(--text-disabled)',
-                      margin: 0
-                    }}>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">
                       {activity.date}
                     </p>
                   </div>
@@ -358,38 +299,33 @@ function DashboardView({ currentRole }) {
       </div>
 
       {/* Summary Stats */}
-      <div style={{
-        background: 'var(--card)',
-        padding: '24px',
-        borderRadius: '12px',
-        border: '1px solid var(--border)'
-      }}>
-        <h3 style={{ fontSize: '16px', fontWeight: '700', margin: '0 0 16px 0', color: 'var(--text-primary)' }}>
-          <i className="fas fa-chart-bar" style={{ marginRight: '8px', color: 'var(--primary)' }}></i>
+      <div className="bg-white dark:bg-card px-6 py-6 rounded-lg border border-neutral-200 dark:border-border-dark">
+        <h3 className="text-base font-bold mb-4 text-text-primary dark:text-text-hi">
+          <i className="fas fa-chart-bar mr-2 text-primary dark:text-blue-400"></i>
           Summary Statistics
         </h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 8px 0' }}>Total Plans</p>
-            <p style={{ fontSize: '24px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>
+        <div className="grid grid-cols-4 gap-lg">
+          <div className="text-center">
+            <p className="text-xs text-text-muted dark:text-text-mid mb-2">Total Plans</p>
+            <p className="text-3xl font-bold text-text-primary dark:text-text-hi">
               {stats.totalPlans}
             </p>
           </div>
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 8px 0' }}>Approved</p>
-            <p style={{ fontSize: '24px', fontWeight: '700', color: '#3b82f6', margin: 0 }}>
+          <div className="text-center">
+            <p className="text-xs text-text-muted dark:text-text-mid mb-2">Approved</p>
+            <p className="text-3xl font-bold text-blue-500 dark:text-blue-400">
               {stats.approvedPlans}
             </p>
           </div>
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 8px 0' }}>Finalized</p>
-            <p style={{ fontSize: '24px', fontWeight: '700', color: '#3fb950', margin: 0 }}>
+          <div className="text-center">
+            <p className="text-xs text-text-muted dark:text-text-mid mb-2">Finalized</p>
+            <p className="text-3xl font-bold text-success-500 dark:text-success-400">
               {stats.finalizedPlans}
             </p>
           </div>
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 8px 0' }}>In Revision</p>
-            <p style={{ fontSize: '24px', fontWeight: '700', color: '#f59e0b', margin: 0 }}>
+          <div className="text-center">
+            <p className="text-xs text-text-muted dark:text-text-mid mb-2">In Revision</p>
+            <p className="text-3xl font-bold text-warning-500 dark:text-warning-400">
               {stats.revisedPlans}
             </p>
           </div>

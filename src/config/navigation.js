@@ -100,12 +100,15 @@ export const ROLE_NAVIGATION = {
           { id: 'accept-approved-plan', label: 'Acceptance plan', icon: 'fas fa-hand-paper' },
           { id: 'tax-center-feedback', label: 'Feedback', icon: 'fas fa-comments' },
           { id: 'cascade-plan-cases', label: 'Cascade to cases', icon: 'fas fa-sitemap' },
+          { id: 'case-types', label: 'Case types', icon: 'fas fa-tags' },
         ],
       },
       {
         label: 'Cases',
         items: [
           { id: 'audit-cases', label: 'Audit cases', icon: 'fas fa-folder' },
+          { id: 'requests', label: 'Requests', icon: 'fas fa-inbox' },
+          { id: 'stored-cases', label: 'Stored cases', icon: 'fas fa-archive' },
           { id: 'case-prioritization', label: 'Prioritization', icon: 'fas fa-sort-amount-up' },
           { id: 'case-assignment', label: 'Assignment', icon: 'fas fa-user-check' },
         ],
@@ -114,31 +117,7 @@ export const ROLE_NAVIGATION = {
     footer: { id: 'configuration', label: 'Settings', icon: 'fas fa-cog' },
   },
 
-  cascade_audit_team: {
-    categories: [
-      {
-        label: 'Overview',
-        items: [
-          { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-th-large' },
-        ],
-      },
-      {
-        label: 'Cascade',
-        items: [
-          { id: 'cascade-plan-cases', label: 'Plan to cases', icon: 'fas fa-link' },
-          { id: 'audit-cases', label: 'Audit cases', icon: 'fas fa-folder' },
-          { id: 'case-prioritization', label: 'Prioritization', icon: 'fas fa-sort-amount-up' },
-        ],
-      },
-      {
-        label: 'Analysis',
-        items: [
-          { id: 'risk-engine', label: 'Risk engine', icon: 'fas fa-bolt' },
-        ],
-      },
-    ],
-    footer: { id: 'configuration', label: 'Settings', icon: 'fas fa-cog' },
-  },
+
 
   team_leader: {
     categories: [
@@ -151,6 +130,7 @@ export const ROLE_NAVIGATION = {
       {
         label: 'Team',
         items: [
+          { id: 'case-management', label: 'My Cases', icon: 'fas fa-briefcase' },
           { id: 'team-cases', label: 'Team cases', icon: 'fas fa-users' },
           { id: 'team-progress', label: 'Team progress', icon: 'fas fa-chart-line' },
           { id: 'case-assignment', label: 'Assignments', icon: 'fas fa-user-check' },
@@ -199,32 +179,7 @@ export const ROLE_NAVIGATION = {
     footer: { id: 'configuration', label: 'Settings', icon: 'fas fa-cog' },
   },
 
-  process_owner: {
-    categories: [
-      {
-        label: 'Overview',
-        items: [
-          { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-th-large' },
-        ],
-      },
-      {
-        label: 'Cases',
-        items: [
-          { id: 'cases', label: 'Audit cases', icon: 'fas fa-folder' },
-          { id: 'stored-cases', label: 'Stored cases', icon: 'fas fa-archive' },
-          { id: 'case-assignment', label: 'Assignment', icon: 'fas fa-user-check' },
-        ],
-      },
-      {
-        label: 'Requests',
-        items: [
-          { id: 'requests', label: 'Requests', icon: 'fas fa-inbox' },
-          { id: 'case-types', label: 'Case types', icon: 'fas fa-tags' },
-        ],
-      },
-    ],
-    footer: { id: 'configuration', label: 'Settings', icon: 'fas fa-cog' },
-  },
+
 
   directorate_requester: {
     categories: [

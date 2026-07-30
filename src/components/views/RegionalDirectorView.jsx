@@ -1,24 +1,48 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../Card';
 import Badge from '../Badge';
-import { loadData } from '../../utils/data';
+import { loadData, saveData } from '../../utils/data';
 import { submitRegionalFeedback, getStatusDisplay, getBadgeClass } from '../../utils/businessLogic';
 import { useAuth } from '../../context/AuthContext';
 
 function RegionalDirectorView() {
   const { getUserInfo } = useAuth();
   const userInfo = getUserInfo();
+  const [plan, setPlan] = useState(null);
+  const [allocation, setAllocation] = useState(null);
+  const [adjustments, setAdjustments] = useState({});
+  const [comments, setComments] = useState('');
+  const [allPlans, setAllPlans] = useState([]);
+  const [selectedPlanId, setSelectedPlanId] = useState(null);
   
   // Use user's assigned region (no selection dropdown)
   const region = userInfo?.orgContext?.assignedRegion || 'Oromia';
 
-  const loadActivePlan = () => {
+  // Load ALL awaiting plans dynamically
+  const loadAllAwaitingPlans = () => {
     const data = loadData();
-    const activePlan = data.plans.find(p => p.status === 'AWAITING_FEEDBACK');
-    setPlan(activePlan);
+    const awaitingPlans = data.plans.filter(p => p.status === 'AWAITING_REGIONAL_FEEDBACK');
+    setAllPlans(awaitingPlans);
+    console.log('📋 Loaded awaiting plans:', awaitingPlans.length);
+  };
+
+  // Load selected plan details
+  const loadPlanDetails = (planId) => {
+    if (!planId) {
+      setPlan(null);
+      setAllocation(null);
+      return;
+    }
+
+    const data = loadData();
+    const selectedPlan = data.plans.find(p => p.id === planId);
     
-    if (activePlan) {
-      const alloc = activePlan.allocations.find(a => a.region === region);
+    if (selectedPlan) {
+      setPlan(selectedPlan);
+      console.log('✅ Selected plan:', selectedPlan.id);
+      
+      // Get allocation for this region
+      const alloc = selectedPlan.allocations?.find(a => a.region === region);
       setAllocation(alloc);
       
       if (alloc) {
@@ -33,9 +57,22 @@ function RegionalDirectorView() {
     }
   };
 
+  // Initial load and set up interval for dynamic updates
   useEffect(() => {
-    loadActivePlan();
-  }, [region]);
+    loadAllAwaitingPlans();
+    
+    // Reload every 5 seconds for real-time updates
+    const interval = setInterval(() => {
+      loadAllAwaitingPlans();
+    }, 5000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  // Load plan details when selectedPlanId changes
+  useEffect(() => {
+    loadPlanDetails(selectedPlanId);
+  }, [selectedPlanId, region]);
 
   const handleSubmitFeedback = () => {
     if (!plan) {
@@ -43,15 +80,70 @@ function RegionalDirectorView() {
       return;
     }
 
-    const message = prompt('Enter your feedback message:', 'Current allocation exceeds available staff.');
+    const message = prompt('Enter your feedback message:', 'Current allocation acceptable.');
     if (message === null) return;
 
     if (submitRegionalFeedback(plan.id, region, message, adjustments, comments)) {
-      alert('Feedback submitted to the Audit Director.');
+      alert('✅ Feedback submitted to the Audit Director.');
       setComments('');
-      loadActivePlan();
+      setSelectedPlanId(null);
+      loadAllAwaitingPlans(); // Refresh list
     } else {
-      alert('Cannot submit feedback. Plan may not be AWAITING_FEEDBACK.');
+      alert('❌ Cannot submit feedback. Plan may not be AWAITING_REGIONAL_FEEDBACK.');
+    }
+  };
+
+  const handleSendToTaxCenters = () => {
+    if (!plan) {
+      alert('❌ No plan selected');
+      return;
+    }
+
+    if (!allocation || allocation.status !== 'ACCEPTED') {
+      alert('❌ Plan must be ACCEPTED before sending to tax centers');
+      return;
+    }
+
+    if (!window.confirm(`Send plan "${plan.id}" to tax centers in ${region}?\n\nThis will notify all tax centers in the region that the plan is ready for them to accept.`)) {
+      return;
+    }
+
+    const data = loadData();
+    const currentPlan = data.plans.find(p => p.id === plan.id);
+    
+    if (currentPlan) {
+      // Mark plan as submitted to tax centers
+      if (!currentPlan.submittedToTaxCenters) {
+        currentPlan.submittedToTaxCenters = {};
+      }
+
+      currentPlan.submittedToTaxCenters[region] = {
+        status: 'SUBMITTED',
+        submittedDate: new Date().toISOString(),
+        submittedBy: `${region} Regional Director`,
+        taxCentersInRegion: [
+          `${region}-tc1`,
+          `${region}-tc2`,
+          `${region}-tc3`,
+          `${region}-tc4`
+        ]
+      };
+
+      // Add to approval history
+      if (!currentPlan.approvalHistory) currentPlan.approvalHistory = [];
+      currentPlan.approvalHistory.push({
+        action: 'SENT_TO_TAX_CENTERS',
+        by: `${region} Regional Director`,
+        date: new Date().toISOString(),
+        region: region,
+        notes: `Plan sent to ${currentPlan.submittedToTaxCenters[region].taxCentersInRegion.length} tax centers in ${region}`,
+        version: currentPlan.version
+      });
+
+      saveData(data);
+      alert(`✅ Plan sent to all tax centers in ${region}!\n\nTax centers can now review and accept the plan.`);
+      setSelectedPlanId(null);
+      loadAllAwaitingPlans(); // Refresh list
     }
   };
 
@@ -81,10 +173,33 @@ function RegionalDirectorView() {
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             <span style={{ fontWeight: '500', color: '#8b949e' }}>📍 Region:</span>
             <span style={{ fontSize: '15px', fontWeight: '600', color: '#f0f6fc' }}>{region}</span>
+            <span style={{ fontSize: '12px', color: '#6e7681', marginLeft: '20px' }}>
+              ({allPlans.length} plan{allPlans.length !== 1 ? 's' : ''} awaiting review)
+            </span>
           </div>
         </div>
         <div></div>
       </div>
+
+      {/* Plan Selector Dropdown */}
+      {allPlans.length > 0 && (
+        <div className="form-group">
+          <label htmlFor="plan-selector"><i className="fas fa-file-alt"></i> Select Plan to Review</label>
+          <select
+            id="plan-selector"
+            value={selectedPlanId || ''}
+            onChange={(e) => setSelectedPlanId(e.target.value || null)}
+            style={{ padding: '8px 12px', fontSize: '14px' }}
+          >
+            <option value="">-- Choose a plan --</option>
+            {allPlans.map(p => (
+              <option key={p.id} value={p.id}>
+                {p.id} (FY {p.year}) - v{p.version}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="cards">
         <Card title="My Allocation" number={allocation?.total || 0} icon="fas fa-folder" />
@@ -216,14 +331,58 @@ function RegionalDirectorView() {
 
       <div className="action-bar">
         <div></div>
-        <button 
-          className="btn btn-primary" 
-          onClick={handleSubmitFeedback}
-          disabled={!canSubmit}
-          title={!canSubmit ? 'Feedback already processed for this region.' : ''}
-        >
-          <i className="fas fa-paper-plane"></i> Submit Feedback
-        </button>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button 
+            className="btn btn-primary" 
+            onClick={() => {
+              if (!plan) {
+                alert('❌ No plan selected');
+                return;
+              }
+              const data = loadData();
+              const currentPlan = data.plans.find(p => p.id === plan.id);
+              if (currentPlan) {
+                const alloc = currentPlan.allocations?.find(a => a.region === region);
+                if (alloc) {
+                  alloc.status = 'ACCEPTED';
+                  if (!currentPlan.regionFeedbackStatus) currentPlan.regionFeedbackStatus = {};
+                  currentPlan.regionFeedbackStatus[region] = {
+                    status: 'received',
+                    receivedDate: new Date().toISOString(),
+                    adjustments: adjustments,
+                    comments: comments
+                  };
+                  saveData(data);
+                  alert('✅ Plan allocation ACCEPTED for your region!');
+                  setSelectedPlanId(null);
+                  loadAllAwaitingPlans(); // Refresh list
+                } else {
+                  alert('❌ No allocation found for your region');
+                }
+              }
+            }}
+            disabled={!canSubmit || !plan}
+            title={!canSubmit || !plan ? 'Already processed or no plan selected' : 'Accept this allocation'}
+          >
+            <i className="fas fa-check-circle"></i> Accept Allocation
+          </button>
+          <button 
+            className="btn btn-primary" 
+            onClick={handleSubmitFeedback}
+            disabled={!canSubmit}
+            title={!canSubmit ? 'Feedback already processed for this region.' : ''}
+          >
+            <i className="fas fa-paper-plane"></i> Submit Feedback
+          </button>
+          <button
+            className="btn btn-success"
+            onClick={handleSendToTaxCenters}
+            disabled={!plan || !allocation || allocation.status !== 'ACCEPTED'}
+            title={!plan ? 'No plan selected' : allocation?.status !== 'ACCEPTED' ? 'Must accept plan first' : 'Send to all tax centers in region'}
+          >
+            <i className="fas fa-share-square"></i> Send to Tax Centers
+          </button>
+        </div>
       </div>
     </div>
   );

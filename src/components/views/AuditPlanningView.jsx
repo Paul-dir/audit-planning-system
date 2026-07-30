@@ -502,46 +502,46 @@ function AuditPlanningView({ currentView }) {
 
         {/* KPI Cards - Same pattern as dashboard */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-7">
-          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-primary-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md">
-            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">Draft Plans</h3>
-            <div className="text-4xl font-bold leading-none mb-2 text-neutral-50">{stats.draft}</div>
-            <div className="text-2xl text-neutral-400 opacity-75"><i className="fas fa-file-alt"></i></div>
+          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-primary-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md overflow-hidden">
+            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2 break-words line-clamp-2">Draft Plans</h3>
+            <div className="text-2xl font-bold leading-tight mb-2 text-neutral-50 break-words line-clamp-2">{stats.draft}</div>
+            <div className="text-lg text-neutral-400 opacity-75"><i className="fas fa-file-alt"></i></div>
           </div>
 
-          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-info-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md">
-            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">Under Review</h3>
-            <div className="text-4xl font-bold leading-none mb-2 text-neutral-50">{stats.submitted}</div>
-            <div className="text-2xl text-neutral-400 opacity-75"><i className="fas fa-hourglass-half"></i></div>
+          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-info-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md overflow-hidden">
+            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2 break-words line-clamp-2">Under Review</h3>
+            <div className="text-2xl font-bold leading-tight mb-2 text-neutral-50 break-words line-clamp-2">{stats.submitted}</div>
+            <div className="text-lg text-neutral-400 opacity-75"><i className="fas fa-hourglass-half"></i></div>
           </div>
 
-          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-success-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md">
-            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">Approved</h3>
-            <div className="text-4xl font-bold leading-none mb-2 text-neutral-50">{stats.approved}</div>
-            <div className="text-2xl text-neutral-400 opacity-75"><i className="fas fa-check-circle"></i></div>
+          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-success-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md overflow-hidden">
+            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2 break-words line-clamp-2">Approved</h3>
+            <div className="text-2xl font-bold leading-tight mb-2 text-neutral-50 break-words line-clamp-2">{stats.approved}</div>
+            <div className="text-lg text-neutral-400 opacity-75"><i className="fas fa-check-circle"></i></div>
           </div>
 
-          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-warning-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md">
-            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">In Revision</h3>
-            <div className="text-4xl font-bold leading-none mb-2 text-neutral-50">{stats.inRevision}</div>
-            <div className="text-2xl text-neutral-400 opacity-75"><i className="fas fa-redo"></i></div>
+          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-warning-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md overflow-hidden">
+            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2 break-words line-clamp-2">In Revision</h3>
+            <div className="text-2xl font-bold leading-tight mb-2 text-neutral-50 break-words line-clamp-2">{stats.inRevision}</div>
+            <div className="text-lg text-neutral-400 opacity-75"><i className="fas fa-redo"></i></div>
           </div>
 
-          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-success-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md">
-            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">Finalized</h3>
-            <div className="text-4xl font-bold leading-none mb-2 text-neutral-50">{stats.finalized}</div>
-            <div className="text-2xl text-neutral-400 opacity-75"><i className="fas fa-flag-checkered"></i></div>
+          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-success-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md overflow-hidden">
+            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2 break-words line-clamp-2">Finalized</h3>
+            <div className="text-2xl font-bold leading-tight mb-2 text-neutral-50 break-words line-clamp-2">{stats.finalized}</div>
+            <div className="text-lg text-neutral-400 opacity-75"><i className="fas fa-flag-checkered"></i></div>
           </div>
 
-          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-info-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md">
-            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">Total Cases</h3>
-            <div className="text-4xl font-bold leading-none mb-2 text-neutral-50">{(stats.totalVolume || 0).toLocaleString()}</div>
-            <div className="text-2xl text-neutral-400 opacity-75"><i className="fas fa-calculator"></i></div>
+          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-info-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md overflow-hidden">
+            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2 break-words line-clamp-2">Total Cases</h3>
+            <div className="text-2xl font-bold leading-tight mb-2 text-neutral-50 break-words line-clamp-2">{(stats.totalVolume || 0).toLocaleString()}</div>
+            <div className="text-lg text-neutral-400 opacity-75"><i className="fas fa-calculator"></i></div>
           </div>
 
-          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-warning-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md">
-            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">Total Effort</h3>
-            <div className="text-4xl font-bold leading-none mb-2 text-neutral-50">{(stats.totalEffort || 0).toLocaleString()}h</div>
-            <div className="text-2xl text-neutral-400 opacity-75"><i className="fas fa-clock"></i></div>
+          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-warning-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md overflow-hidden">
+            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2 break-words line-clamp-2">Total Effort</h3>
+            <div className="text-2xl font-bold leading-tight mb-2 text-neutral-50 break-words line-clamp-2">{(stats.totalEffort || 0).toLocaleString()}h</div>
+            <div className="text-lg text-neutral-400 opacity-75"><i className="fas fa-clock"></i></div>
           </div>
         </div>
 

@@ -1,0 +1,125 @@
+/home/paul/Screenshots/Screenshot from 2026-07-28 15-02-27.png<!DOCTYPE html>
+<html>
+<head>
+    <title>AP Cluster - Data Checker</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #0f1419;
+            color: #8b949e;
+            padding: 20px;
+        }
+        h2 {
+            color: #58a6ff;
+        }
+        .plan {
+            background: #161b22;
+            border: 1px solid #30363d;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 6px;
+        }
+        .good {
+            color: #3fb950;
+        }
+        .bad {
+            color: #f85149;
+        }
+        .warning {
+            color: #d29922;
+        }
+        pre {
+            background: #0d1117;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 AP Cluster - Data Flow Checker</h1>
+    
+    <div id="output"></div>
+
+    <script>
+        const output = document.getElementById('output');
+        
+        // Load data from localStorage
+        const data = JSON.parse(localStorage.getItem('audit_plan_data') || '{"plans": []}');
+        
+        output.innerHTML = `<h2>Total Plans: ${data.plans.length}</h2>`;
+        
+        data.plans.forEach(plan => {
+            const div = document.createElement('div');
+            div.className = 'plan';
+            
+            let html = `<h3>${plan.id} - ${plan.fiscalYear} (v${plan.version})</h3>`;
+            html += `<p><strong>Status:</strong> <span class="${plan.status === 'FINALIZED' ? 'good' : 'warning'}">${plan.status}</span></p>`;
+            
+            // Check finalized
+            if (plan.status === 'FINALIZED') {
+                html += `<p class="good">✅ Step 1: Finalized by Director</p>`;
+                html += `<p>Sent to regions: ${plan.sentToRegions ? plan.sentToRegions.join(', ') : 'NONE'}</p>`;
+            } else {
+                html += `<p class="bad">❌ Not finalized yet (status: ${plan.status})</p>`;
+            }
+            
+            // Check regional acknowledgment
+            if (plan.regionalAcknowledgment) {
+                html += `<h4 class="good">✅ Step 2: Regional Acknowledgment</h4>`;
+                Object.keys(plan.regionalAcknowledgment).forEach(region => {
+                    const ack = plan.regionalAcknowledgment[region];
+                    html += `<p>&nbsp;&nbsp;${region}: ${ack.status} (${ack.acknowledgedDate || 'no date'})</p>`;
+                });
+            } else {
+                html += `<p class="bad">❌ Step 2: No regional acknowledgment yet</p>`;
+            }
+            
+            // Check submitted to tax centers
+            if (plan.submittedToTaxCenters) {
+                html += `<h4 class="good">✅ Step 3: Submitted to Tax Centers</h4>`;
+                Object.keys(plan.submittedToTaxCenters).forEach(region => {
+                    const sub = plan.submittedToTaxCenters[region];
+                    html += `<p>&nbsp;&nbsp;<strong>${region}:</strong> ${sub.status}</p>`;
+                    html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;Tax Centers: ${(sub.taxCentersInRegion || []).join(', ') || 'NONE'}</p>`;
+                    html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;Date: ${sub.submittedDate || 'no date'}</p>`;
+                });
+            } else {
+                html += `<p class="bad">❌ Step 3: Not submitted to any tax centers</p>`;
+            }
+            
+            // Check tax center acceptance
+            if (plan.taxCenterAcceptance) {
+                html += `<h4 class="good">✅ Step 4: Tax Center Acceptance</h4>`;
+                Object.keys(plan.taxCenterAcceptance).forEach(region => {
+                    html += `<p>&nbsp;&nbsp;<strong>${region}:</strong></p>`;
+                    Object.keys(plan.taxCenterAcceptance[region]).forEach(tc => {
+                        const acc = plan.taxCenterAcceptance[region][tc];
+                        html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;${tc}: ${acc.status} (${acc.acceptedDate || 'no date'})</p>`;
+                    });
+                });
+            } else {
+                html += `<p class="warning">⚠️ Step 4: No tax center has accepted yet</p>`;
+            }
+            
+            html += `<details><summary>Full Plan Data (click to expand)</summary><pre>${JSON.stringify(plan, null, 2)}</pre></details>`;
+            
+            div.innerHTML = html;
+            output.appendChild(div);
+        });
+        
+        // Summary
+        const summary = document.createElement('div');
+        summary.className = 'plan';
+        summary.innerHTML = `
+            <h2>📊 Summary</h2>
+            <p>Total Plans: ${data.plans.length}</p>
+            <p class="good">FINALIZED: ${data.plans.filter(p => p.status === 'FINALIZED').length}</p>
+            <p class="warning">With Regional Acknowledgment: ${data.plans.filter(p => p.regionalAcknowledgment).length}</p>
+            <p class="warning">Submitted to Tax Centers: ${data.plans.filter(p => p.submittedToTaxCenters).length}</p>
+            <p class="good">With Tax Center Acceptance: ${data.plans.filter(p => p.taxCenterAcceptance).length}</p>
+        `;
+        output.insertBefore(summary, output.firstChild);
+    </script>
+</body>
+</html>

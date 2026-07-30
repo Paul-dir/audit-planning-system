@@ -1,7 +1,14 @@
 import { useMemo } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { auditConfig } from '../config/auditConfig';
 import { ANNUAL_PLANNING_STAGES, STAGE_STATUS } from '../config/planningProcess';
 import { useAppData } from './useAppData';
+import {
+  loadAssignmentsByUser,
+  loadAuditors,
+  loadTeamLeaders,
+  loadAuditorsByTaxCenter,
+} from '../utils/assignmentData';
 
 function countSentAllocations(plans) {
   let sent = 0;
@@ -344,93 +351,70 @@ export function useTaxCenterManagerMetrics() {
   }, [data]);
 }
 
-export function useCascadeTeamMetrics() {
-  const { data } = useAppData();
 
-  return useMemo(() => {
-    const regionCount = auditConfig.regions.length;
-    const taxCenterCount = auditConfig.taxCenters.length;
-    const cases = data.auditCases || data.cases || [];
-    const assignments = data.assignments || [];
-    const plans = data.plans || [];
 
-    let cascadeCompleted = 0;
-    plans.forEach((plan) => {
-      if (plan.taxCenterAllocations) {
-        Object.values(plan.taxCenterAllocations).forEach((regionTCs) => {
-          cascadeCompleted += Object.keys(regionTCs).length;
-        });
-      }
-    });
-
-    const cascadeProgress = taxCenterCount > 0 ? Math.round((cascadeCompleted / taxCenterCount) * 100) : 0;
-
-    return {
-      summaryMetrics: [
-        {
-          id: 'regions',
-          title: 'Regions managed',
-          value: regionCount,
-          subtitle: 'active regional coverage',
-          color: 'blue',
-          progress: 100,
-        },
-        {
-          id: 'cascade',
-          title: 'Tax centers cascaded',
-          value: `${cascadeCompleted}/${taxCenterCount}`,
-          subtitle: 'plan distribution progress',
-          color: 'amber',
-          progress: cascadeProgress,
-        },
-        {
-          id: 'cases',
-          title: 'Cases created',
-          value: cases.length,
-          subtitle: `${assignments.length} cases assigned`,
-          color: 'teal',
-          progress: cases.length > 0 ? Math.round((assignments.length / cases.length) * 100) : 0,
-        },
-      ],
-      bottomMetrics: [
-        { id: 'plans', label: 'Active plans', value: plans.length, color: 'blue' },
-        { id: 'assigned', label: 'Cases assigned', value: assignments.length, color: 'teal' },
-        { id: 'progress', label: 'Cascade progress', value: `${cascadeProgress}%`, color: 'amber' },
-      ],
-      stages: null,
-      activeStageTitle: '',
-      timelineTitle: '',
-    };
-  }, [data]);
-}
-
+/**
+ * Team Leader Metrics — scoped to the logged-in user.
+ * Counts only cases assigned TO this team leader and their team's work.
+ */
 export function useTeamLeaderMetrics() {
   const { data } = useAppData();
+  const { getUserInfo } = useAuth();
+  const userInfo = getUserInfo();
 
   return useMemo(() => {
-    const assignments = data.assignments || [];
+    // Get the current user's ID (from auth context)
+    const userId = userInfo?.id || userInfo?.userId;
+
+    // Load assignments that belong to THIS team leader only
+    const allAssignments = data.assignments || [];
+    const myAssignments = allAssignments.filter(
+      (a) => a.currentOwner === userId && a.currentOwnerRole === 'TEAM_LEADER'
+    );
+
+    // Count cases assigned to my team leaders (by way of being assigned to me)
     const cases = data.auditCases || data.cases || [];
-    const teamMembers = new Set(assignments.map((a) => a.auditorId || a.assignedTo).filter(Boolean));
-    const inProgress = cases.filter((c) => c.status === 'IN_PROGRESS' || c.status === 'in_progress').length;
-    const closed = cases.filter((c) => c.status === 'CLOSED' || c.status === 'closed' || c.status === 'COMPLETED').length;
-    const teamCapacity = Math.max(teamMembers.size * 5, 10);
-    const capacityUsed = teamCapacity > 0 ? Math.round((assignments.length / teamCapacity) * 100) : 0;
-    const completionRate = assignments.length > 0 ? Math.round((closed / assignments.length) * 100) : 0;
+
+    // Get the case IDs that belong to my assignments
+    const myCaseIds = new Set(myAssignments.map((a) => a.caseId));
+    const myCases = cases.filter((c) => myCaseIds.has(c.id));
+
+    // Load my auditors (team members under this team leader)
+    const myAuditors = loadAuditors(userId);
+
+    // Count auditor assignments that went out from me
+    const auditorAssignments = allAssignments.filter(
+      (a) => a.currentOwnerRole === 'AUDITOR' && myAuditors.some((aud) => aud.id === a.currentOwner)
+    );
+
+    const inProgress = myCases.filter(
+      (c) => c.status === 'IN_PROGRESS' || c.status === 'in_progress'
+    ).length;
+    const closed = myCases.filter(
+      (c) => c.status === 'CLOSED' || c.status === 'closed' || c.status === 'COMPLETED'
+    ).length;
+
+    const teamCapacity = Math.max(myAuditors.length * 5, 10);
+    const casesAssignedToAuditors = auditorAssignments.length;
+    const capacityUsed =
+      teamCapacity > 0 ? Math.round((casesAssignedToAuditors / teamCapacity) * 100) : 0;
+    const completionRate =
+      myCases.length > 0 ? Math.round((closed / myCases.length) * 100) : 0;
 
     return {
       summaryMetrics: [
         {
           id: 'team',
           title: 'Team auditors',
-          value: teamMembers.size,
-          subtitle: 'active team members',
+          value: myAuditors.length,
+          subtitle: 'active team members under you',
           color: 'blue',
-          progress: Math.min(100, teamMembers.size * 20),
+          progress: Math.min(100, myAuditors.length * 20),
         },
         {
           id: 'assigned',
-          title: 'Cases assigned',
-          value: assignments.length,
+          title: 'Cases assigned to you',
+          value: myAssignments.length,
           subtitle: `${inProgress} currently in progress`,
           color: 'amber',
           progress: capacityUsed,
@@ -439,70 +423,95 @@ export function useTeamLeaderMetrics() {
           id: 'completion',
           title: 'Completion rate',
           value: `${completionRate}%`,
-          subtitle: `${closed} of ${assignments.length} cases closed`,
+          subtitle: `${closed} of ${myCases.length} your cases closed`,
           color: 'teal',
           progress: completionRate,
         },
       ],
       bottomMetrics: [
         { id: 'progress', label: 'In progress', value: inProgress, color: 'amber' },
-        { id: 'closed', label: 'Cases closed', value: closed, color: 'teal' },
-        { id: 'capacity', label: 'Capacity used', value: `${capacityUsed}%`, color: 'blue' },
+        { id: 'closed', label: 'Your cases closed', value: closed, color: 'teal' },
+        { id: 'capacity', label: 'Team capacity used', value: `${capacityUsed}%`, color: 'blue' },
       ],
       stages: null,
       activeStageTitle: '',
       timelineTitle: '',
     };
-  }, [data]);
+  }, [data, userInfo]);
 }
 
+/**
+ * Auditor Metrics — scoped to the logged-in user.
+ * Counts only cases assigned TO this auditor specifically.
+ */
 export function useAuditorMetrics() {
   const { data } = useAppData();
+  const { getUserInfo } = useAuth();
+  const userInfo = getUserInfo();
 
   return useMemo(() => {
+    const userId = userInfo?.id || userInfo?.userId;
+
+    // Filter to ONLY this auditor's assignments
+    const allAssignments = data.assignments || [];
+    const myAssignments = allAssignments.filter(
+      (a) => a.currentOwner === userId && a.currentOwnerRole === 'AUDITOR'
+    );
+
+    // Get the case details for my assignments only
     const cases = data.auditCases || data.cases || [];
-    const inProgress = cases.filter((c) => c.status === 'IN_PROGRESS' || c.status === 'in_progress').length;
-    const closed = cases.filter((c) => c.status === 'CLOSED' || c.status === 'closed' || c.status === 'COMPLETED').length;
-    const overdue = cases.filter((c) => c.isOverdue || c.status === 'OVERDUE').length;
-    const completionRate = cases.length > 0 ? Math.round((closed / cases.length) * 100) : 0;
+    const myCaseIds = new Set(myAssignments.map((a) => a.caseId));
+    const myCases = cases.filter((c) => myCaseIds.has(c.id));
+
+    const inProgress = myCases.filter(
+      (c) => c.status === 'IN_PROGRESS' || c.status === 'in_progress'
+    ).length;
+    const closed = myCases.filter(
+      (c) => c.status === 'CLOSED' || c.status === 'closed' || c.status === 'COMPLETED'
+    ).length;
+    const pending = myAssignments.filter(
+      (a) =>
+        a.currentState === 'ASSIGNED_TO_AUDITOR'
+    ).length;
+    const completionRate = myCases.length > 0 ? Math.round((closed / myCases.length) * 100) : 0;
 
     return {
       summaryMetrics: [
         {
           id: 'assigned',
-          title: 'Assigned cases',
-          value: cases.length,
+          title: 'Assigned to you',
+          value: myAssignments.length,
           subtitle: 'total cases on your queue',
           color: 'blue',
-          progress: Math.min(100, cases.length * 10),
+          progress: Math.min(100, myAssignments.length * 10),
         },
         {
           id: 'progress',
           title: 'In progress',
           value: inProgress,
-          subtitle: 'cases actively being executed',
+          subtitle: `${pending} awaiting your response`,
           color: 'amber',
-          progress: cases.length > 0 ? Math.round((inProgress / cases.length) * 100) : 0,
+          progress: myCases.length > 0 ? Math.round((inProgress / myCases.length) * 100) : 0,
         },
         {
           id: 'completion',
           title: 'Completion rate',
           value: `${completionRate}%`,
-          subtitle: `${closed} of ${cases.length} cases completed`,
+          subtitle: `${closed} of ${myCases.length} your cases completed`,
           color: 'teal',
           progress: completionRate,
         },
       ],
       bottomMetrics: [
-        { id: 'closed', label: 'Completed', value: closed, color: 'teal' },
-        { id: 'overdue', label: 'Overdue', value: overdue, color: 'amber' },
-        { id: 'rate', label: 'Completion rate', value: `${completionRate}%`, color: 'blue' },
+        { id: 'pending', label: 'Awaiting response', value: pending, color: 'amber' },
+        { id: 'closed', label: 'Your completed', value: closed, color: 'teal' },
+        { id: 'rate', label: 'Your completion rate', value: `${completionRate}%`, color: 'blue' },
       ],
       stages: null,
       activeStageTitle: '',
       timelineTitle: '',
     };
-  }, [data]);
+  }, [data, userInfo]);
 }
 
 export function useSeniorManagementMetrics() {
@@ -560,7 +569,7 @@ const METRIC_HOOKS = {
   audit_director: useAuditDirectorMetrics,
   regional_director: useRegionalDirectorMetrics,
   tax_center_manager: useTaxCenterManagerMetrics,
-  cascade_audit_team: useCascadeTeamMetrics,
+
   team_leader: useTeamLeaderMetrics,
   auditor: useAuditorMetrics,
   senior_management: useSeniorManagementMetrics,

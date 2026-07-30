@@ -6,6 +6,8 @@ import TreatmentPlanModal from '../modals/TreatmentPlanModal';
 import CapacityPanel from '../panels/CapacityPanel';
 import { loadData, saveData } from '../../utils/data';
 import { useAuth } from '../../context/AuthContext';
+import { getAllUsers } from '../../data/orgStructure';
+
 
 /**
  * CasePrioritizationView - Tax Center Manager / Cascade Audit Team
@@ -48,43 +50,24 @@ function CasePrioritizationView() {
     const data = loadData();
     const userRegion = userInfo?.orgContext?.assignedRegion;
     const userTaxCenter = userInfo?.orgContext?.assignedTaxCenter;
+    const isProcessOwner = userInfo?.role === 'process_owner';
 
-    if (!userRegion || !userTaxCenter) {
-      console.warn('No assigned region or tax center for user');
-      return;
-    }
+    // Load all cases for prioritization & tracking
+    const allCombinedCases = data.auditCases || [];
 
-    // Load Risk Engine cases
-    const riskEngineCases = (data.auditCases || [])
-      .filter(c => !c.createdFrom || c.createdFrom !== 'AUDIT_REQUEST');
-
-    // Load Approved Request cases (ONLY APPROVED_SCHEDULED status)
-    const requestCases = (data.auditCases || [])
-      .filter(c => 
-        c.createdFrom === 'AUDIT_REQUEST' && 
-        c.status === 'APPROVED_SCHEDULED'
-      );
-
-    // Combine both sources
-    const allCombinedCases = [...riskEngineCases, ...requestCases];
-
-    // CRITICAL: Filter by tax center + remove STORED cases
-    const userCases = allCombinedCases.filter(c =>
-      c.region === userRegion &&
-      c.taxCenter === userTaxCenter &&
-      c.storageStatus !== 'STORED'
-    );
+    // Filter cases for Process Owner & Tax Center view
+    const userCases = allCombinedCases.filter(c => {
+      if (isProcessOwner) return true; // Process owner sees all cases (assigned & unassigned)
+      if (userRegion && userTaxCenter) {
+        return c.region === userRegion && c.taxCenter === userTaxCenter;
+      }
+      return false;
+    });
 
     console.log('📊 CasePrioritizationView - Cases loaded:', {
       total: userCases.length,
-      riskEngine: riskEngineCases.filter(c => 
-        c.region === userRegion && c.taxCenter === userTaxCenter
-      ).length,
-      approvedRequests: requestCases.filter(c =>
-        c.region === userRegion && c.taxCenter === userTaxCenter
-      ).length,
-      userRegion,
-      userTaxCenter
+      assigned: userCases.filter(c => c.status === 'ASSIGNED_TO_TEAM_LEADER' || c.status === 'ASSIGNED_TO_AUDITOR').length,
+      unassigned: userCases.filter(c => c.status === 'PENDING_PROCESS_OWNER' || !c.status).length
     });
 
     // Sort by risk score descending
@@ -213,63 +196,37 @@ function CasePrioritizationView() {
     }
   };
 
-  // Store selected cases
+  // Prioritize and Store cases for later assignment
   const handleStoreSelectedCases = () => {
     if (selectedCases.size === 0) {
       alert('Please select at least one case');
       return;
     }
 
-    // Calculate total hours from treatment plans
-    let totalHours = 0;
-    selectedCases.forEach(caseId => {
-      const c = allCases.find(x => x.id === caseId);
-      totalHours += c.treatmentPlan?.estimatedHours || c.estimatedHours || 0;
-    });
-
-    // Validate capacity
-    if (totalHours > capacityConfig.remainingHours) {
-      alert(
-        `Insufficient capacity.\n\n` +
-        `Plan hours: ${totalHours} hrs\n` +
-        `Remaining capacity: ${capacityConfig.remainingHours} hrs\n\n` +
-        `Please reduce treatment plan hours or configure higher capacity.`
-      );
-      return;
-    }
-
-    // Update cases to STORED
     const data = loadData();
-    selectedCases.forEach(caseId => {
-      const caseIdx = data.auditCases.findIndex(c => c.id === caseId);
-      if (caseIdx >= 0) {
-        data.auditCases[caseIdx].storageStatus = 'STORED';
-        data.auditCases[caseIdx].storedDate = new Date().toISOString();
-        data.auditCases[caseIdx].storedBy = userInfo?.fullName || 'Tax Center Manager';
-      }
-    });
+    
+    // Get selected case IDs
+    const selectedCaseIds = Array.from(selectedCases);
 
-    // Update capacity
-    const configIdx = data.capacityConfigs?.findIndex(c =>
-      c.region === userInfo.orgContext.assignedRegion &&
-      c.taxCenter === userInfo.orgContext.assignedTaxCenter
-    );
-    if (configIdx >= 0 && data.capacityConfigs) {
-      data.capacityConfigs[configIdx].remainingHours -= totalHours;
+    let count = 0;
+    if (data.auditCases) {
+      data.auditCases.forEach(c => {
+        if (selectedCaseIds.includes(c.id)) {
+          c.storageStatus = 'STORED';
+          c.priorityRank = getCaseRank(c.id);
+          c.status = 'STORED_FOR_ASSIGNMENT';
+          count++;
+        }
+      });
     }
 
     // Save to localStorage
     saveData(data);
 
-    // Update local state
-    const newCapacity = { ...capacityConfig, remainingHours: capacityConfig.remainingHours - totalHours };
-    setCapacityConfig(newCapacity);
-
-    // Reload cases (removes stored ones)
+    // Reload cases
     loadCasesForTaxCenter();
     setSelectedCases(new Set());
-
-    alert(`✅ Successfully stored ${selectedCases.size} cases\n${totalHours} hours allocated`);
+    alert(`✅ Successfully prioritized and stored ${count} cases for assignment.`);
   };
 
   // Get statistics
@@ -447,7 +404,7 @@ function CasePrioritizationView() {
                 marginLeft: 'auto'
               }}
             >
-              <i className="fas fa-save"></i> Store {selectedCases.size} Cases
+              <i className="fas fa-save"></i> Prioritize & Store {selectedCases.size} Cases
             </button>
           )}
         </div>
@@ -501,74 +458,125 @@ function CasePrioritizationView() {
                 <th>RISK</th>
                 <th>STRENGTH</th>
                 <th>SOURCE</th>
+                <th>STATUS</th>
                 <th>REVENUE</th>
                 <th>HOURS</th>
                 <th style={{ width: '120px' }}>ACTIONS</th>
               </tr>
             </thead>
             <tbody>
-              {paginatedCases.map(auditCase => (
-                <tr key={auditCase.id}>
-                  <td>
-                    <input
-                      type="checkbox"
-                      checked={selectedCases.has(auditCase.id)}
-                      onChange={() => toggleCaseSelection(auditCase.id)}
-                    />
-                  </td>
-                  <td><strong>{getCaseRank(auditCase.id)}</strong></td>
-                  <td><strong style={{ color: '#4caf50' }}>{auditCase.id?.substring(0, 15)}...</strong></td>
-                  <td>{auditCase.tin}</td>
-                  <td>{auditCase.taxpayerName}</td>
-                  <td><small>{auditCase.auditType}</small></td>
-                  <td>
-                    <span style={{
-                      background: getRiskColor(auditCase.riskLevel),
-                      color: '#fff',
-                      padding: '4px 8px',
-                      borderRadius: '4px',
-                      fontSize: '11px',
-                      fontWeight: 'bold'
-                    }}>
-                      {auditCase.riskLevel}
-                    </span>
-                  </td>
-                  <td><small>{auditCase.riskStrength || 'N/A'}</small></td>
-                  <td>
-                    <span style={{
-                      background: auditCase.createdFrom === 'AUDIT_REQUEST' ? '#ff9800' : '#4a8fd9',
-                      color: '#fff',
-                      padding: '4px 8px',
-                      borderRadius: '4px',
-                      fontSize: '11px',
-                      fontWeight: 'bold'
-                    }}>
-                      {auditCase.createdFrom === 'AUDIT_REQUEST' ? '🔔 Req' : '⚙️ Eng'}
-                    </span>
-                  </td>
-                  <td><small>{((auditCase.revenueAtRisk || 0) / 1000000).toFixed(1)}M</small></td>
-                  <td><strong>{auditCase.estimatedHours}</strong></td>
-                  <td>
-                    <button
-                      onClick={() => {
-                        setSelectedDetailsId(auditCase.id);
-                        setShowDetailsModal(true);
-                      }}
-                      style={{
-                        padding: '4px 8px',
-                        background: '#2196f3',
+              {paginatedCases.map(auditCase => {
+                const isAssignedToTL = auditCase.status === 'ASSIGNED_TO_TEAM_LEADER' || auditCase.assignedTeamLeader;
+                const isAssignedToAuditor = auditCase.status === 'ASSIGNED_TO_AUDITOR' || auditCase.assignedAuditor;
+                const isAssigned = isAssignedToTL || isAssignedToAuditor || auditCase.storageStatus === 'STORED';
+
+                return (
+                  <tr key={auditCase.id} style={{ background: isAssignedToAuditor ? 'rgba(16, 185, 129, 0.08)' : isAssignedToTL ? 'rgba(156, 39, 176, 0.08)' : 'inherit' }}>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={selectedCases.has(auditCase.id)}
+                        onChange={() => !isAssigned && toggleCaseSelection(auditCase.id)}
+                        disabled={isAssigned}
+                        style={{ opacity: isAssigned ? 0.5 : 1, cursor: isAssigned ? 'not-allowed' : 'pointer' }}
+                      />
+                    </td>
+                    <td><strong>{getCaseRank(auditCase.id)}</strong></td>
+                    <td><strong style={{ color: '#4caf50' }}>{auditCase.id?.substring(0, 15)}...</strong></td>
+                    <td>{auditCase.tin}</td>
+                    <td>{auditCase.taxpayerName}</td>
+                    <td><small>{auditCase.auditType}</small></td>
+                    <td>
+                      <span style={{
+                        background: getRiskColor(auditCase.riskLevel),
                         color: '#fff',
-                        border: 'none',
+                        padding: '4px 8px',
                         borderRadius: '4px',
                         fontSize: '11px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Details
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                        fontWeight: 'bold'
+                      }}>
+                        {auditCase.riskLevel}
+                      </span>
+                    </td>
+                    <td><small>{auditCase.riskStrength || 'N/A'}</small></td>
+                    <td>
+                      <span style={{
+                        background: auditCase.createdFrom === 'AUDIT_REQUEST' ? '#ff9800' : '#4a8fd9',
+                        color: '#fff',
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        fontWeight: 'bold'
+                      }}>
+                        {auditCase.createdFrom === 'AUDIT_REQUEST' ? '🔔 Req' : '⚙️ Eng'}
+                      </span>
+                    </td>
+                    <td>
+                      {isAssignedToAuditor ? (
+                        <span style={{
+                          background: '#059669',
+                          color: '#fff',
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          fontWeight: 'bold',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}>
+                          🔒 Auditor: {auditCase.assignedAuditor || 'Assigned'}
+                        </span>
+                      ) : isAssignedToTL ? (
+                        <span style={{
+                          background: '#9c27b0',
+                          color: '#fff',
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          fontWeight: 'bold',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}>
+                          🔒 TL: {auditCase.assignedTeamLeader || 'Assigned'}
+                        </span>
+                      ) : (
+                        <span style={{
+                          background: '#4caf50',
+                          color: '#fff',
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          fontWeight: 'bold'
+                        }}>
+                          Unassigned
+                        </span>
+                      )}
+                    </td>
+                    <td><small>{((auditCase.revenueAtRisk || 0) / 1000000).toFixed(1)}M</small></td>
+                    <td><strong>{auditCase.estimatedHours}</strong></td>
+                    <td>
+                      <button
+                        onClick={() => {
+                          setSelectedDetailsId(auditCase.id);
+                          setShowDetailsModal(true);
+                        }}
+                        style={{
+                          padding: '4px 8px',
+                          background: '#2196f3',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Details
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -634,6 +642,8 @@ function CasePrioritizationView() {
           alert('✅ Treatment plan saved successfully');
         }}
       />
+
+
     </div>
   );
 }

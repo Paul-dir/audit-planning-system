@@ -402,7 +402,7 @@ function CaseReallocationView() {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {filteredAssignments.map(assignment => {
+          {filteredAssignments.map((assignment, idx) => {
             const data = loadData();
             const auditCase = (data.auditCases || []).find(c => c.id === assignment.caseId);
             const currentTL = teamLeaders.find(t => t.id === assignment.currentOwner);
@@ -411,7 +411,7 @@ function CaseReallocationView() {
             );
 
             return (
-              <div key={assignment.id} style={{
+              <div key={`${assignment.id}-${idx}`} style={{
                 background: '#1c2128',
                 border: `2px solid ${getStateColor(assignment.currentState)}`,
                 borderRadius: '6px',

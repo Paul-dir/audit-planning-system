@@ -76,8 +76,15 @@ const TAX_CENTERS_PER_REGION = {
   'Somali': ['Somali TC1', 'Somali TC2', 'Somali TC3']
 };
 
-// Audit Types
-const AUDIT_TYPES = ['Standard Audit', 'Compliance Audit', 'Risk-Based Audit'];
+// Audit Types (Must match auditConfig)
+const AUDIT_TYPES = [
+  'Desk Audit',
+  'Field Audit',
+  'Joint Audit',
+  'Transfer Pricing',
+  'Comprehensive',
+  'Issue Audit'
+];
 
 // Role hierarchy and access levels
 const ROLE_ACCESS_LEVELS = {
@@ -87,7 +94,6 @@ const ROLE_ACCESS_LEVELS = {
   'tax_center_manager': 'tax_center_only',
   'team_leader': 'tax_center_only',
   'auditor': 'assigned_cases_only',
-  'cascade_audit_team': 'national_only',
   'senior_management': 'national_only'
 };
 
@@ -188,50 +194,7 @@ function generateOrganizationalUsers() {
     });
   });
 
-  // 4. CASCADE AUDIT TEAM (3 users) - One per audit type - National level
-  const cascadeNames = ['Dabissa Girma', 'Desta Lemma', 'Diriba Tadesse'];
-  AUDIT_TYPES.forEach((auditType, idx) => {
-    users.push({
-      id: generateUserId('cascade_audit_team'),
-      full_name: cascadeNames[idx],
-      email: `${cascadeNames[idx].toLowerCase().replace(/\s+/g, '.')}@mor.gov.et`,
-      role: 'cascade_audit_team',
-      title: 'Cascade Audit Team',
-      accessLevel: 'national_only',
-      canAccess: ['all_regions', 'all_tax_centers', 'cascade_plans'],
-      org_context: {
-        assignedRegion: null,
-        assignedRegionName: 'National Level',
-        assignedTaxCenter: null,
-        assignedTaxCenterName: 'N/A',
-        teamId: null,
-        teamName: null,
-        auditType: auditType, // CASCADES SPECIFIC AUDIT TYPE
-        level: 'national'
-      }
-    });
-  });
 
-  // 5. PROCESS OWNER (1 user) - National level
-  users.push({
-    id: generateUserId('process_owner'),
-    full_name: 'Donkoro Fikadu',
-    email: 'donkoro.fikadu@mor.gov.et',
-    role: 'process_owner',
-    title: 'Process Owner',
-    accessLevel: 'national_only',
-    canAccess: ['all_regions', 'all_tax_centers', 'manage_processes'],
-    org_context: {
-      assignedRegion: null,
-      assignedRegionName: 'National Level',
-      assignedTaxCenter: null,
-      assignedTaxCenterName: 'N/A',
-      teamId: null,
-      teamName: null,
-      auditType: null,
-      level: 'national'
-    }
-  });
 
   // 6. REGIONAL AND LOWER HIERARCHY
   REGIONS.forEach((region) => {
@@ -281,97 +244,58 @@ function generateOrganizationalUsers() {
         }
       });
 
-      // Process Owner at Tax Center (1 per tax center = 15 total) - SHARED for all audit types
-      const poName = `${generateName()} ${generateName()}`;
-      users.push({
-        id: generateUserId('process_owner'),
-        full_name: poName,
-        email: `${poName.toLowerCase().replace(/\s+/g, '.')}@mor.gov.et`,
-        role: 'process_owner',
-        title: 'Process Owner',
-        accessLevel: 'tax_center_only',
-        canAccess: [taxCenter, 'all_audit_types'],
-        org_context: {
-          assignedRegion: region,
-          assignedRegionName: region,
-          assignedTaxCenter: taxCenter,
-          assignedTaxCenterName: taxCenter,
-          teamId: null,
-          teamName: `${taxCenter} - Process Management`,
-          auditType: null, // NULL = handles ALL audit types
-          level: 'tax_center'
-        }
-      });
 
-      // Cascade Team at Tax Center (1 per tax center = 15 total) - SHARED for all audit types
-      const catName = `${generateName()} ${generateName()}`;
-      const cascadeTeamId = `CASCADE-${region.substring(0, 3)}-${taxCenter.split(' ')[taxCenter.split(' ').length - 1]}`;
-      users.push({
-        id: generateUserId('cascade_audit_team'),
-        full_name: catName,
-        email: `${catName.toLowerCase().replace(/\s+/g, '.')}@mor.gov.et`,
-        role: 'cascade_audit_team',
-        title: 'Cascade Audit Team',
-        accessLevel: 'tax_center_only',
-        canAccess: [taxCenter, 'all_audit_types'],
-        org_context: {
-          assignedRegion: region,
-          assignedRegionName: region,
-          assignedTaxCenter: taxCenter,
-          assignedTaxCenterName: taxCenter,
-          teamId: cascadeTeamId,
-          teamName: `${taxCenter} - Cascade Team`,
-          auditType: null, // NULL = handles ALL audit types
-          level: 'tax_center'
-        }
-      });
 
-      // Team Leaders (3 per tax center = 1 per audit type = 3 × 3 × 5 = 45 total)
+      // Team Leaders (multiple per tax center possible)
       AUDIT_TYPES.forEach((auditType) => {
-        const teamId = `TEAM-${region.substring(0, 3)}-${taxCenter.split(' ')[taxCenter.split(' ').length - 1]}-${auditType.split(' ')[0].substring(0, 3)}`;
-        const tlName = `${generateName()} ${generateName()}`;
-        users.push({
-          id: generateUserId('team_leader'),
-          full_name: tlName,
-          email: `${tlName.toLowerCase().replace(/\s+/g, '.')}@mor.gov.et`,
-          role: 'team_leader',
-          title: 'Team Leader',
-          accessLevel: 'tax_center_only',
-          canAccess: [taxCenter, auditType],
-          org_context: {
-            assignedRegion: region,
-            assignedRegionName: region,
-            assignedTaxCenter: taxCenter,
-            assignedTaxCenterName: taxCenter,
-            teamId: teamId,
-            teamName: `${taxCenter} - ${auditType} Team`,
-            auditType: auditType, // TEAM LEADER FOR SPECIFIC AUDIT TYPE
-            level: 'team'
-          }
-        });
-
-        // Auditors (3 per team = 3 × 3 × 3 × 5 = 135 total)
-        for (let i = 0; i < 3; i++) {
-          const auditorName = `${generateName()} ${generateName()}`;
+        const numTLs = 2; // Generate 2 Team Leaders for every audit type across all tax centers
+        
+        for (let tlIndex = 1; tlIndex <= numTLs; tlIndex++) {
+          const teamId = `TEAM-${region.substring(0, 3)}-${taxCenter.split(' ')[taxCenter.split(' ').length - 1]}-${auditType.split(' ')[0].substring(0, 3)}-${tlIndex}`;
+          const tlName = `${generateName()} ${generateName()}`;
           users.push({
-            id: generateUserId('auditor'),
-            full_name: auditorName,
-            email: `${auditorName.toLowerCase().replace(/\s+/g, '.')}@mor.gov.et`,
-            role: 'auditor',
-            title: 'Auditor',
-            accessLevel: 'assigned_cases_only',
-            canAccess: ['assigned_cases'],
+            id: generateUserId('team_leader'),
+            full_name: tlName,
+            email: `${tlName.toLowerCase().replace(/\s+/g, '.')}@mor.gov.et`,
+            role: 'team_leader',
+            title: 'Team Leader',
+            accessLevel: 'tax_center_only',
+            canAccess: [taxCenter, auditType],
             org_context: {
               assignedRegion: region,
               assignedRegionName: region,
               assignedTaxCenter: taxCenter,
               assignedTaxCenterName: taxCenter,
               teamId: teamId,
-              teamName: `${taxCenter} - ${auditType} Team`,
-              auditType: auditType,
-              level: 'auditor'
+              teamName: `${taxCenter} - ${auditType} Team ${tlIndex}`,
+              auditType: auditType, // TEAM LEADER FOR SPECIFIC AUDIT TYPE
+              level: 'team'
             }
           });
+  
+          // Auditors (5 per team)
+          for (let i = 0; i < 5; i++) {
+            const auditorName = `${generateName()} ${generateName()}`;
+            users.push({
+              id: generateUserId('auditor'),
+              full_name: auditorName,
+              email: `${auditorName.toLowerCase().replace(/\s+/g, '.')}@mor.gov.et`,
+              role: 'auditor',
+              title: 'Auditor',
+              accessLevel: 'assigned_cases_only',
+              canAccess: ['assigned_cases'],
+              org_context: {
+                assignedRegion: region,
+                assignedRegionName: region,
+                assignedTaxCenter: taxCenter,
+                assignedTaxCenterName: taxCenter,
+                teamId: teamId,
+                teamName: `${taxCenter} - ${auditType} Team ${tlIndex}`,
+                auditType: auditType,
+                level: 'auditor'
+              }
+            });
+          }
         }
       });
     });
@@ -472,8 +396,6 @@ export function getStatistics() {
       audit_team: users.filter(u => u.role === 'audit_team').length,
       senior_management: users.filter(u => u.role === 'senior_management').length,
       audit_director: users.filter(u => u.role === 'audit_director').length,
-      cascade_audit_team: users.filter(u => u.role === 'cascade_audit_team').length,
-      process_owner: users.filter(u => u.role === 'process_owner').length,
       regional_director: users.filter(u => u.role === 'regional_director').length,
       tax_center_manager: users.filter(u => u.role === 'tax_center_manager').length,
       team_leader: users.filter(u => u.role === 'team_leader').length,

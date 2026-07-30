@@ -1,0 +1,297 @@
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                   COMPLETE AUDIT CASE WORKFLOW DIAGRAM                        ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+STAGE 1: PLAN ACCEPTANCE
+═════════════════════════════════════════════════════════════════════════════════
+  
+  Director Creates & Finalizes Plan (AP-0001)
+          ↓ status: FINALIZED
+          
+  Tax Center Manager Reviews Plan
+          ↓ accept
+          
+  Plan Accepted for Oromia-tc1
+  ├─ taxCenterAcceptance['Oromia']['Oromia-tc1'].status = 'ACCEPTED'
+  ├─ storedDate: 2026-07-27T10:00:00Z
+  └─ acceptedBy: Tax Center Manager
+  
+
+STAGE 2: PLAN CASCADING
+═════════════════════════════════════════════════════════════════════════════════
+  
+  Cascade Audit Team (Oromia-tc1) Loads System
+          ↓
+  
+  Filter: Find Accepted Plans
+  ├─ status='FINALIZED' ✅
+  ├─ taxCenterAcceptance['Oromia']['Oromia-tc1'].status='ACCEPTED' ✅
+  └─ Show: AP-0001 in dropdown
+  
+          ↓ select plan AP-0001
+          
+  View Plan Allocations for Oromia-tc1
+  ├─ Comprehensive: 10 cases
+  ├─ Field Audit: 30 cases
+  ├─ Desk Audit: 50 cases
+  ├─ Joint Audit: 5 cases
+  ├─ Transfer Pricing: 3 cases
+  └─ Issue Audit: 2 cases
+  TOTAL: 100 cases
+  
+          ↓ browse available taxpayers
+          
+  View 410 Taxpayers by Risk Level
+  ┌─────────┬──────────┬─────────────────┬──────────────────┐
+  │ Risk    │ Count    │ Recommended     │ Revenue at Risk  │
+  ├─────────┼──────────┼─────────────────┼──────────────────┤
+  │ Critical│    5     │ Comprehensive   │ 4.5M - 12M ETB   │
+  │ High    │   35     │ Field Audit     │ 1.5M - 4M ETB    │
+  │ Medium  │   50     │ Desk Audit      │ 500K - 1.5M ETB  │
+  │ Low     │  320     │ Desk Audit      │ 100K - 500K ETB  │
+  └─────────┴──────────┴─────────────────┴──────────────────┘
+  
+          ↓ select 100 taxpayers
+          ├─ 8 Critical → Comprehensive audit (8 of 10 slots)
+          ├─ 30 High → Field Audit (30 of 30 slots) ✅
+          ├─ 50 Medium → Desk Audit (50 of 50 slots) ✅
+          ├─ 4 Low → Issue Audit (4 of 5 slots)
+          └─ Total: 92 cases
+  
+          ↓ create cases
+          
+  100 Audit Cases Created
+  ┌──────────────────────────────────────────────────────────────┐
+  │ CASE-Oromia-tc1-1721904000000-0                             │
+  │ • planId: AP-0001                                           │
+  │ • taxpayerId: TP-0001 (Solomon Trading PLC)                 │
+  │ • riskLevel: Critical                                       │
+  │ • riskScore: 92                                             │
+  │ • auditType: Comprehensive                                  │
+  │ • status: ASSIGNED ◄─ Initial status from cascade           │
+  │ • createdDate: 2026-07-27T10:30:00Z                        │
+  └──────────────────────────────────────────────────────────────┘
+          ↓ (× 100 cases)
+  
+
+STAGE 3: CASE PRIORITIZATION & RANKING
+═════════════════════════════════════════════════════════════════════════════════
+  
+  Process Owner Reviews Cases
+  
+  Load Cases for Prioritization
+  ├─ Filter: status='ASSIGNED' ✅
+  ├─ Filter: storageStatus ≠ 'STORED' ✅
+  ├─ Filter: region='Oromia', taxCenter='Oromia-tc1' ✅
+  └─ Total: 100 cases ready for prioritization
+  
+          ↓ review and select top 50 cases
+          
+  Selected Cases (Top 50 by Risk Score)
+  ┌──────────┬─────────────────┬──────────┬─────────────┐
+  │ Rank     │ TIN             │ R.Score  │ Audit Type  │
+  ├──────────┼─────────────────┼──────────┼─────────────┤
+  │ 1        │ ET1000001       │    92    │ Comprehensive
+  │ 2        │ ET1000010       │    88    │ Comprehensive
+  │ 3        │ ET1000015       │    85    │ Comprehensive
+  │ 4        │ ET1000002       │    75    │ Field Audit
+  │ 5        │ ET1000003       │    72    │ Field Audit
+  │ ...      │ ...             │   ...    │ ...
+  │ 50       │ ET1000299       │    45    │ Desk Audit
+  └──────────┴─────────────────┴──────────┴─────────────┘
+  
+          ↓ click "Store Selected Cases"
+          
+  Cases Stored & Ranked by Risk Score
+  ┌──────────────────────────────────────────────────────────────┐
+  │ CASE-Oromia-tc1-1721904000000-0                             │
+  │ • status: ASSIGNED (unchanged)                              │
+  │ • storageStatus: STORED ◄─ NEW: Marked for assignment       │
+  │ • priorityRank: 1 ◄─ NEW: Ranked by risk score (high→low)   │
+  │ • storedDate: 2026-07-27T14:45:00Z ◄─ NEW                   │
+  │ • storedBy: Process Owner Name ◄─ NEW                       │
+  │ • treatmentPlan: { strategy: '...', ... } ◄─ OPTIONAL       │
+  └──────────────────────────────────────────────────────────────┘
+          ↓ (× 50 cases stored)
+  
+
+STAGE 4: CASE ASSIGNMENT
+═════════════════════════════════════════════════════════════════════════════════
+  
+  Team Leader Reviews Ranked Cases
+  
+  Load Cases for Assignment
+  ├─ Filter: storageStatus='STORED' ✅
+  ├─ Sort: priorityRank ASC (1 first = highest) ✅
+  ├─ Group: by auditType
+  └─ Total: 50 ranked cases ready for assignment
+  
+          ↓
+          
+  Cases Displayed by Priority & Audit Type
+  
+  COMPREHENSIVE (10 cases)          GROUP 1: Highest Priority
+  ├─ priorityRank 1: ET1000001     ← Assign first (highest risk)
+  ├─ priorityRank 2: ET1000010
+  ├─ priorityRank 3: ET1000015
+  └─ ... (7 more)
+  
+  FIELD AUDIT (30 cases)            GROUP 2: Medium Priority
+  ├─ priorityRank 4: ET1000002
+  ├─ priorityRank 5: ET1000003
+  └─ ... (28 more)
+  
+  DESK AUDIT (10 cases)             GROUP 3: Lower Priority
+  ├─ priorityRank 45: ET1000299
+  └─ ... (9 more)
+  
+          ↓ select cases and assign to auditors
+          
+  Cases Assigned to Auditors
+  ┌──────────────────────────────────────────────────────────────┐
+  │ CASE-Oromia-tc1-1721904000000-0                             │
+  │ • status: ASSIGNED (unchanged)                              │
+  │ • storageStatus: STORED (unchanged)                         │
+  │ • priorityRank: 1 (unchanged)                               │
+  │ • assignedTeam: ['Lead Auditor Name', 'Support 1'] ◄─ NEW   │
+  │ • leadAuditor: 'Lead Auditor Name' ◄─ NEW                   │
+  │ • assignedDate: 2026-07-28T09:00:00Z ◄─ NEW                 │
+  │ • assignedBy: 'Team Leader Name' ◄─ NEW                     │
+  └──────────────────────────────────────────────────────────────┘
+          ↓ (× assigned cases)
+  
+
+STAGE 5: AUDIT EXECUTION
+═════════════════════════════════════════════════════════════════════════════════
+  
+  Lead Auditor Reviews Assigned Cases
+  
+  Load Cases for Execution
+  ├─ Filter: assignedTeam includes user ✅
+  ├─ Display: case details + treatment plan
+  └─ Total: 10+ assigned cases ready for execution
+  
+          ↓ click "Start Execution"
+          
+  Start Audit (In Progress)
+  ┌──────────────────────────────────────────────────────────────┐
+  │ CASE-Oromia-tc1-1721904000000-0                             │
+  │ • status: IN_PROGRESS ◄─ UPDATED                            │
+  │ • startedDate: 2026-07-28T10:00:00Z ◄─ NEW                  │
+  └──────────────────────────────────────────────────────────────┘
+  
+  Auditor performs fieldwork, logs findings...
+  
+          ↓ click "Complete Audit"
+          
+  Complete Audit (Finished)
+  ┌──────────────────────────────────────────────────────────────┐
+  │ CASE-Oromia-tc1-1721904000000-0                             │
+  │ • status: COMPLETED ◄─ UPDATED                              │
+  │ • completedDate: 2026-08-15T17:30:00Z ◄─ NEW                │
+  │ • findings: {                           ◄─ NEW              │
+  │     issuesFound: 3,                                         │
+  │     highRiskIssues: 1,                                      │
+  │     summary: 'Revenue cutoff issue found...',               │
+  │     recommendedFollowUp: 'Management meeting required'      │
+  │   }                                                         │
+  │ • hoursSpent: 178 ◄─ NEW                                    │
+  └──────────────────────────────────────────────────────────────┘
+  
+          ↓ (× all assigned cases)
+          
+
+STAGE 6: REPORTING & FOLLOW-UP
+═════════════════════════════════════════════════════════════════════════════════
+  
+  Audit Director Reviews Completed Cases
+  ├─ Case completion rate: 100%
+  ├─ Issues found: 150 total
+  ├─ High-risk issues: 25
+  └─ Average hours per case: 145 (vs estimated 150)
+  
+  Generate Reports
+  ├─ Audit results by tax center
+  ├─ Issues identified and recommendations
+  └─ Follow-up actions required
+  
+  Plan Next Steps
+  ├─ Follow-up audits for high-risk findings
+  ├─ Management meetings for significant issues
+  └─ Capacity planning for next fiscal year
+
+
+KEY DATA TRANSFORMATIONS
+═════════════════════════════════════════════════════════════════════════════════
+
+Stage 2: Creation
+  ├─ Input: Plan Allocation → Taxpayer Risk → Audit Type
+  ├─ Output: Audit Cases (status='ASSIGNED')
+  └─ Count: 100 cases created
+
+Stage 3: Prioritization
+  ├─ Input: 100 ASSIGNED cases
+  ├─ Operation: Sort by risk score, assign ranks
+  ├─ Output: 50 STORED cases with priorityRank
+  └─ Result: Top 50 by risk ready for assignment
+
+Stage 4: Assignment
+  ├─ Input: 50 STORED cases
+  ├─ Operation: Team Leader assigns to auditors
+  ├─ Output: 50 ASSIGNED cases with assignedTeam
+  └─ Result: Ready for auditor execution
+
+Stage 5: Execution
+  ├─ Input: 50 ASSIGNED cases
+  ├─ Operation: Auditor executes, logs findings
+  ├─ Output: COMPLETED cases with findings + hours
+  └─ Result: Audit complete, ready for reporting
+
+
+MULTI-TAX CENTER SCENARIO
+═════════════════════════════════════════════════════════════════════════════════
+
+Same Plan (AP-0001) Across Multiple Tax Centers:
+
+Oromia-tc1: Accepts Plan ✅
+├─ Cascades: 100 cases
+├─ Prioritizes: 50 cases  
+├─ Assigns: 50 cases to auditors
+└─ Result: Independent workflow
+
+Oromia-tc2: Accepts Plan ✅
+├─ Cascades: 95 cases (different taxpayers)
+├─ Prioritizes: 48 cases
+├─ Assigns: 48 cases to auditors
+└─ Result: Independent workflow
+
+Oromia-tc3: Rejects Plan ❌
+├─ Cascades: Cannot see plan
+├─ Prioritizes: No cases
+├─ Assigns: No cases
+└─ Result: Excluded from workflow
+
+Amhara-tc1: Accepts Plan ✅
+├─ Cascades: 110 cases (more taxpayers in region)
+├─ Prioritizes: 60 cases
+├─ Assigns: 60 cases to different auditors
+└─ Result: Completely independent workflow
+
+NO CONFLICTS: Each tax center has isolated data and workflow
+
+
+BUILD STATUS
+═════════════════════════════════════════════════════════════════════════════════
+
+✓ vite build: SUCCESS
+✓ 125 modules transformed
+✓ No errors or warnings
+✓ Bundle size: ~906 KB (JS), 115 KB (CSS)
+✓ Exit Code: 0
+
+Ready for production! ✅
+
+
+Implementation Status: COMPLETE ✅
+Date: July 27, 2026
+Version: 1.0

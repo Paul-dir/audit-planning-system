@@ -6,6 +6,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { loadTeamLeaders, loadAssignment, saveAssignment, updateTeamLeaderWorkload } from '../../../utils/assignmentData';
 import { createAssignment, ASSIGNMENT_STATES } from '../../../utils/assignmentDataModels';
 import { executeTransition } from '../../../utils/assignmentStateMachine';
+import { intelligentDistributeCases, dynamicRerouteIfNeeded } from '../../../utils/intelligentCaseDistribution';
 
 /**
  * AssignToTeamLeadersView - Tax Center Manager
@@ -24,6 +25,7 @@ function AssignToTeamLeadersView() {
   const [assignments, setAssignments] = useState({});
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState(null);
+  const [assignmentSummary, setAssignmentSummary] = useState(null);
 
   useEffect(() => {
     loadCasesAndTeamLeaders();
@@ -44,13 +46,14 @@ function AssignToTeamLeadersView() {
       // Get stored cases
       const stored = (data.auditCases || []).filter(c =>
         c.storageStatus === 'STORED' &&
+        c.status === 'STORED_FOR_ASSIGNMENT' &&
         c.region === userRegion &&
         c.taxCenter === userTaxCenter
       );
 
       setStoredCases(stored);
 
-      // Group by audit type
+      // Group by audit type and sort each group by priorityRank
       const grouped = {};
       stored.forEach(c => {
         if (!grouped[c.auditType]) {
@@ -58,6 +61,12 @@ function AssignToTeamLeadersView() {
         }
         grouped[c.auditType].push(c);
       });
+      
+      // Sort each audit type group by priorityRank (1 = highest priority)
+      Object.keys(grouped).forEach(auditType => {
+        grouped[auditType].sort((a, b) => (a.priorityRank || 999) - (b.priorityRank || 999));
+      });
+      
       setCasesByAuditType(grouped);
 
       // Load team leaders
@@ -119,6 +128,16 @@ function AssignToTeamLeadersView() {
       // Update team leader workload
       updateTeamLeaderWorkload(teamLeaderId, 1);
 
+      // Also update data.auditCases directly
+      const data = loadData();
+      const caseIdx = (data.auditCases || []).findIndex(c => c.id === caseId);
+      if (caseIdx !== -1) {
+        data.auditCases[caseIdx].status = 'ASSIGNED_TO_TEAM_LEADER';
+        data.auditCases[caseIdx].assignedTeamLeader = tl.fullName || tl.full_name;
+        data.auditCases[caseIdx].assignedTeamLeaderId = tl.id;
+        saveData(data);
+      }
+
       // Update local state
       setAssignments({ ...assignments, [caseId]: assignment });
       setMessage({ type: 'success', text: `Case assigned to ${tl.fullName}` });
@@ -128,38 +147,50 @@ function AssignToTeamLeadersView() {
     }
   };
 
-  const handleAutoAssignAll = () => {
+  const toggleCaseSelection = (caseId, e) => {
+    e.stopPropagation();
+    const newSelected = new Set(selectedCases);
+    if (newSelected.has(caseId)) {
+      newSelected.delete(caseId);
+    } else {
+      newSelected.add(caseId);
+    }
+    setSelectedCases(newSelected);
+  };
+
+  const handleAutoAssignSelected = () => {
     try {
-      let successCount = 0;
-      let errors = [];
+      const data = loadData();
+      
+      // Initialize if needed
+      if (!data.teamLeaders) data.teamLeaders = [];
+      if (!data.assignments) data.assignments = [];
 
-      // For each audit type, assign to best available TL
-      Object.entries(casesByAuditType).forEach(([auditType, cases]) => {
-        const availableTLs = teamLeaders
-          .filter(tl => tl.auditType === auditType && tl.currentWorkload < tl.maxCapacity)
-          .sort((a, b) => a.currentWorkload - b.currentWorkload);
+      // Get selected unassigned case IDs
+      const unassignedStoredCaseIds = Array.from(selectedCases).filter(id => !assignments[id]);
 
-        if (availableTLs.length === 0) {
-          errors.push(`No available team leaders for ${auditType}`);
-          return;
-        }
+      if (unassignedStoredCaseIds.length === 0) {
+        setMessage({ type: 'warning', text: 'No unassigned cases selected' });
+        return;
+      }
 
-        const bestTL = availableTLs[0];
+      console.log('=== INTELLIGENT ASSIGNMENT START ===');
+      
+      // Use intelligent distribution algorithm
+      const summaryList = intelligentDistributeCases(unassignedStoredCaseIds, data, userInfo);
 
-        cases.forEach(c => {
-          try {
-            handleAssignCase(c.id, bestTL.id);
-            successCount++;
-          } catch (err) {
-            errors.push(`Failed to assign case ${c.id}: ${err.message}`);
-          }
-        });
-      });
+      // Trigger dynamic re-routing to catch any other pending cases
+      dynamicRerouteIfNeeded(data);
 
-      const msg = successCount > 0
-        ? `✓ Auto-assigned ${successCount} cases`
-        : 'No cases auto-assigned';
-      setMessage({ type: successCount > 0 ? 'success' : 'warning', text: msg });
+      // Save to localStorage
+      saveData(data);
+      console.log('=== INTELLIGENT ASSIGNMENT END ===');
+
+      // Reload view
+      loadCasesAndTeamLeaders();
+      setAssignmentSummary(summaryList);
+      setSelectedCases(new Set());
+      
     } catch (error) {
       console.error('Error auto-assigning:', error);
       setMessage({ type: 'error', text: 'Error auto-assigning cases' });
@@ -233,19 +264,42 @@ function AssignToTeamLeadersView() {
             gap: '12px'
           }}>
             <button
-              onClick={handleAutoAssignAll}
+              onClick={handleAutoAssignSelected}
+              disabled={selectedCases.size === 0}
               style={{
                 padding: '8px 14px',
-                background: '#4caf50',
-                color: '#fff',
+                background: selectedCases.size > 0 ? '#4caf50' : '#2e7d32',
+                color: selectedCases.size > 0 ? '#fff' : '#aaa',
                 border: 'none',
+                borderRadius: '6px',
+                fontSize: '12px',
+                fontWeight: '600',
+                cursor: selectedCases.size > 0 ? 'pointer' : 'not-allowed'
+              }}
+            >
+              <i className="fas fa-magic"></i> Auto-Assign Selected ({selectedCases.size})
+            </button>
+            <button
+              onClick={() => {
+                const allUnassigned = storedCases.filter(c => !assignments[c.id]).map(c => c.id);
+                if (selectedCases.size === allUnassigned.length) {
+                  setSelectedCases(new Set());
+                } else {
+                  setSelectedCases(new Set(allUnassigned));
+                }
+              }}
+              style={{
+                padding: '8px 14px',
+                background: '#1c2128',
+                color: '#58a6ff',
+                border: '1px solid #58a6ff',
                 borderRadius: '6px',
                 fontSize: '12px',
                 fontWeight: '600',
                 cursor: 'pointer'
               }}
             >
-              <i className="fas fa-magic"></i> Auto-Assign All
+              Select All Unassigned
             </button>
           </div>
 
@@ -322,25 +376,35 @@ function AssignToTeamLeadersView() {
                         justifyContent: 'space-between',
                         alignItems: 'center'
                       }}>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '4px' }}>
-                            <strong style={{ color: '#f0f6fc', minWidth: '100px' }}>{c.id.substring(0, 20)}...</strong>
-                            <span style={{
-                              background: c.riskLevel === 'Critical' ? '#ff5252' :
-                                c.riskLevel === 'High' ? '#ff9800' :
-                                c.riskLevel === 'Medium' ? '#ffc107' : '#4caf50',
-                              color: '#fff',
-                              padding: '3px 8px',
-                              borderRadius: '3px',
-                              fontSize: '10px',
-                              fontWeight: 'bold'
-                            }}>
-                              {c.riskLevel}
-                            </span>
+                        <div style={{ flex: 1, display: 'flex', gap: '12px', alignItems: 'center' }}>
+                          {!assignment && (
+                            <input 
+                              type="checkbox" 
+                              checked={selectedCases.has(c.id)}
+                              onChange={(e) => toggleCaseSelection(c.id, e)}
+                              style={{ cursor: 'pointer', transform: 'scale(1.2)' }}
+                            />
+                          )}
+                          <div>
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '4px' }}>
+                              <strong style={{ color: '#f0f6fc', minWidth: '100px' }}>{c.id.substring(0, 20)}...</strong>
+                              <span style={{
+                                background: c.riskLevel === 'Critical' ? '#ff5252' :
+                                  c.riskLevel === 'High' ? '#ff9800' :
+                                  c.riskLevel === 'Medium' ? '#ffc107' : '#4caf50',
+                                color: '#fff',
+                                padding: '3px 8px',
+                                borderRadius: '3px',
+                                fontSize: '10px',
+                                fontWeight: 'bold'
+                              }}>
+                                {c.riskLevel}
+                              </span>
+                            </div>
+                            <small style={{ color: '#8b949e' }}>
+                              {c.taxpayerName} (TIN: {c.tin}) | Revenue: {((c.revenueAtRisk || 0) / 1000000).toFixed(1)}M | Hours: {c.estimatedHours}
+                            </small>
                           </div>
-                          <small style={{ color: '#8b949e' }}>
-                            {c.taxpayerName} (TIN: {c.tin}) | Revenue: {((c.revenueAtRisk || 0) / 1000000).toFixed(1)}M | Hours: {c.estimatedHours}
-                          </small>
                         </div>
 
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -402,6 +466,119 @@ function AssignToTeamLeadersView() {
             </p>
           </div>
         </>
+      )}
+
+      {/* Assignment Summary Modal */}
+      {assignmentSummary && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.8)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: '#1c2128',
+            borderRadius: '12px',
+            width: '900px',
+            maxWidth: '90%',
+            maxHeight: '90vh',
+            display: 'flex',
+            flexDirection: 'column',
+            border: '1px solid #30363d',
+            boxShadow: '0 24px 48px rgba(0,0,0,0.5)'
+          }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid #30363d', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, color: '#f0f6fc', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <i className="fas fa-check-circle" style={{ color: '#4caf50' }}></i> Intelligent Distribution Complete
+              </h3>
+              <button onClick={() => setAssignmentSummary(null)} style={{ background: 'none', border: 'none', color: '#8b949e', cursor: 'pointer', fontSize: '16px' }}>✖</button>
+            </div>
+            
+            <div style={{ padding: '24px', overflowY: 'auto' }}>
+              <p style={{ color: '#8b949e', marginTop: 0, marginBottom: '20px' }}>
+                Successfully distributed <strong>{assignmentSummary.length}</strong> cases across multiple Team Leaders with dynamic auditor routing.
+              </p>
+
+              {/* Summary stats */}
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                gap: '12px',
+                marginBottom: '20px'
+              }}>
+                <div style={{ background: '#0f1419', padding: '12px', borderRadius: '6px', border: '1px solid #30363d' }}>
+                  <div style={{ fontSize: '11px', color: '#8b949e' }}>Total Cases Distributed</div>
+                  <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#4caf50', marginTop: '4px' }}>{assignmentSummary.length}</div>
+                </div>
+                <div style={{ background: '#0f1419', padding: '12px', borderRadius: '6px', border: '1px solid #30363d' }}>
+                  <div style={{ fontSize: '11px', color: '#8b949e' }}>Routed to Auditors</div>
+                  <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#58a6ff', marginTop: '4px' }}>
+                    {assignmentSummary.filter(s => s.status === 'ROUTED_TO_AUDITOR').length}
+                  </div>
+                </div>
+                <div style={{ background: '#0f1419', padding: '12px', borderRadius: '6px', border: '1px solid #30363d' }}>
+                  <div style={{ fontSize: '11px', color: '#8b949e' }}>Awaiting Auditor</div>
+                  <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#ffa500', marginTop: '4px' }}>
+                    {assignmentSummary.filter(s => s.status === 'AWAITING_AUDITOR').length}
+                  </div>
+                </div>
+              </div>
+
+              {/* Detailed table */}
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                <thead>
+                  <tr style={{ background: '#0f1419', color: '#8b949e', textAlign: 'left' }}>
+                    <th style={{ padding: '12px', borderBottom: '1px solid #30363d' }}>Rank</th>
+                    <th style={{ padding: '12px', borderBottom: '1px solid #30363d' }}>Case ID</th>
+                    <th style={{ padding: '12px', borderBottom: '1px solid #30363d' }}>Audit Type</th>
+                    <th style={{ padding: '12px', borderBottom: '1px solid #30363d' }}>Team Leader</th>
+                    <th style={{ padding: '12px', borderBottom: '1px solid #30363d' }}>Assigned Auditor</th>
+                    <th style={{ padding: '12px', borderBottom: '1px solid #30363d', textAlign: 'center' }}>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {assignmentSummary.map((s, idx) => (
+                    <tr key={idx} style={{ borderBottom: '1px solid #30363d' }}>
+                      <td style={{ padding: '12px', color: '#f0f6fc', fontWeight: 'bold' }}>{s.rank}</td>
+                      <td style={{ padding: '12px', color: '#f0f6fc' }}>{s.caseId.substring(0, 12)}...</td>
+                      <td style={{ padding: '12px', color: '#8b949e' }}>{s.auditType}</td>
+                      <td style={{ padding: '12px', color: '#58a6ff', fontWeight: 'bold' }}>{s.teamLeader}</td>
+                      <td style={{ padding: '12px', color: s.auditor === '(Pending)' ? '#ffa500' : '#4caf50' }}>
+                        {s.auditor}
+                      </td>
+                      <td style={{ padding: '12px', textAlign: 'center' }}>
+                        <span style={{
+                          background: s.status === 'ROUTED_TO_AUDITOR' ? '#4caf50' : '#ff9800',
+                          color: '#fff',
+                          padding: '4px 8px',
+                          borderRadius: '3px',
+                          fontSize: '10px',
+                          fontWeight: 'bold'
+                        }}>
+                          {s.status === 'ROUTED_TO_AUDITOR' ? '✓ Routed' : '⏳ Pending'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <p style={{ color: '#8b949e', marginTop: '16px', fontSize: '12px', fontStyle: 'italic' }}>
+                <i className="fas fa-info-circle"></i> Cases are intelligently distributed to Team Leaders based on audit type and capacity. 
+                Available auditors are automatically routed cases in real-time. Cases awaiting auditors will be routed when auditor capacity becomes available.
+              </p>
+            </div>
+
+            <div style={{ padding: '16px 24px', borderTop: '1px solid #30363d', display: 'flex', justifyContent: 'flex-end' }}>
+              <button onClick={() => setAssignmentSummary(null)} style={{ padding: '8px 16px', background: '#2196f3', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
+                Close Summary
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

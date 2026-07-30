@@ -1,5 +1,6 @@
-import React from 'react';
-import LoginForm from './components/LoginForm';
+import React, { useState } from 'react';
+import EnterpriseLoginForm from './components/EnterpriseLoginForm';
+import ConfigurationDashboard from './components/configuration/ConfigurationDashboard';
 import { RegionalProvider } from './context/RegionalContext';
 import { useAuth } from './context/AuthContext';
 // Import role-specific view containers
@@ -10,8 +11,6 @@ import TaxCenterManagerView from './components/roleViews/TaxCenterManagerView';
 import TeamLeaderView from './components/roleViews/TeamLeaderView';
 import AuditorView from './components/roleViews/AuditorView';
 import SeniorManagementView from './components/roleViews/SeniorManagementView';
-import CascadeTeamView from './components/roleViews/CascadeTeamView';
-import ProcessOwnerView from './components/roleViews/ProcessOwnerView';
 import RequesterDashboardView from './components/roleViews/RequesterDashboardView';
 
 function AppContent() {
@@ -23,7 +22,7 @@ function AppContent() {
   // Render role-specific view container
   const renderRoleView = () => {
     if (!isAuthenticated) {
-      return <LoginForm />;
+      return <EnterpriseLoginForm />;
     }
 
     switch (currentRole) {
@@ -41,10 +40,6 @@ function AppContent() {
         return <AuditorView />;
       case 'senior_management':
         return <SeniorManagementView />;
-      case 'cascade_audit_team':
-        return <CascadeTeamView />;
-      case 'process_owner':
-        return <ProcessOwnerView />;
       case 'directorate_requester':
         return <RequesterDashboardView userRole="directorate_requester" />;
       case 'external_stakeholder':
@@ -53,10 +48,6 @@ function AppContent() {
         return <AuditTeamView />;
     }
   };
-
-  if (!isAuthenticated) {
-    return <LoginForm />;
-  }
 
   return (
     <RegionalProvider userRole={currentRole}>

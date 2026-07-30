@@ -5,6 +5,7 @@ import TeamLeaderDashboard from '../dashboards/TeamLeaderDashboard';
 import AuditCasesListView from '../views/AuditCasesListView';
 import ConfigurationView from '../views/ConfigurationView';
 import CaseAssignmentView from '../views/CaseAssignmentView';
+import TeamLeaderCaseManagementView from '../views/assignments/TeamLeaderCaseManagementView';
 
 function TeamLeaderView() {
   const [currentView, setCurrentView] = useState('dashboard');
@@ -16,6 +17,8 @@ function TeamLeaderView() {
       case 'team-cases':
       case 'team-progress':
         return <AuditCasesListView />;
+      case 'case-management':
+        return <TeamLeaderCaseManagementView />;
       case 'case-assignment':
         return <CaseAssignmentView />;
       case 'configuration':

@@ -40,30 +40,59 @@ function CascadePlanToCasesView() {
   const [remainingAllocations, setRemainingAllocations] = useState({});
   const itemsPerPage = 15;
 
-  // Load approved plans - APPROVED plans that have allocations for cascade
+  // Normalize tax center name function
+  const normalizeTaxCenterName = (taxCenter, region) => {
+    if (!taxCenter) return null;
+    if (taxCenter.includes('Tax Center')) {
+      const parts = taxCenter.split(' ');
+      const tcNum = parts[parts.length - 1];
+      return `${region}-tc${tcNum}`;
+    }
+    return taxCenter;
+  };
+
+  // Load ACCEPTED plans - REAL DATA ONLY
   useEffect(() => {
     const data = loadData();
-    // Load APPROVED plans that have allocations for cascade
-    const plans = data.plans?.filter(p => p.status === 'APPROVED') || [];
-    setAllPlans(plans);
+    let acceptedPlans = [];
+    
+    if (!selectedRegion || !selectedTaxCenter) {
+      console.warn('⚠️ No region or tax center selected');
+      setAllPlans([]);
+      return;
+    }
+
+    const normalizedTC = normalizeTaxCenterName(selectedTaxCenter, selectedRegion);
+    
+    // Filter: Plans accepted by THIS tax center
+    acceptedPlans = (data.plans || []).filter(p => {
+      // MUST have taxCenterAcceptance entry for this region and tax center
+      const acceptance = p.taxCenterAcceptance?.[selectedRegion]?.[normalizedTC];
+      if (!acceptance) return false;
+      
+      // MUST have status ACCEPTED
+      if (acceptance.status !== 'ACCEPTED') return false;
+      
+      return true;
+    });
+
+    setAllPlans(acceptedPlans);
     const cases = data.auditCases || [];
     setCascadedCases(cases);
-    
-    // DEBUG: No auto-select - let user choose from dropdown
-    console.log('🔍 CASCADE VIEW - Plans Available:', {
-      totalPlans: plans.length,
-      userRegion,
-      userTaxCenter,
-      plans: plans.map(p => ({
+
+    console.log('✅ CASCADE VIEW - Plans Loaded:', {
+      region: selectedRegion,
+      taxCenter: selectedTaxCenter,
+      normalizedTC,
+      totalAcceptedPlans: acceptedPlans.length,
+      plans: acceptedPlans.map(p => ({
         id: p.id,
         status: p.status,
-        hasRegionalAllocation: !!p.regionalAllocation,
-        hasTaxCenterAllocations: !!p.taxCenterAllocations,
-        allocatedRegions: p.taxCenterAllocations ? Object.keys(p.taxCenterAllocations) : [],
-        taxCenterAllocationKeys: p.taxCenterAllocations ? Object.entries(p.taxCenterAllocations).map(([region, tcs]) => ({ region, taxCenters: Object.keys(tcs) })) : []
+        fiscalYear: p.fiscalYear,
+        acceptedDate: p.taxCenterAcceptance?.[selectedRegion]?.[normalizedTC]?.acceptedDate
       }))
     });
-  }, []);
+  }, [selectedRegion, selectedTaxCenter]);
 
   // Helper: Map audit type name to key
   const getAuditTypeKey = (auditTypeName) => {
@@ -325,14 +354,33 @@ function CascadePlanToCasesView() {
     setSelectedTaxpayers(new Map());
   };
 
-  // Create cases
+  // Create cases - WITH DUPLICATE PREVENTION
   const handleCreateCases = () => {
-    if (selectedTaxpayers.size === 0) {
-      alert('Please select taxpayers');
+    if (!selectedPlan) {
+      alert('❌ Please select a plan first');
       return;
     }
 
-    // Validate allocation limits per audit type
+    if (selectedTaxpayers.size === 0) {
+      alert('❌ Please select at least one taxpayer');
+      return;
+    }
+
+    const data = loadData();
+    
+    // VALIDATION 1: Check if cases already created for this plan from this cascade
+    const existingCasesForPlan = (data.auditCases || []).filter(c => 
+      c.planId === selectedPlan && 
+      c.region === selectedRegion && 
+      c.taxCenter === selectedTaxCenter
+    );
+
+    if (existingCasesForPlan.length > 0) {
+      alert(`⚠️ WARNING: This plan has already been cascaded!\n\nExisting cases: ${existingCasesForPlan.length}\n\nYou cannot cascade the same plan twice to avoid duplication.`);
+      return;
+    }
+
+    // VALIDATION 2: Check allocation limits per audit type
     const byAuditType = {};
     selectedTaxpayers.forEach(selection => {
       if (!byAuditType[selection.auditType]) {
@@ -341,44 +389,87 @@ function CascadePlanToCasesView() {
       byAuditType[selection.auditType]++;
     });
 
-    // Check each audit type against its allocation
+    // Validate each audit type
     for (const [auditType, count] of Object.entries(byAuditType)) {
       const auditTypeKey = getAuditTypeKey(auditType);
       const allocated = taxCenterAllocation?.[auditTypeKey] || 0;
+      
       if (count > allocated) {
-        alert(`❌ ${auditType} exceeds allocation\n\nSelected: ${count}\nAllocated: ${allocated}`);
+        alert(`❌ ERROR: ${auditType} exceeds allocation\n\nSelected: ${count}\nAllocated: ${allocated}`);
         return;
       }
     }
 
-    const data = loadData();
-    const newCases = Array.from(selectedTaxpayers.values()).map((selection, idx) => {
-      const taxpayer = allTaxpayers.find(tp => tp.id === selection.taxpayerId);
-      return {
-        id: `CASE-${selectedRegion}-${selectedTaxCenter}-${Date.now()}-${idx}`,
-        planId: selectedPlan,
-        taxCenter: selectedTaxCenter,
-        region: selectedRegion,
-        taxpayerId: selection.taxpayerId,
-        taxpayerName: taxpayer?.name,
-        tin: taxpayer?.tin,
-        auditType: selection.auditType,
-        riskLevel: taxpayer?.riskLevel,
-        riskScore: taxpayer?.riskScore,
-        revenueAtRisk: taxpayer?.revenueAtRisk,
-        estimatedHours: taxpayer?.estimatedHours,
-        status: 'ASSIGNED',
-        createdDate: new Date().toISOString(),
-        assignedTeam: null,
-        leadAuditor: null
-      };
+    // VALIDATION 3: Check for duplicate taxpayer selections (same taxpayer twice)
+    const taxpayerIds = new Set();
+    let duplicateFound = false;
+    selectedTaxpayers.forEach(selection => {
+      if (taxpayerIds.has(selection.taxpayerId)) {
+        duplicateFound = true;
+      }
+      taxpayerIds.add(selection.taxpayerId);
     });
 
+    if (duplicateFound) {
+      alert('❌ ERROR: Same taxpayer selected multiple times. Each taxpayer can only be selected once.');
+      return;
+    }
+
+    // All validations passed - CREATE CASES
+    const newCases = Array.from(selectedTaxpayers.values()).map((selection, idx) => {
+      const taxpayer = allTaxpayers.find(tp => tp.id === selection.taxpayerId);
+      
+      if (!taxpayer) {
+        console.error('Taxpayer not found:', selection.taxpayerId);
+        return null;
+      }
+
+      return {
+        id: `CASE-${selectedRegion}-${selectedTaxCenter}-${Date.now()}-${idx}`,
+        planId: selectedPlan,                    // ← Links to plan
+        taxCenter: selectedTaxCenter,
+        region: selectedRegion,
+        
+        taxpayerId: selection.taxpayerId,
+        taxpayerName: taxpayer.name,
+        tin: taxpayer.tin,
+        industry: taxpayer.industry,
+        
+        riskLevel: taxpayer.riskLevel,
+        riskScore: taxpayer.riskScore,
+        revenueAtRisk: taxpayer.revenueAtRisk,
+        
+        auditType: selection.auditType,
+        estimatedHours: taxpayer.estimatedHours,
+        
+        status: 'PENDING_PROCESS_OWNER',        // ← Routed to Process Owner
+        createdDate: new Date().toISOString(),
+        createdFrom: 'CASCADE_PLAN',            // ← Track origin
+        
+        assignedTeam: null,
+        leadAuditor: null,
+        
+        // Prioritization fields (will be set later)
+        storageStatus: undefined,
+        priorityRank: undefined
+      };
+    }).filter(c => c !== null);
+
+    if (newCases.length === 0) {
+      alert('❌ ERROR: No valid cases created');
+      return;
+    }
+
+    // SAVE: Add to data and persist
     data.auditCases = [...(data.auditCases || []), ...newCases];
     saveData(data);
+    
+    // Update state
     setCascadedCases([...cascadedCases, ...newCases]);
     setSelectedTaxpayers(new Map());
-    alert(`✓ Created ${newCases.length} audit cases!\n✓ Automatically stored`);
+    
+    // Confirm to user
+    alert(`✅ SUCCESS: Created ${newCases.length} audit cases\n\nPlan: ${selectedPlan}\nTax Center: ${selectedTaxCenter}\nRegion: ${selectedRegion}\n\nCases are now ready for prioritization.`);
   };
 
   // Get allocation summary
@@ -430,32 +521,32 @@ function CascadePlanToCasesView() {
   // Selection screen
   if (!selectedPlan || allPlans.length === 0) {
     return (
-      <div style={{ padding: '24px' }}>
-        <h2 style={{ marginBottom: '24px' }}><i className="fas fa-tasks"></i> Cascade Plan to Audit Cases</h2>
+      <div className="p-8">
+        <h2 className="mb-8"><i className="fas fa-tasks"></i> Cascade Plan to Audit Cases</h2>
         
         {/* Display auto-assigned region and tax center */}
         {selectedRegion && selectedTaxCenter && (
-          <div style={{ background: '#1c2128', padding: '16px', borderRadius: '8px', marginBottom: '24px', border: '1px solid #30363d' }}>
-            <p style={{ fontSize: '12px', color: '#8b949e', margin: '0 0 12px 0', fontWeight: 'bold' }}>📌 YOUR ASSIGNED LOCATION</p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <div style={{ background: '#0f1419', padding: '12px', borderRadius: '6px', border: '1px solid #30363d' }}>
-                <p style={{ fontSize: '10px', color: '#8b949e', margin: 0, marginBottom: '4px' }}>REGION</p>
-                <p style={{ fontSize: '14px', fontWeight: 'bold', color: '#3b82f6', margin: 0 }}>{selectedRegion}</p>
+          <div className="bg-panel dark:bg-panel-dark p-4 rounded-lg mb-8 border border-border dark:border-border-dark">
+            <p className="text-xs text-text-mid dark:text-text-mid mb-3 font-bold">📌 YOUR ASSIGNED LOCATION</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-ink dark:bg-ink p-3 rounded-md border border-border dark:border-border-dark">
+                <p className="text-xs text-text-mid dark:text-text-mid mb-1">REGION</p>
+                <p className="text-sm font-bold text-blue dark:text-blue">{selectedRegion}</p>
               </div>
-              <div style={{ background: '#0f1419', padding: '12px', borderRadius: '6px', border: '1px solid #30363d' }}>
-                <p style={{ fontSize: '10px', color: '#8b949e', margin: 0, marginBottom: '4px' }}>TAX CENTER</p>
-                <p style={{ fontSize: '14px', fontWeight: 'bold', color: '#f5c451', margin: 0 }}>{selectedTaxCenter}</p>
+              <div className="bg-ink dark:bg-ink p-3 rounded-md border border-border dark:border-border-dark">
+                <p className="text-xs text-text-mid dark:text-text-mid mb-1">TAX CENTER</p>
+                <p className="text-sm font-bold text-gold dark:text-gold">{selectedTaxCenter}</p>
               </div>
             </div>
           </div>
         )}
         
         {/* Plan selector - SHOW ALL PLANS */}
-        <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
-          <div style={{ flex: 1, minWidth: '250px' }}>
-            <label style={{ fontSize: '12px', color: '#8b949e', fontWeight: 'bold', display: 'block', marginBottom: '8px' }}>SELECT APPROVED PLAN TO CASCADE</label>
+        <div className="flex gap-3 mb-8 flex-wrap items-start">
+          <div className="flex-1 min-w-[250px]">
+            <label className="text-xs text-text-mid dark:text-text-mid font-bold block mb-2">SELECT APPROVED PLAN TO CASCADE</label>
             <select value={selectedPlan || ''} onChange={(e) => setSelectedPlan(e.target.value || null)}
-              style={{ width: '100%', padding: '10px 12px', border: '2px solid #4a8fd9', borderRadius: '8px', background: '#1c2128', color: '#f0f6fc', fontSize: '13px', fontWeight: '500' }}>
+              className="w-full px-3 py-2 border-2 border-blue dark:border-blue rounded-lg bg-panel dark:bg-panel-dark text-text-hi dark:text-text-hi text-sm font-medium focus:outline-none focus:border-blue dark:focus:border-blue">
               <option value="">-- Choose a Plan to Start --</option>
               {allPlans.map(plan => (
                 <option key={plan.id} value={plan.id}>
@@ -463,18 +554,18 @@ function CascadePlanToCasesView() {
                 </option>
               ))}
             </select>
-            <p style={{ fontSize: '11px', color: '#8b949e', marginTop: '6px', margin: '6px 0 0 0' }}>
+            <p className="text-xs text-text-mid dark:text-text-mid mt-1">
               {allPlans.length} approved plan(s) available
             </p>
           </div>
         </div>
 
         {allPlans.length === 0 && (
-          <div style={{ background: '#2a1a1a', border: '1px solid #ff7b7b', borderRadius: '6px', padding: '16px' }}>
-            <p style={{ fontSize: '13px', color: '#ff7b7b', margin: 0, fontWeight: 'bold' }}>
+          <div className="bg-ink dark:bg-ink border border-danger dark:border-danger rounded-lg p-4">
+            <p className="text-sm text-danger dark:text-danger font-bold">
               ⚠️ No APPROVED plans available
             </p>
-            <p style={{ fontSize: '12px', color: '#8b949e', margin: '6px 0 0 0' }}>
+            <p className="text-xs text-text-mid dark:text-text-mid mt-1">
               Ask your Regional Director to approve plans first
             </p>
           </div>
@@ -485,37 +576,17 @@ function CascadePlanToCasesView() {
 
   // Main cascade view
   return (
-    <div style={{ padding: '24px' }}>
-      <h2 style={{ marginBottom: '24px' }}><i className="fas fa-tasks"></i> Cascade to Audit Cases</h2>
+    <div className="p-8">
+      <h2 className="mb-8"><i className="fas fa-tasks"></i> Cascade to Audit Cases</h2>
 
       {/* Plan Switcher - PROMINENT at top */}
       {allPlans.length > 0 && (
-        <div style={{
-          background: '#0f1419', color: '#f0f6fc',
-          padding: '16px',
-          borderRadius: '8px',
-          marginBottom: '24px',
-          border: '2px solid #4a8fd9',
-          display: 'flex',
-          gap: '16px',
-          alignItems: 'center',
-          flexWrap: 'wrap'
-        }}>
-          <label style={{ fontSize: '13px', fontWeight: '700', color: '#4a8fd9', whiteSpace: 'nowrap' }}>
+        <div className="bg-ink dark:bg-ink text-text-hi dark:text-text-hi p-4 rounded-lg mb-8 border-2 border-blue dark:border-blue flex gap-4 items-center flex-wrap">
+          <label className="text-sm font-bold text-blue dark:text-blue whitespace-nowrap">
             <i className="fas fa-file-alt"></i> CURRENT PLAN:
           </label>
           <select value={selectedPlan || ''} onChange={(e) => setSelectedPlan(e.target.value || null)}
-            style={{
-              padding: '10px 14px',
-              borderRadius: '6px',
-              border: '2px solid #4a8fd9',
-              fontSize: '13px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              background: '#1c2128',
-              color: '#f0f6fc',
-              minWidth: '220px'
-            }}>
+            className="px-3 py-2 rounded-md border-2 border-blue dark:border-blue text-sm font-semibold cursor-pointer bg-panel dark:bg-panel-dark text-text-hi dark:text-text-hi min-w-[220px] focus:outline-none focus:border-blue dark:focus:border-blue">
             <option value="">-- Select a Plan --</option>
             {allPlans.map(plan => (
               <option key={plan.id} value={plan.id}>
@@ -523,49 +594,49 @@ function CascadePlanToCasesView() {
               </option>
             ))}
           </select>
-          <div style={{ fontSize: '12px', color: '#a0aec0', marginLeft: 'auto' }}>
+          <div className="text-xs text-text-mid dark:text-text-mid ml-auto">
             {allPlans.length} total plan(s) available
           </div>
         </div>
       )}
 
       {/* Selection & Plan Overview */}
-      <div style={{ background: '#1c2128', padding: '16px', borderRadius: '8px', marginBottom: '24px', border: '1px solid #30363d' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-          <h3 style={{ fontSize: '13px', fontWeight: 'bold', color: '#f0f6fc', margin: 0 }}>📋 PLAN ALLOCATION FOR THIS TAX CENTER</h3>
+      <div className="bg-panel dark:bg-panel-dark p-4 rounded-lg mb-8 border border-border dark:border-border-dark">
+        <div className="flex justify-between items-center mb-3">
+          <h3 className="text-sm font-bold text-text-hi dark:text-text-hi m-0">📋 PLAN ALLOCATION FOR THIS TAX CENTER</h3>
           <button onClick={() => { setSelectedPlan(null); setSelectedRegion(null); setSelectedTaxCenter(null); }}
-            style={{ padding: '4px 8px', fontSize: '11px', border: '1px solid #30363d', borderRadius: '4px', background: '#0f1419', color: '#8b949e', cursor: 'pointer' }}>← Back to Select</button>
+            className="px-2 py-1 text-xs border border-border dark:border-border-dark rounded-md bg-ink dark:bg-ink text-text-mid dark:text-text-mid cursor-pointer hover:bg-panel dark:hover:bg-panel transition-colors">← Back to Select</button>
         </div>
         
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '12px', marginBottom: '12px' }}>
-          <div style={{ background: '#0f1419', padding: '8px', borderRadius: '6px', border: '1px solid #30363d' }}>
-            <p style={{ fontSize: '10px', color: '#8b949e', margin: 0, marginBottom: '4px' }}>PLAN ID</p>
-            <p style={{ fontSize: '12px', fontWeight: 'bold', color: '#4caf50', margin: 0 }}>{selectedPlan}</p>
+        <div className="grid grid-cols-auto-fit gap-3 mb-3">
+          <div className="bg-ink dark:bg-ink p-2 rounded-md border border-border dark:border-border-dark">
+            <p className="text-xs text-text-mid dark:text-text-mid m-0 mb-1">PLAN ID</p>
+            <p className="text-sm font-bold text-success dark:text-success m-0">{selectedPlan}</p>
           </div>
-          <div style={{ background: '#0f1419', padding: '8px', borderRadius: '6px', border: '1px solid #30363d' }}>
-            <p style={{ fontSize: '10px', color: '#8b949e', margin: 0, marginBottom: '4px' }}>REGION</p>
-            <p style={{ fontSize: '12px', fontWeight: 'bold', color: '#3b82f6', margin: 0 }}>{selectedRegion}</p>
+          <div className="bg-ink dark:bg-ink p-2 rounded-md border border-border dark:border-border-dark">
+            <p className="text-xs text-text-mid dark:text-text-mid m-0 mb-1">REGION</p>
+            <p className="text-sm font-bold text-blue dark:text-blue m-0">{selectedRegion}</p>
           </div>
-          <div style={{ background: '#0f1419', padding: '8px', borderRadius: '6px', border: '1px solid #30363d' }}>
-            <p style={{ fontSize: '10px', color: '#8b949e', margin: 0, marginBottom: '4px' }}>TAX CENTER</p>
-            <p style={{ fontSize: '12px', fontWeight: 'bold', color: '#f5c451', margin: 0 }}>{selectedTaxCenter}</p>
+          <div className="bg-ink dark:bg-ink p-2 rounded-md border border-border dark:border-border-dark">
+            <p className="text-xs text-text-mid dark:text-text-mid m-0 mb-1">TAX CENTER</p>
+            <p className="text-sm font-bold text-gold dark:text-gold m-0">{selectedTaxCenter}</p>
           </div>
-          <div style={{ background: '#0f1419', padding: '8px', borderRadius: '6px', border: '1px solid #30363d' }}>
-            <p style={{ fontSize: '10px', color: '#8b949e', margin: 0, marginBottom: '4px' }}>TOTAL ALLOCATED</p>
-            <p style={{ fontSize: '12px', fontWeight: 'bold', color: totalAllocated === 0 ? '#ff7b7b' : '#5ee89c', margin: 0 }}>{totalAllocated} Cases</p>
+          <div className="bg-ink dark:bg-ink p-2 rounded-md border border-border dark:border-border-dark">
+            <p className="text-xs text-text-mid dark:text-text-mid m-0 mb-1">TOTAL ALLOCATED</p>
+            <p className={`text-sm font-bold m-0 ${totalAllocated === 0 ? 'text-danger dark:text-danger' : 'text-success dark:text-success'}`}>{totalAllocated} Cases</p>
           </div>
         </div>
 
         {/* Warning if no allocation */}
         {totalAllocated === 0 && taxCenterAllocation === undefined && (
-          <div style={{ background: '#2a1a1a', border: '1px solid #ff7b7b', borderRadius: '6px', padding: '12px', marginTop: '12px' }}>
-            <p style={{ fontSize: '12px', color: '#ff7b7b', margin: 0, fontWeight: 'bold' }}>
+          <div className="bg-ink dark:bg-ink border border-danger dark:border-danger rounded-lg p-3 mt-3">
+            <p className="text-xs text-danger dark:text-danger m-0 font-bold">
               ⚠️ NO ALLOCATION FOUND
             </p>
-            <p style={{ fontSize: '11px', color: '#c9d1d9', margin: '4px 0 0 0' }}>
+            <p className="text-xs text-text-mid dark:text-text-mid m-1 mt-1">
               This plan does not have allocations sent to {selectedTaxCenter} in {selectedRegion}.
             </p>
-            <p style={{ fontSize: '11px', color: '#8b949e', margin: '4px 0 0 0' }}>
+            <p className="text-xs text-text-mid dark:text-text-mid m-0 mt-1">
               Please ask the Director to send allocations for this tax center before cascading.
             </p>
           </div>
@@ -573,34 +644,28 @@ function CascadePlanToCasesView() {
       </div>
 
       {/* Allocations - THIS TAX CENTER ONLY */}
-      <div style={{ marginBottom: '24px' }}>
-        <h3 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '12px', color: '#f0f6fc' }}>✅ THIS TAX CENTER's ALLOCATION BREAKDOWN</h3>
-        <p style={{ fontSize: '12px', color: '#8b949e', marginBottom: '12px', margin: '0 0 12px 0' }}>
-          Total cases allocated to {selectedTaxCenter}: <strong style={{ color: totalAllocated === 0 ? '#ff7b7b' : '#5ee89c' }}>{totalAllocated}</strong>
+      <div className="mb-8">
+        <h3 className="text-sm font-bold mb-3 text-text-hi dark:text-text-hi">✅ THIS TAX CENTER's ALLOCATION BREAKDOWN</h3>
+        <p className="text-xs text-text-mid dark:text-text-mid mb-3">
+          Total cases allocated to {selectedTaxCenter}: <strong className={totalAllocated === 0 ? 'text-danger dark:text-danger' : 'text-success dark:text-success'}>{totalAllocated}</strong>
         </p>
         
         {totalAllocated === 0 ? (
-          <div style={{ background: '#1c2128', padding: '24px', borderRadius: '8px', border: '1px solid #30363d', textAlign: 'center' }}>
-            <p style={{ fontSize: '13px', color: '#8b949e', margin: 0 }}>No allocation data available for this tax center.</p>
-            <p style={{ fontSize: '12px', color: '#ff7b7b', margin: '8px 0 0 0', fontWeight: 'bold' }}>
+          <div className="bg-panel dark:bg-panel-dark p-8 rounded-lg border border-border dark:border-border-dark text-center">
+            <p className="text-sm text-text-mid dark:text-text-mid m-0">No allocation data available for this tax center.</p>
+            <p className="text-xs text-danger dark:text-danger m-0 mt-2 font-bold">
               ⚠️ Cascade cannot proceed without allocation
             </p>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
+          <div className="grid grid-cols-auto-fit gap-3">
             {Object.entries(allocationSummary).map(([type, data]) => (
-              <div key={type} style={{ 
-                background: '#1c2128', 
-                padding: '12px', 
-                borderRadius: '8px', 
-                border: data.remaining === 0 ? '2px solid #ff7b7b' : '1px solid #30363d',
-                boxShadow: data.remaining === 0 ? '0 0 8px rgba(255, 123, 123, 0.2)' : 'none'
-              }}>
-                <p style={{ fontSize: '11px', fontWeight: 'bold', color: '#f0f6fc', margin: 0, marginBottom: '4px' }}>{type}</p>
-                <p style={{ fontSize: '14px', fontWeight: 'bold', color: '#5ee89c', margin: 0, marginBottom: '2px' }}>
+              <div key={type} className={`bg-panel dark:bg-panel-dark p-3 rounded-lg ${data.remaining === 0 ? 'border-2 border-danger dark:border-danger shadow-lg shadow-danger/20' : 'border border-border dark:border-border-dark'}`}>
+                <p className="text-xs font-bold text-text-hi dark:text-text-hi m-0 mb-1">{type}</p>
+                <p className="text-sm font-bold text-success dark:text-success m-0 mb-1">
                   {data.cascaded} / {data.total}
                 </p>
-                <p style={{ fontSize: '10px', color: data.remaining === 0 ? '#ff7b7b' : '#8b949e', margin: 0 }}>
+                <p className={`text-xs m-0 ${data.remaining === 0 ? 'text-danger dark:text-danger' : 'text-text-mid dark:text-text-mid'}`}>
                   {data.remaining === 0 ? '🔴 FULL' : `Remaining: ${data.remaining}`}
                 </p>
               </div>
@@ -610,134 +675,134 @@ function CascadePlanToCasesView() {
       </div>
 
       {/* Filters */}
-      <div style={{ marginBottom: '24px' }}>
-        <h3 style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '12px', color: '#f0f6fc' }}>🔍 SELECT TAXPAYERS TO CASCADE</h3>
-        <p style={{ fontSize: '12px', color: '#8b949e', marginBottom: '12px', margin: '0 0 12px 0' }}>
+      <div className="mb-8">
+        <h3 className="text-sm font-bold mb-3 text-text-hi dark:text-text-hi">🔍 SELECT TAXPAYERS TO CASCADE</h3>
+        <p className="text-xs text-text-mid dark:text-text-mid mb-3">
           Filter taxpayers by risk, audit type, or name. Allocation limits are enforced automatically.
         </p>
       </div>
 
       {totalAllocated === 0 ? (
-        <div style={{ background: '#2a1a1a', border: '2px solid #ff7b7b', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
-          <p style={{ fontSize: '14px', color: '#ff7b7b', margin: 0, fontWeight: 'bold' }}>❌ CANNOT PROCEED</p>
-          <p style={{ fontSize: '12px', color: '#c9d1d9', margin: '8px 0 0 0' }}>
+        <div className="bg-ink dark:bg-ink border-2 border-danger dark:border-danger rounded-lg p-8 text-center mb-8">
+          <p className="text-sm text-danger dark:text-danger m-0 font-bold">❌ CANNOT PROCEED</p>
+          <p className="text-xs text-text-mid dark:text-text-mid m-0 mt-2">
             This plan has no allocation for {selectedTaxCenter} in {selectedRegion}.
           </p>
-          <p style={{ fontSize: '11px', color: '#8b949e', margin: '8px 0 0 0' }}>
+          <p className="text-xs text-text-mid dark:text-text-mid m-0 mt-2">
             The Director/Regional Director must send allocations to this tax center first.
           </p>
           <button onClick={() => { setSelectedPlan(null); setSelectedRegion(null); setSelectedTaxCenter(null); }}
-            style={{ marginTop: '16px', padding: '8px 16px', border: '1px solid #ff7b7b', borderRadius: '6px', background: 'transparent', color: '#ff7b7b', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
+            className="mt-4 px-4 py-2 border border-danger dark:border-danger rounded-md bg-transparent text-danger dark:text-danger text-xs font-semibold cursor-pointer hover:bg-danger/10 transition-colors">
             ← Back to Selection
           </button>
         </div>
       ) : (
         <>
-          <div style={{ background: '#1c2128', padding: '12px', borderRadius: '8px', marginBottom: '24px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-        <input type="text" placeholder="Search TIN or name..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-          style={{ flex: 1, minWidth: '150px', padding: '6px 10px', border: '1px solid #30363d', borderRadius: '6px', background: '#0f1419', color: '#f0f6fc', fontSize: '12px' }} />
-        
-        <select value={filterRiskLevel} onChange={(e) => setFilterRiskLevel(e.target.value)}
-          style={{ padding: '6px 10px', border: '1px solid #30363d', borderRadius: '6px', background: '#0f1419', color: '#f0f6fc', fontSize: '12px' }}>
-          <option value="All">All Risk</option>
-          <option value="Critical">Critical</option>
-          <option value="High">High</option>
-          <option value="Medium">Medium</option>
-          <option value="Low">Low</option>
-        </select>
+          <div className="bg-panel dark:bg-panel-dark p-3 rounded-lg mb-8 flex gap-2 flex-wrap border border-border dark:border-border-dark">
+            <input type="text" placeholder="Search TIN or name..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1 min-w-[150px] px-2 py-1 border border-border dark:border-border-dark rounded-md bg-ink dark:bg-ink text-text-hi dark:text-text-hi text-xs focus:outline-none focus:border-gold dark:focus:border-gold" />
+            
+            <select value={filterRiskLevel} onChange={(e) => setFilterRiskLevel(e.target.value)}
+              className="px-2 py-1 border border-border dark:border-border-dark rounded-md bg-ink dark:bg-ink text-text-hi dark:text-text-hi text-xs focus:outline-none focus:border-gold">
+              <option value="All">All Risk</option>
+              <option value="Critical">Critical</option>
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Low">Low</option>
+            </select>
 
-        <select value={filterAuditType} onChange={(e) => setFilterAuditType(e.target.value)}
-          style={{ padding: '6px 10px', border: '1px solid #30363d', borderRadius: '6px', background: '#0f1419', color: '#f0f6fc', fontSize: '12px' }}>
-          <option value="All">All Types</option>
-          <option value="Comprehensive">Comprehensive</option>
-          <option value="Field Audit">Field Audit</option>
-          <option value="Desk Audit">Desk Audit</option>
-          <option value="Joint Audit">Joint Audit</option>
-          <option value="Transfer Pricing">TP</option>
-        </select>
+            <select value={filterAuditType} onChange={(e) => setFilterAuditType(e.target.value)}
+              className="px-2 py-1 border border-border dark:border-border-dark rounded-md bg-ink dark:bg-ink text-text-hi dark:text-text-hi text-xs focus:outline-none focus:border-gold">
+              <option value="All">All Types</option>
+              <option value="Comprehensive">Comprehensive</option>
+              <option value="Field Audit">Field Audit</option>
+              <option value="Desk Audit">Desk Audit</option>
+              <option value="Joint Audit">Joint Audit</option>
+              <option value="Transfer Pricing">TP</option>
+            </select>
 
-        <button onClick={() => { setSearchTerm(''); setFilterRiskLevel('All'); setFilterAuditType('All'); }}
-          style={{ padding: '6px 10px', border: '1px solid #30363d', borderRadius: '6px', background: '#0f1419', color: '#8b949e', fontSize: '12px', cursor: 'pointer' }}>Clear</button>
-      </div>
+            <button onClick={() => { setSearchTerm(''); setFilterRiskLevel('All'); setFilterAuditType('All'); }}
+              className="px-2 py-1 border border-border dark:border-border-dark rounded-md bg-ink dark:bg-ink text-text-mid dark:text-text-mid text-xs cursor-pointer hover:bg-panel dark:hover:bg-panel transition-colors">Clear</button>
+          </div>
 
-      {/* Table */}
-      <div className="table-container" style={{ marginBottom: '24px' }}>
-        <table>
-          <thead>
-            <tr>
-              <th style={{ width: '40px' }}>☑</th>
-              <th>TIN</th>
-              <th>TAXPAYER</th>
-              <th>RISK</th>
-              <th>AUDIT TYPE</th>
-              <th>REVENUE</th>
-              <th>HOURS</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedTaxpayers.map(taxpayer => {
-              const isSelected = selectedTaxpayers.has(`${taxpayer.id}-${taxpayer.recommendedAuditType}`);
-              const auditTypeKey = getAuditTypeKey(taxpayer.recommendedAuditType);
-              const slotsAvailable = remainingAllocations[auditTypeKey] || 0;
-              const canSelect = slotsAvailable > 0 || isSelected;
-              
-              return (
-                <tr key={taxpayer.id} style={{ opacity: !canSelect ? 0.4 : 1 }}>
-                  <td><input type="checkbox" checked={isSelected} onChange={() => canSelect && toggleTaxpayerSelection(taxpayer.id)} disabled={!canSelect} /></td>
-                  <td>{taxpayer.tin}</td>
-                  <td>{taxpayer.name}</td>
-                  <td><Badge status={taxpayer.riskLevel} className="feedback" /></td>
-                  <td style={{ color: slotsAvailable > 0 ? '#4caf50' : '#ff7b7b' }}>
-                    {taxpayer.recommendedAuditType} {slotsAvailable <= 0 && !isSelected ? '❌' : ''}
-                  </td>
-                  <td>{(taxpayer.revenueAtRisk / 1000000).toFixed(1)}M</td>
-                  <td>{taxpayer.estimatedHours}</td>
+          {/* Table */}
+          <div className="table-container mb-8 overflow-x-auto border border-border dark:border-border-dark rounded-lg">
+            <table className="w-full text-sm">
+              <thead className="bg-panel dark:bg-panel-dark border-b border-border dark:border-border-dark">
+                <tr>
+                  <th className="w-10 text-left px-3 py-2">☑</th>
+                  <th className="text-left px-3 py-2 text-text-mid dark:text-text-mid font-semibold text-xs">TIN</th>
+                  <th className="text-left px-3 py-2 text-text-mid dark:text-text-mid font-semibold text-xs">TAXPAYER</th>
+                  <th className="text-left px-3 py-2 text-text-mid dark:text-text-mid font-semibold text-xs">RISK</th>
+                  <th className="text-left px-3 py-2 text-text-mid dark:text-text-mid font-semibold text-xs">AUDIT TYPE</th>
+                  <th className="text-left px-3 py-2 text-text-mid dark:text-text-mid font-semibold text-xs">REVENUE</th>
+                  <th className="text-left px-3 py-2 text-text-mid dark:text-text-mid font-semibold text-xs">HOURS</th>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+              </thead>
+              <tbody className="divide-y divide-border dark:divide-border-dark">
+                {paginatedTaxpayers.map(taxpayer => {
+                  const isSelected = selectedTaxpayers.has(`${taxpayer.id}-${taxpayer.recommendedAuditType}`);
+                  const auditTypeKey = getAuditTypeKey(taxpayer.recommendedAuditType);
+                  const slotsAvailable = remainingAllocations[auditTypeKey] || 0;
+                  const canSelect = slotsAvailable > 0 || isSelected;
+                  
+                  return (
+                    <tr key={taxpayer.id} className={`border-b border-border dark:border-border-dark hover:bg-panel/50 dark:hover:bg-panel-dark/50 transition-colors ${!canSelect ? 'opacity-40' : ''}`}>
+                      <td className="px-3 py-2"><input type="checkbox" checked={isSelected} onChange={() => canSelect && toggleTaxpayerSelection(taxpayer.id)} disabled={!canSelect} /></td>
+                      <td className="px-3 py-2 text-text-hi dark:text-text-hi text-xs">{taxpayer.tin}</td>
+                      <td className="px-3 py-2 text-text-hi dark:text-text-hi text-xs">{taxpayer.name}</td>
+                      <td className="px-3 py-2"><Badge status={taxpayer.riskLevel} className="feedback" /></td>
+                      <td className={`px-3 py-2 text-xs ${slotsAvailable > 0 ? 'text-success dark:text-success' : 'text-danger dark:text-danger'}`}>
+                        {taxpayer.recommendedAuditType} {slotsAvailable <= 0 && !isSelected ? '❌' : ''}
+                      </td>
+                      <td className="px-3 py-2 text-text-hi dark:text-text-hi text-xs">{(taxpayer.revenueAtRisk / 1000000).toFixed(1)}M</td>
+                      <td className="px-3 py-2 text-text-hi dark:text-text-hi text-xs">{taxpayer.estimatedHours}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
 
-      {/* Summary */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '24px' }}>
-        <div style={{ background: '#1c2128', padding: '12px', borderRadius: '8px', border: '1px solid #30363d' }}>
-          <p style={{ fontSize: '11px', fontWeight: 'bold', color: '#f0f6fc', margin: 0, marginBottom: '4px' }}>YOUR SELECTION</p>
-          <p style={{ fontSize: '18px', fontWeight: 'bold', color: selectionSummary.count > totalAllocated ? '#ff7b7b' : '#5ee89c', margin: 0 }}>
-            {selectionSummary.count} / {totalAllocated}
-          </p>
-          <p style={{ fontSize: '11px', color: '#8b949e', margin: '4px 0 0 0' }}>
-            {selectionSummary.count === 0 ? 'No cases selected' : 
-             selectionSummary.count === totalAllocated ? '✅ FULL ALLOCATION' :
-             selectionSummary.count > totalAllocated ? '❌ EXCEEDS LIMIT' :
-             `${totalAllocated - selectionSummary.count} slots remaining`}
-          </p>
-        </div>
-        <div style={{ background: '#1c2128', padding: '12px', borderRadius: '8px', border: '1px solid #30363d' }}>
-          <p style={{ fontSize: '11px', fontWeight: 'bold', color: '#f0f6fc', margin: 0, marginBottom: '4px' }}>IMPACT</p>
-          <p style={{ fontSize: '12px', color: '#8b949e', margin: '4px 0' }}>Revenue: <strong>{(selectionSummary.totalRevenue / 1000000).toFixed(1)}M</strong></p>
-          <p style={{ fontSize: '12px', color: '#8b949e', margin: '4px 0 0 0' }}>Audit Hours: <strong>{selectionSummary.totalHours.toLocaleString()}</strong></p>
-        </div>
-      </div>
+          {/* Summary */}
+          <div className="grid grid-cols-2 gap-3 mb-8">
+            <div className="bg-panel dark:bg-panel-dark p-3 rounded-lg border border-border dark:border-border-dark">
+              <p className="text-xs font-bold text-text-hi dark:text-text-hi m-0 mb-1">YOUR SELECTION</p>
+              <p className={`text-lg font-bold m-0 mb-1 ${selectionSummary.count > totalAllocated ? 'text-danger dark:text-danger' : 'text-success dark:text-success'}`}>
+                {selectionSummary.count} / {totalAllocated}
+              </p>
+              <p className="text-xs text-text-mid dark:text-text-mid m-0">
+                {selectionSummary.count === 0 ? 'No cases selected' : 
+                 selectionSummary.count === totalAllocated ? '✅ FULL ALLOCATION' :
+                 selectionSummary.count > totalAllocated ? '❌ EXCEEDS LIMIT' :
+                 `${totalAllocated - selectionSummary.count} slots remaining`}
+              </p>
+            </div>
+            <div className="bg-panel dark:bg-panel-dark p-3 rounded-lg border border-border dark:border-border-dark">
+              <p className="text-xs font-bold text-text-hi dark:text-text-hi m-0 mb-1">IMPACT</p>
+              <p className="text-xs text-text-mid dark:text-text-mid m-0 mb-1">Revenue: <strong>{(selectionSummary.totalRevenue / 1000000).toFixed(1)}M</strong></p>
+              <p className="text-xs text-text-mid dark:text-text-mid m-0">Audit Hours: <strong>{selectionSummary.totalHours.toLocaleString()}</strong></p>
+            </div>
+          </div>
 
-      {/* Buttons */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button onClick={() => { setSelectedPlan(null); setSelectedRegion(null); setSelectedTaxCenter(null); }}
-            style={{ padding: '8px 12px', border: '1px solid #30363d', borderRadius: '6px', background: '#0f1419', color: '#8b949e', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>Back</button>
-          
-          <button onClick={handleAutoCascade}
-            style={{ padding: '8px 12px', border: '1px solid #3b82f6', borderRadius: '6px', background: '#0f1419', color: '#3b82f6', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>Auto Cascade</button>
+          {/* Buttons */}
+          <div className="flex justify-between gap-2">
+            <div className="flex gap-2">
+              <button onClick={() => { setSelectedPlan(null); setSelectedRegion(null); setSelectedTaxCenter(null); }}
+                className="px-3 py-2 border border-border dark:border-border-dark rounded-md bg-ink dark:bg-ink text-text-mid dark:text-text-mid text-xs font-semibold cursor-pointer hover:bg-panel dark:hover:bg-panel transition-colors">Back</button>
+              
+              <button onClick={handleAutoCascade}
+                className="px-3 py-2 border border-blue dark:border-blue rounded-md bg-ink dark:bg-ink text-blue dark:text-blue text-xs font-semibold cursor-pointer hover:bg-blue/10 transition-colors">Auto Cascade</button>
 
-          <button onClick={handleClearSelection} disabled={selectedTaxpayers.size === 0}
-            style={{ padding: '8px 12px', border: '1px solid #30363d', borderRadius: '6px', background: '#0f1419', color: '#8b949e', fontSize: '12px', fontWeight: '600', cursor: 'pointer', opacity: selectedTaxpayers.size === 0 ? 0.5 : 1 }}>Clear</button>
-        </div>
+              <button onClick={handleClearSelection} disabled={selectedTaxpayers.size === 0}
+                className={`px-3 py-2 border border-border dark:border-border-dark rounded-md bg-ink dark:bg-ink text-text-mid dark:text-text-mid text-xs font-semibold cursor-pointer hover:bg-panel dark:hover:bg-panel transition-colors ${selectedTaxpayers.size === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>Clear</button>
+            </div>
 
-        <button onClick={handleCreateCases} disabled={selectedTaxpayers.size === 0 || selectionSummary.count > totalAllocated}
-          style={{ padding: '8px 12px', border: 'none', borderRadius: '6px', background: (selectedTaxpayers.size === 0 || selectionSummary.count > totalAllocated) ? '#4f5763' : '#3b82f6', color: '#ffffff', fontSize: '12px', fontWeight: '600', cursor: (selectedTaxpayers.size === 0 || selectionSummary.count > totalAllocated) ? 'not-allowed' : 'pointer' }}>
-          Create {selectionSummary.count} / {totalAllocated} Cases
-        </button>
-      </div>
+            <button onClick={handleCreateCases} disabled={selectedTaxpayers.size === 0 || selectionSummary.count > totalAllocated}
+              className={`px-3 py-2 rounded-md text-white text-xs font-semibold cursor-pointer transition-colors ${(selectedTaxpayers.size === 0 || selectionSummary.count > totalAllocated) ? 'bg-text-mid dark:bg-text-mid opacity-50 cursor-not-allowed' : 'bg-blue dark:bg-blue hover:opacity-90'}`}>
+              Create {selectionSummary.count} / {totalAllocated} Cases
+            </button>
+          </div>
         </>
       )}
     </div>

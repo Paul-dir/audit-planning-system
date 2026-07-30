@@ -1,3 +1,9 @@
+/**
+ * ApprovedPlansDeploymentView — Send approved plans to regions
+ * Used by both Director (to send) and Regional Directors (to acknowledge)
+ * Fully converted to Tailwind CSS with enterprise-grade design.
+ */
+
 import React, { useState, useEffect } from 'react';
 import Card from '../Card';
 import Badge from '../Badge';
@@ -7,10 +13,6 @@ import { getStatusDisplay, getBadgeClass } from '../../utils/businessLogic';
 import { auditConfig } from '../../config/auditConfig';
 import { useRegional } from '../../context/RegionalContext';
 
-/**
- * ApprovedPlansDeploymentView - Send approved plans to regions
- * Used by both Director (to send) and Regional Directors (to acknowledge)
- */
 function ApprovedPlansDeploymentView({ userRole }) {
   const { selectedRegion, assignedRegion } = useRegional();
   const [plans, setPlans] = useState([]);
@@ -26,15 +28,12 @@ function ApprovedPlansDeploymentView({ userRole }) {
     const data = loadData();
     
     if (userRole === 'director') {
-      // Director sees SENIOR_MANAGEMENT_APPROVED plans ready to send
-      // Also include old AWAITING_SENIOR_MANAGEMENT_APPROVAL plans (backwards compatibility)
       const directorPlans = data.plans.filter(p => 
         p.status === 'SENIOR_MANAGEMENT_APPROVED' || 
         p.status === 'AWAITING_SENIOR_MANAGEMENT_APPROVAL'
       );
       setPlans(directorPlans);
     } else if (userRole === 'regional') {
-      // Regional Directors see FINALIZED plans ready to acknowledge - ONLY for their region
       const regionalPlans = data.plans.filter(p => 
         p.status === 'FINALIZED' &&
         p.regionalAllocation &&
@@ -117,108 +116,107 @@ function ApprovedPlansDeploymentView({ userRole }) {
 
   if (selectedPlan) {
     return (
-      <>
+      <div className="space-y-6 p-8 bg-neutral-900 min-h-screen">
         <PlanDetailsView 
           plan={selectedPlan}
           onBack={() => setSelectedPlan(null)}
           readOnly={true}
         />
-        <div className="action-bar" style={{ marginTop: '20px' }}>
-          <div></div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {userRole === 'director' && selectedPlan.status === 'SENIOR_MANAGEMENT_APPROVED' && (
-              <button 
-                className="btn btn-success"
-                onClick={() => handleDirectorDeploy(selectedPlan.id)}
-              >
-                <i className="fas fa-paper-plane"></i> Deploy to All Regions
-              </button>
-            )}
-            {userRole === 'regional' && selectedPlan.status === 'FINALIZED' && (
-              <button 
-                className="btn btn-success"
-                onClick={() => handleRegionalAcknowledge(selectedPlan.id)}
-              >
-                <i className="fas fa-thumbs-up"></i> Acknowledge Receipt
-              </button>
-            )}
-          </div>
+        <div className="flex justify-end gap-3 pt-4">
+          {userRole === 'director' && selectedPlan.status === 'SENIOR_MANAGEMENT_APPROVED' && (
+            <button 
+              className="inline-flex items-center gap-2 rounded-lg bg-success-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-success-700"
+              onClick={() => handleDirectorDeploy(selectedPlan.id)}
+            >
+              <i className="fas fa-paper-plane"></i> Deploy to All Regions
+            </button>
+          )}
+          {userRole === 'regional' && selectedPlan.status === 'FINALIZED' && (
+            <button 
+              className="inline-flex items-center gap-2 rounded-lg bg-success-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-success-700"
+              onClick={() => handleRegionalAcknowledge(selectedPlan.id)}
+            >
+              <i className="fas fa-thumbs-up"></i> Acknowledge Receipt
+            </button>
+          )}
         </div>
-      </>
+      </div>
     );
   }
 
   const title = userRole === 'director' 
     ? 'Deploy Approved Plans to Regions'
-    : `Acknowledge Finalized Plans - ${userRegion || 'Region'}`;
+    : `Acknowledge Finalized Plans — ${userRegion || 'Region'}`;
   
   const subtitle = userRole === 'director'
     ? 'Plans approved by Senior Management, ready to deploy to regions'
     : `Finalized plans for ${userRegion || 'your region'} from Director`;
 
-  const stats = {
-    pending: plans.length,
-    deployed: userRole === 'director' ? 0 : plans.filter(p => p.regionalAcknowledgment).length,
-  };
-
   return (
-    <div>
-      <div className="detail-header">
-        <h2>
-          <i className={userRole === 'director' ? 'fas fa-paper-plane' : 'fas fa-check-double'}></i> {title}
+    <div className="space-y-6 p-8 bg-neutral-900 min-h-screen">
+      <div className="border-b border-neutral-700 pb-4">
+        <h2 className="flex items-center gap-3 text-2xl font-bold text-neutral-50">
+          <i className={`fas ${userRole === 'director' ? 'fa-paper-plane' : 'fa-check-double'} text-primary-400`}></i>
+          {title}
         </h2>
-        <Badge status={subtitle} className={userRole === 'director' ? 'director-approved' : 'pending'} />
+        <p className="mt-1 text-sm text-neutral-400">{subtitle}</p>
       </div>
 
-      <div className="cards">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Card 
           title={userRole === 'director' ? 'Ready to Deploy' : 'Ready to Acknowledge'} 
-          number={stats.pending} 
+          number={plans.length} 
           icon={userRole === 'director' ? 'fas fa-paper-plane' : 'fas fa-check-double'} 
         />
         {userRole === 'regional' && (
-          <Card title="Acknowledged" number={stats.deployed} icon="fas fa-check-circle" />
+          <Card title="Acknowledged" number={plans.filter(p => p.regionalAcknowledgment).length} icon="fas fa-check-circle" />
         )}
       </div>
 
-      <div className="section-title">
-        <i className={userRole === 'director' ? 'fas fa-envelope' : 'fas fa-inbox'}></i> {userRole === 'director' ? 'Plans for Deployment' : 'Plans for Acknowledgment'}
+      <div className="border-b border-neutral-700 pb-2">
+        <h3 className="flex items-center gap-2 text-lg font-bold text-neutral-50">
+          <i className={`fas ${userRole === 'director' ? 'fa-envelope' : 'fa-inbox'} text-primary-400`}></i>
+          {userRole === 'director' ? 'Plans for Deployment' : 'Plans for Acknowledgment'}
+        </h3>
       </div>
       
-      <div className="table-container">
-        <table>
-          <thead>
+      <div className="overflow-hidden rounded-lg border border-neutral-700">
+        <table className="w-full text-sm">
+          <thead className="border-b border-neutral-700 bg-neutral-800">
             <tr>
-              <th>Plan ID</th>
-              <th>Fiscal Year</th>
-              <th>Total Cases</th>
-              <th>Version</th>
-              <th>Status</th>
-              <th>Action</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-neutral-300">Plan ID</th>
+              <th className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-neutral-300">Fiscal Year</th>
+              <th className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-neutral-300">Total Cases</th>
+              <th className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-neutral-300">Version</th>
+              <th className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-neutral-300">Status</th>
+              <th className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-neutral-300">Action</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-neutral-700">
             {plans.length === 0 ? (
               <tr>
-                <td colSpan="6" style={{ textAlign: 'center', padding: '40px' }}>
-                  <i className="fas fa-inbox" style={{ fontSize: '48px', color: '#ccc' }}></i>
-                  <br />
-                  {userRole === 'director' 
-                    ? 'No approved plans ready to deploy'
-                    : 'No finalized plans to acknowledge'}
+                <td colSpan="6" className="py-10 text-center">
+                  <i className="fas fa-inbox mb-4 block text-5xl text-neutral-600"></i>
+                  <span className="text-neutral-400">
+                    {userRole === 'director' 
+                      ? 'No approved plans ready to deploy'
+                      : 'No finalized plans to acknowledge'}
+                  </span>
                 </td>
               </tr>
             ) : (
               plans.map(plan => (
-                <tr key={plan.id}>
-                  <td><strong>{plan.id}</strong></td>
-                  <td>{plan.fiscalYear}</td>
-                  <td>{plan.totalVolume}</td>
-                  <td>v{plan.version}</td>
-                  <td><Badge status={getStatusDisplay(plan.status)} className={getBadgeClass(plan.status)} /></td>
-                  <td>
+                <tr key={plan.id} className="transition-colors hover:bg-neutral-700/50">
+                  <td className="px-6 py-4 font-semibold text-neutral-50">{plan.id}</td>
+                  <td className="px-6 py-4 text-center text-neutral-300">{plan.fiscalYear}</td>
+                  <td className="px-6 py-4 text-center text-neutral-300">{plan.totalVolume}</td>
+                  <td className="px-6 py-4 text-center text-neutral-300">v{plan.version}</td>
+                  <td className="px-6 py-4 text-center">
+                    <Badge status={getStatusDisplay(plan.status)} className={getBadgeClass(plan.status)} />
+                  </td>
+                  <td className="px-6 py-4 text-center">
                     <button 
-                      className="btn btn-sm btn-info"
+                      className="inline-flex items-center gap-1 rounded bg-primary-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-primary-700"
                       onClick={() => setSelectedPlan(plan)}
                     >
                       <i className="fas fa-eye"></i> View
@@ -231,9 +229,12 @@ function ApprovedPlansDeploymentView({ userRole }) {
         </table>
       </div>
 
-      <div style={{ background: '#e3f2fd', color: '#0c4a6e', padding: '16px', borderRadius: '8px', marginTop: '20px', border: '1px solid #1976d2' }}>
-        <strong><i className="fas fa-info-circle"></i> {userRole === 'director' ? 'Director Deployment' : 'Regional Acknowledgment'}</strong>
-        <p style={{ color: '#0c4a6e', margin: '8px 0 0 0', fontSize: '13px', lineHeight: '1.6' }}>
+      <div className="rounded-lg border border-primary-700 bg-primary-900/20 p-4">
+        <p className="flex items-center gap-2 font-semibold text-primary-400">
+          <i className="fas fa-info-circle"></i>
+          {userRole === 'director' ? 'Director Deployment' : 'Regional Acknowledgment'}
+        </p>
+        <p className="mt-2 text-sm leading-relaxed text-primary-300/80">
           {userRole === 'director' 
             ? 'Deploy approved plans to all regions for final distribution to tax centers. Plans will be marked as FINALIZED and regions will be able to acknowledge receipt.'
             : 'Acknowledge receipt of finalized plans from Director. This confirms that your region is ready to cascade the plan to audit cases.'}

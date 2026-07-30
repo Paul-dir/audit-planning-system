@@ -281,28 +281,28 @@ function RiskEngineView({ userRole: propUserRole, selectedRegion: propSelectedRe
 
         {/* KPI Cards - 4 Column Grid */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-primary-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md">
-            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">Total Registered</h3>
-            <div className="text-4xl font-bold leading-none mb-2 text-neutral-50">{(national.totalRegistered || 0).toLocaleString()}</div>
-            <div className="text-2xl text-neutral-400 opacity-75"><i className="fas fa-users"></i></div>
+          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-primary-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md overflow-hidden">
+            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2 break-words line-clamp-2">Total Registered</h3>
+            <div className="text-2xl font-bold leading-tight mb-2 text-neutral-50 break-words line-clamp-2">{(national.totalRegistered || 0).toLocaleString()}</div>
+            <div className="text-lg text-neutral-400 opacity-75"><i className="fas fa-users"></i></div>
           </div>
 
-          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-info-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md">
-            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">Active Taxpayers</h3>
-            <div className="text-4xl font-bold leading-none mb-2 text-neutral-50">{(national.activeTaxpayers || 0).toLocaleString()}</div>
-            <div className="text-2xl text-neutral-400 opacity-75"><i className="fas fa-user-check"></i></div>
+          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-info-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md overflow-hidden">
+            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2 break-words line-clamp-2">Active Taxpayers</h3>
+            <div className="text-2xl font-bold leading-tight mb-2 text-neutral-50 break-words line-clamp-2">{(national.activeTaxpayers || 0).toLocaleString()}</div>
+            <div className="text-lg text-neutral-400 opacity-75"><i className="fas fa-user-check"></i></div>
           </div>
 
-          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-warning-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md">
-            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">Risky Suspects</h3>
-            <div className="text-4xl font-bold leading-none mb-2 text-neutral-50">{(national.riskySuspects || 0).toLocaleString()}</div>
-            <div className="text-2xl text-neutral-400 opacity-75"><i className="fas fa-exclamation-circle"></i></div>
+          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-warning-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md overflow-hidden">
+            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2 break-words line-clamp-2">Risky Suspects</h3>
+            <div className="text-2xl font-bold leading-tight mb-2 text-neutral-50 break-words line-clamp-2">{(national.riskySuspects || 0).toLocaleString()}</div>
+            <div className="text-lg text-neutral-400 opacity-75"><i className="fas fa-exclamation-circle"></i></div>
           </div>
 
-          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-danger-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md">
-            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">Revenue at Risk</h3>
-            <div className="text-4xl font-bold leading-none mb-2 text-neutral-50">{((national.revenueAtRisk || 0) / 1000000000).toFixed(1)}B ETB</div>
-            <div className="text-2xl text-neutral-400 opacity-75"><i className="fas fa-dollar-sign"></i></div>
+          <div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-danger-600 rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md overflow-hidden">
+            <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2 break-words line-clamp-2">Revenue at Risk</h3>
+            <div className="text-2xl font-bold leading-tight mb-2 text-neutral-50 break-words line-clamp-2">{((national.revenueAtRisk || 0) / 1000000000).toFixed(1)}B ETB</div>
+            <div className="text-lg text-neutral-400 opacity-75"><i className="fas fa-dollar-sign"></i></div>
           </div>
         </div>
 

@@ -40,11 +40,19 @@ function AuditCaseSelectionView() {
   const loadCases = () => {
     const data = loadData();
     
-    // Load risk engine cases
-    const riskEngineCases = (data.auditCases || []).filter(c => !c.createdFrom || c.createdFrom !== 'AUDIT_REQUEST');
+    // Load risk engine / cascade plan cases that need prioritization
+    const riskEngineCases = (data.auditCases || []).filter(c => 
+      (!c.createdFrom || c.createdFrom !== 'AUDIT_REQUEST') && 
+      c.status !== 'ASSIGNED_TO_TEAM_LEADER' &&
+      c.storageStatus !== 'STORED'
+    );
     
     // Load request-based cases (approved requests that created cases)
-    const requestCases = (data.auditCases || []).filter(c => c.createdFrom === 'AUDIT_REQUEST');
+    const requestCases = (data.auditCases || []).filter(c => 
+      c.createdFrom === 'AUDIT_REQUEST' && 
+      c.status !== 'ASSIGNED_TO_TEAM_LEADER' &&
+      c.storageStatus !== 'STORED'
+    );
     
     // Combine all cases
     const allCombinedCases = [...riskEngineCases, ...requestCases];
@@ -186,77 +194,116 @@ function AuditCaseSelectionView() {
     }
   };
 
-  // Store selected cases
+  // Prioritize, Rank and Auto-Assign cases to Team Leaders
   const handleStoreSelectedCases = () => {
     if (selectedCases.size === 0) {
       alert('Please select at least one case');
       return;
     }
 
-    console.log('=== STORE CASES START ===');
-    console.log('Selected case IDs:', Array.from(selectedCases));
-
+    console.log('=== AUTO-ASSIGN CASES START ===');
     const data = loadData();
     
-    // Initialize stored cases array if not exists
-    if (!data.storedAuditCases) {
-      data.storedAuditCases = [];
-      console.log('Created new storedAuditCases array');
-    }
+    // Initialize Team Leaders if empty for this tax center
+    if (!data.teamLeaders) data.teamLeaders = [];
+    if (!data.assignments) data.assignments = [];
 
-    console.log('Current stored cases count:', data.storedAuditCases.length);
+    const casesToProcess = Array.from(selectedCases)
+      .map(caseId => allCases.find(c => c.id === caseId))
+      .filter(c => c !== null)
+      .sort((a, b) => (b.riskScore || 0) - (a.riskScore || 0));
 
-    // Map selected IDs to case objects
-    const casesToStore = Array.from(selectedCases).map(caseId => {
-      const auditCase = allCases.find(c => c.id === caseId);
+    // Dynamic Team Leader assignment tracking
+    const tlAssignmentCounters = {}; 
+
+    casesToProcess.forEach((auditCase, index) => {
+      const caseIdx = data.auditCases.findIndex(c => c.id === auditCase.id);
       
-      if (!auditCase) {
-        console.warn('Case not found:', caseId);
-        return null;
+      if (caseIdx !== -1) {
+        // 1. Process Owner Prioritizes and Ranks
+        data.auditCases[caseIdx].priorityRank = index + 1;
+        data.auditCases[caseIdx].storageStatus = 'STORED';
+        data.auditCases[caseIdx].storedDate = new Date().toISOString();
+        data.auditCases[caseIdx].storedBy = userInfo?.fullName || 'Process Owner';
+        
+        // 2. Map to Team Leader based on Audit Type
+        const taxCenter = auditCase.taxCenter || 'Unknown-TC';
+        const region = auditCase.region || 'Unknown-Region';
+        const auditTypeKey = auditCase.auditType.toLowerCase().replace(/\s+/g, '_');
+        
+        // Find existing team leaders for this tax center and audit type
+        let matchingTLs = data.teamLeaders.filter(tl => 
+          tl.taxCenter === taxCenter && tl.auditType === auditTypeKey
+        );
+        
+        // If no TL exists, create dynamic ones for this tax center/audit type
+        if (matchingTLs.length === 0) {
+          const newTL = {
+            id: `TL-${auditTypeKey.toUpperCase()}-${taxCenter.replace(/\s+/g, '-')}-001`,
+            region,
+            taxCenter,
+            auditType: auditTypeKey,
+            fullName: `${auditCase.auditType} Team Leader (${taxCenter} - TL-1)`,
+            email: `tl.${auditTypeKey}@mor.gov.et`,
+            currentWorkload: 0,
+            maxCapacity: 12,
+            status: 'ACTIVE'
+          };
+          data.teamLeaders.push(newTL);
+          matchingTLs = [newTL];
+        }
+
+        // Round robin assignment if multiple TLs exist
+        const tlGroupKey = `${taxCenter}-${auditTypeKey}`;
+        if (tlAssignmentCounters[tlGroupKey] === undefined) {
+          tlAssignmentCounters[tlGroupKey] = 0;
+        } else {
+          tlAssignmentCounters[tlGroupKey] = (tlAssignmentCounters[tlGroupKey] + 1) % matchingTLs.length;
+        }
+        
+        const selectedTL = matchingTLs[tlAssignmentCounters[tlGroupKey]];
+        
+        // Update case status
+        data.auditCases[caseIdx].assignedTeamLeader = selectedTL.fullName;
+        data.auditCases[caseIdx].assignedTeamLeaderId = selectedTL.id;
+        data.auditCases[caseIdx].status = 'ASSIGNED_TO_TEAM_LEADER';
+        
+        // Create Assignment Object for the system
+        const existingAssignmentIdx = data.assignments.findIndex(a => a.caseId === auditCase.id);
+        const newAssignment = {
+          id: `ASN-${Date.now()}-${Math.floor(Math.random()*1000)}`,
+          caseId: auditCase.id,
+          region,
+          taxCenter,
+          auditType: auditTypeKey,
+          currentState: 'ASSIGNED_TO_TEAM_LEADER',
+          currentOwner: selectedTL.id,
+          currentOwnerRole: 'TEAM_LEADER',
+          history: [{
+            state: 'ASSIGNED_TO_TEAM_LEADER',
+            date: new Date().toISOString(),
+            byUser: userInfo?.id || 'PROCESS_OWNER',
+            notes: `Auto-assigned by Process Owner (Rank ${index + 1})`
+          }]
+        };
+
+        if (existingAssignmentIdx >= 0) {
+          data.assignments[existingAssignmentIdx] = newAssignment;
+        } else {
+          data.assignments.push(newAssignment);
+        }
+
+        console.log(`Assigned case ${auditCase.id} to TL: ${selectedTL.fullName}`);
       }
-
-      const storedCase = {
-        ...auditCase,
-        storedId: `STORED-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        storedDate: new Date().toISOString(),
-        storedBy: userInfo?.fullName || 'Process Owner',
-        storageStatus: 'STORED'
-      };
-
-      console.log('Case to store:', {
-        caseId: storedCase.id,
-        taxpayer: storedCase.taxpayerName,
-        storedId: storedCase.storedId,
-        status: storedCase.storageStatus
-      });
-
-      return storedCase;
-    }).filter(c => c !== null);
-
-    console.log(`Preparing to store ${casesToStore.length} cases`);
-
-    // Add to stored cases
-    data.storedAuditCases = [...data.storedAuditCases, ...casesToStore];
-
-    console.log('Total stored cases after adding:', data.storedAuditCases.length);
+    });
 
     // Save to localStorage
     saveData(data);
 
-    // Verify saved
-    console.log('=== VERIFY SAVED ===');
-    const verifyData = loadData();
-    console.log('Verification - Total stored:', verifyData.storedAuditCases?.length || 0);
-    console.log('Verification - Last 3 stored:', verifyData.storedAuditCases?.slice(-3).map(c => ({ 
-      id: c.id, 
-      taxpayer: c.taxpayerName,
-      storedId: c.storedId 
-    })));
-
-    console.log('=== STORE CASES END ===');
+    console.log('=== AUTO-ASSIGN CASES END ===');
 
     // Show success message with details
-    alert(`✅ Successfully stored ${casesToStore.length} cases for audit execution\n\nTotal stored cases in system: ${verifyData.storedAuditCases?.length || 0}`);
+    alert(`✅ Successfully Prioritized and Auto-Assigned ${casesToProcess.length} cases to respective Team Leaders!`);
     
     setSelectedCases(new Set());
     loadCases();
@@ -468,7 +515,7 @@ function AuditCaseSelectionView() {
               marginLeft: 'auto'
             }}
           >
-            <i className="fas fa-save"></i> Store {selectedCases.size} Cases
+            <i className="fas fa-save"></i> Prioritize & Auto-Assign {selectedCases.size} Cases
           </button>
         )}
       </div>

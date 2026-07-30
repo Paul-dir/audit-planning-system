@@ -16,6 +16,7 @@ import {
 import { createAssignment, ASSIGNMENT_STATES } from '../../../utils/assignmentDataModels';
 import { executeTransition } from '../../../utils/assignmentStateMachine';
 import { rankAuditors } from '../../../utils/assignmentScoring';
+import { getBestAvailableAuditor } from '../../../utils/intelligentCaseDistribution';
 
 /**
  * AssignToAuditorsView - Team Leader
@@ -34,6 +35,10 @@ function AssignToAuditorsView() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState(null);
   const [expandedCase, setExpandedCase] = useState(null);
+  const [selectedCases, setSelectedCases] = useState(new Set());
+  const [assignmentSummary, setAssignmentSummary] = useState(null);
+  const [processingCase, setProcessingCase] = useState(null);
+  const [processConfirmation, setProcessConfirmation] = useState(null);
 
   useEffect(() => {
     loadCasesAndAuditors();
@@ -44,7 +49,7 @@ function AssignToAuditorsView() {
       setLoading(true);
       const userRegion = userInfo?.orgContext?.assignedRegion;
       const userTaxCenter = userInfo?.orgContext?.assignedTaxCenter;
-      const tlId = userInfo?.id;
+      const tlId = userInfo?.userId || userInfo?.id;
 
       if (!userRegion || !userTaxCenter || !tlId) {
         setMessage({ type: 'error', text: 'Missing assignment context' });
@@ -55,17 +60,41 @@ function AssignToAuditorsView() {
       const auditors = loadAuditors(tlId);
       setMyAuditors(auditors);
 
-      // Load my assigned cases (ASSIGNED_TO_TEAM_LEADER state)
-      const myAssignments = loadAssignmentsByUser(tlId, 'TEAM_LEADER');
+      // Load assigned cases for Team Leader (combining assignments and auditCases)
       const data = loadData();
+      let myAssignments = loadAssignmentsByUser(tlId, 'TEAM_LEADER');
 
-      const cases = myAssignments
-        .map(assignment => {
-          const auditCase = (data.auditCases || []).find(c => c.id === assignment.caseId);
-          return { ...auditCase, assignment };
-        })
-        .filter(c => c !== undefined);
+      // Find cases matching this Team Leader in auditCases directly
+      const directCases = (data.auditCases || []).filter(c => 
+        c.status === 'ASSIGNED_TO_TEAM_LEADER' &&
+        (c.assignedTeamLeaderId === tlId || 
+         c.assignedTeamLeader === userInfo?.fullName || 
+         c.assignedTeamLeader === userInfo?.full_name)
+      );
 
+      // Combine cases into Map to deduplicate by ID
+      const caseMap = new Map();
+      myAssignments.forEach(a => {
+        const auditCase = (data.auditCases || []).find(c => c.id === a.caseId);
+        if (auditCase) caseMap.set(auditCase.id, { ...auditCase, assignment: a });
+      });
+
+      directCases.forEach(c => {
+        if (!caseMap.has(c.id)) {
+          const assignment = (data.assignments || []).find(a => a.caseId === c.id) || {
+            caseId: c.id,
+            region: c.region,
+            taxCenter: c.taxCenter,
+            auditType: c.auditType,
+            currentState: 'ASSIGNED_TO_TEAM_LEADER',
+            currentOwner: tlId,
+            currentOwnerRole: 'TEAM_LEADER'
+          };
+          caseMap.set(c.id, { ...c, assignment });
+        }
+      });
+
+      const cases = Array.from(caseMap.values());
       setCasesByTeamLeader(cases);
 
       // Generate recommendations for each case
@@ -104,7 +133,7 @@ function AssignToAuditorsView() {
       if (auditor.currentWorkload >= auditor.maxCapacity) {
         setMessage({
           type: 'error',
-          text: `${auditor.fullName} is at capacity (${auditor.currentWorkload}/${auditor.maxCapacity})`
+          text: `${auditor.fullName || auditor.full_name} is at capacity (${auditor.currentWorkload}/${auditor.maxCapacity})`
         });
         return;
       }
@@ -126,27 +155,42 @@ function AssignToAuditorsView() {
         ASSIGNMENT_STATES.ASSIGNED_TO_AUDITOR,
         {
           toUser: auditorId,
-          fromUser: userInfo.id,
-          reason: `Assigned by Team Leader ${userInfo.fullName} based on recommendations`
+          fromUser: userInfo.userId || userInfo.id,
+          reason: `Assigned by Team Leader ${userInfo.fullName || userInfo.full_name} based on recommendations`
         }
       );
 
       // Save assignment
       saveAssignment(assignment);
 
-      // Update auditor workload
-      updateAuditorWorkload(auditorId, 1);
+      // Also update data.auditCases directly
+      const data = loadData();
+      const caseIdx = (data.auditCases || []).findIndex(c => c.id === caseId);
+      if (caseIdx !== -1) {
+        data.auditCases[caseIdx].status = 'ASSIGNED_TO_AUDITOR';
+        data.auditCases[caseIdx].assignedAuditor = auditor.fullName || auditor.full_name;
+        data.auditCases[caseIdx].assignedAuditorId = auditor.id;
+        saveData(data);
+      }
+
+      // Update auditor workload - NON-CRITICAL (silently continues on failure)
+      updateAuditorWorkload(auditorId, 1); // Don't check result - always continue
 
       // Update case in local state
       setCasesByTeamLeader(
         casesByTeamLeader.map(c =>
-          c.id === caseId ? { ...c, assignment } : c
+          c.id === caseId ? { ...c, status: 'ASSIGNED_TO_AUDITOR', assignedAuditor: auditor.fullName || auditor.full_name, assignment } : c
         )
       );
 
+      // Update auditor workload in local state so subsequent assignments load balance correctly
+      setMyAuditors(prev => prev.map(a => 
+        a.id === auditorId ? { ...a, currentWorkload: a.currentWorkload + 1 } : a
+      ));
+
       setMessage({
         type: 'success',
-        text: `Case assigned to ${auditor.fullName}`
+        text: `Case assigned to ${auditor.fullName || auditor.full_name}`
       });
     } catch (error) {
       console.error('Error assigning case:', error);
@@ -154,29 +198,166 @@ function AssignToAuditorsView() {
     }
   };
 
+  const handleProcessAssignment = (caseId) => {
+    const auditCase = casesByTeamLeader.find(c => c.id === caseId);
+    if (!auditCase) return;
+
+    setProcessingCase(caseId);
+    setProcessConfirmation({
+      caseId,
+      caseName: auditCase.taxpayerName,
+      auditType: auditCase.auditType,
+      riskLevel: auditCase.riskLevel,
+      estimatedHours: auditCase.estimatedHours
+    });
+  };
+
+  const confirmProcessAssignment = () => {
+    if (!processConfirmation) return;
+
+    try {
+      const { caseId } = processConfirmation;
+      const auditCase = casesByTeamLeader.find(c => c.id === caseId);
+
+      if (!auditCase || !myAuditors.length) {
+        throw new Error('Case or auditors not found');
+      }
+
+      // Auto-assign to least busy auditor
+      const availableAuditors = [...myAuditors].sort((a, b) => a.currentWorkload - b.currentWorkload);
+      const selectedAuditor = availableAuditors[0];
+
+      // Process the assignment
+      handleAssignToAuditor(caseId, selectedAuditor.id);
+
+      setMessage({
+        type: 'success',
+        text: `✓ Assignment processed and allocated to ${selectedAuditor.fullName}`
+      });
+
+      setProcessConfirmation(null);
+      setProcessingCase(null);
+    } catch (error) {
+      console.error('Error processing assignment:', error);
+      setMessage({ type: 'error', text: 'Error processing assignment' });
+    }
+  };
+
+  const toggleCaseSelection = (caseId, e) => {
+    e.stopPropagation();
+    const newSelected = new Set(selectedCases);
+    if (newSelected.has(caseId)) {
+      newSelected.delete(caseId);
+    } else {
+      newSelected.add(caseId);
+    }
+    setSelectedCases(newSelected);
+  };
+
   const handleBulkAssign = () => {
     try {
-      let successCount = 0;
-      let errors = [];
+      const casesToAssign = casesByTeamLeader.filter(c => 
+        selectedCases.has(c.id) && c.assignment?.currentState === ASSIGNMENT_STATES.ASSIGNED_TO_TEAM_LEADER
+      );
+      
+      if (casesToAssign.length === 0) {
+        setMessage({ type: 'warning', text: 'Please select unassigned cases first.' });
+        return;
+      }
 
-      casesByTeamLeader.forEach(c => {
-        if (c.assignment?.currentState === ASSIGNMENT_STATES.ASSIGNED_TO_TEAM_LEADER) {
-          const recs = recommendations[c.id] || [];
-          if (recs.length > 0) {
-            try {
-              handleAssignToAuditor(c.id, recs[0].id);
-              successCount++;
-            } catch (err) {
-              errors.push(`Failed to assign ${c.id}: ${err.message}`);
-            }
+      if (myAuditors.length === 0) {
+        setMessage({ type: 'error', text: 'No auditors available in your team.' });
+        return;
+      }
+
+      const summaryList = [];
+      const updatedCases = [...casesByTeamLeader];
+      const data = loadData();
+
+      casesToAssign.forEach((c) => {
+        try {
+          // Get the best available auditor using intelligent distribution
+          const bestAuditor = getBestAvailableAuditor(userInfo.userId || userInfo.id, data);
+
+          if (!bestAuditor) {
+            console.warn(`No available auditor for case ${c.id}`);
+            setMessage({ 
+              type: 'warning', 
+              text: `Skipped case ${c.id}: No available auditors with capacity` 
+            });
+            return;
           }
+
+          // Get or create assignment
+          let assignment = c.assignment;
+          if (!assignment) {
+            assignment = createAssignment({
+              caseId: c.id,
+              region: c.region,
+              taxCenter: c.taxCenter,
+              auditType: c.auditType
+            });
+          }
+
+          // Execute transition
+          assignment = executeTransition(
+            assignment,
+            ASSIGNMENT_STATES.ASSIGNED_TO_AUDITOR,
+            {
+              toUser: bestAuditor.id,
+              fromUser: userInfo.userId || userInfo.id,
+              reason: `Auto-assigned by Team Leader ${userInfo.fullName} via bulk assignment`
+            }
+          );
+
+          saveAssignment(assignment);
+          
+          // Update auditor workload - NON-CRITICAL (silently continues on failure)
+          updateAuditorWorkload(bestAuditor.id, 1); // Don't check result - always continue
+
+          // Also update data.auditCases directly
+          const caseIdxInStore = (data.auditCases || []).findIndex(uc => uc.id === c.id);
+          if (caseIdxInStore !== -1) {
+            data.auditCases[caseIdxInStore].status = 'ASSIGNED_TO_AUDITOR';
+            data.auditCases[caseIdxInStore].assignedAuditor = bestAuditor.full_name || bestAuditor.fullName;
+            data.auditCases[caseIdxInStore].assignedAuditorId = bestAuditor.id;
+            saveData(data); // Save the core case update
+          }
+
+          const caseIdx = updatedCases.findIndex(uc => uc.id === c.id);
+          if (caseIdx !== -1) {
+            updatedCases[caseIdx] = { 
+              ...updatedCases[caseIdx], 
+              status: 'ASSIGNED_TO_AUDITOR',
+              assignedAuditor: bestAuditor.full_name || bestAuditor.fullName,
+              assignment 
+            };
+          }
+
+          summaryList.push({
+            caseId: c.id,
+            auditorName: bestAuditor.full_name || bestAuditor.fullName,
+            auditorId: bestAuditor.id,
+            auditType: c.auditType
+          });
+
+          console.log(`✓ Auto-assigned case ${c.id} to ${bestAuditor.full_name || bestAuditor.fullName}`);
+        } catch (err) {
+          console.error(`Error assigning case ${c.id}:`, err);
         }
       });
 
-      const msg = successCount > 0
-        ? `✓ Bulk-assigned ${successCount} cases to recommended auditors`
-        : 'No cases to assign';
-      setMessage({ type: successCount > 0 ? 'success' : 'warning', text: msg });
+      setCasesByTeamLeader(updatedCases);
+      setSelectedCases(new Set());
+      setAssignmentSummary(summaryList);
+      setMyAuditors(loadAuditors(userInfo.userId || userInfo.id)); // refresh workloads
+
+      if (summaryList.length > 0) {
+        setMessage({
+          type: 'success',
+          text: `✅ Auto-assigned ${summaryList.length} case${summaryList.length !== 1 ? 's' : ''} to available auditors`
+        });
+      }
     } catch (error) {
       console.error('Error bulk assigning:', error);
       setMessage({ type: 'error', text: 'Error bulk-assigning cases' });
@@ -239,18 +420,41 @@ function AssignToAuditorsView() {
       }}>
         <button
           onClick={handleBulkAssign}
+          disabled={selectedCases.size === 0}
           style={{
             padding: '8px 14px',
-            background: '#4caf50',
-            color: '#fff',
+            background: selectedCases.size > 0 ? '#4caf50' : '#2e7d32',
+            color: selectedCases.size > 0 ? '#fff' : '#aaa',
             border: 'none',
+            borderRadius: '6px',
+            fontSize: '12px',
+            fontWeight: '600',
+            cursor: selectedCases.size > 0 ? 'pointer' : 'not-allowed'
+          }}
+        >
+          <i className="fas fa-magic"></i> Auto-Assign Selected ({selectedCases.size})
+        </button>
+        <button
+          onClick={() => {
+            const allUnassigned = casesByTeamLeader.filter(c => c.assignment?.currentState === ASSIGNMENT_STATES.ASSIGNED_TO_TEAM_LEADER).map(c => c.id);
+            if (selectedCases.size === allUnassigned.length) {
+              setSelectedCases(new Set());
+            } else {
+              setSelectedCases(new Set(allUnassigned));
+            }
+          }}
+          style={{
+            padding: '8px 14px',
+            background: '#1c2128',
+            color: '#58a6ff',
+            border: '1px solid #58a6ff',
             borderRadius: '6px',
             fontSize: '12px',
             fontWeight: '600',
             cursor: 'pointer'
           }}
         >
-          <i className="fas fa-magic"></i> Bulk Assign to Recommended
+          Select All Unassigned
         </button>
       </div>
 
@@ -331,12 +535,22 @@ function AssignToAuditorsView() {
                     style={{
                       padding: '12px',
                       display: 'flex',
-                      justifyContent: 'space-between',
+                      justifyContent: 'flex-start',
                       alignItems: 'center',
                       cursor: 'pointer',
-                      background: expandedCase === c.id ? '#2d333b' : 'transparent'
+                      background: expandedCase === c.id ? '#2d333b' : 'transparent',
+                      gap: '12px'
                     }}
                   >
+                    {!isAssigned && (
+                      <input 
+                        type="checkbox" 
+                        checked={selectedCases.has(c.id)}
+                        onChange={(e) => toggleCaseSelection(c.id, e)}
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ cursor: 'pointer', transform: 'scale(1.2)' }}
+                      />
+                    )}
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '4px' }}>
                         <strong style={{ color: '#f0f6fc', minWidth: '100px' }}>{c.id.substring(0, 20)}...</strong>
@@ -369,140 +583,45 @@ function AssignToAuditorsView() {
                     </div>
                   </div>
 
-                  {/* Expanded: Recommendations */}
-                  {expandedCase === c.id && !isAssigned && (
-                    <div style={{
-                      background: '#0f1419',
-                      borderTop: '1px solid #30363d',
-                      padding: '12px',
-                      borderRadius: '0 0 6px 6px'
-                    }}>
-                      <div style={{ marginBottom: '12px' }}>
-                        <small style={{ color: '#8b949e', fontWeight: 'bold' }}>TOP RECOMMENDED AUDITORS:</small>
-                      </div>
-
-                      {topRecs.length > 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
-                          {topRecs.map((rec, idx) => {
-                            const auditor = myAuditors.find(a => a.id === rec.id);
-                            const breakdown = getMatchBreakdown(auditor, c);
-
-                            return (
-                              <div key={rec.id} style={{
-                                background: '#1c2128',
-                                border: '1px solid #30363d',
-                                borderRadius: '6px',
-                                padding: '10px',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center'
-                              }}>
-                                <div style={{ flex: 1 }}>
-                                  <div style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    marginBottom: '6px'
-                                  }}>
-                                    <span style={{ color: '#ffc107', fontWeight: 'bold' }}>
-                                      {idx === 0 ? '⭐' : idx === 1 ? '⭐⭐' : '⭐⭐⭐'}
-                                    </span>
-                                    <strong style={{ color: '#f0f6fc' }}>{auditor?.fullName}</strong>
-                                    <span style={{
-                                      background: '#2e7d32',
-                                      color: '#fff',
-                                      padding: '2px 8px',
-                                      borderRadius: '12px',
-                                      fontSize: '10px',
-                                      fontWeight: 'bold'
-                                    }}>
-                                      {rec.totalScore}% match
-                                    </span>
-                                  </div>
-
-                                  {breakdown && (
-                                    <div style={{
-                                      fontSize: '10px',
-                                      color: '#8b949e',
-                                      display: 'grid',
-                                      gridTemplateColumns: '1fr 1fr 1fr 1fr',
-                                      gap: '4px'
-                                    }}>
-                                      <span>Skills: <strong style={{ color: '#4caf50' }}>{breakdown.skillsMatch}%</strong></span>
-                                      <span>Workload: <strong style={{ color: '#ffc107' }}>{breakdown.workloadScore}%</strong></span>
-                                      <span>Sector: <strong style={{ color: '#ff9800' }}>{breakdown.sectorScore}%</strong></span>
-                                      <span>Complexity: <strong style={{ color: '#9c27b0' }}>{breakdown.complexityScore}%</strong></span>
-                                    </div>
-                                  )}
-                                </div>
-
-                                <button
-                                  onClick={() => handleAssignToAuditor(c.id, auditor.id)}
-                                  disabled={auditor.currentWorkload >= auditor.maxCapacity}
-                                  style={{
-                                    padding: '6px 12px',
-                                    background: auditor.currentWorkload >= auditor.maxCapacity ? '#666' : '#4caf50',
-                                    color: '#fff',
-                                    border: 'none',
-                                    borderRadius: '4px',
-                                    fontSize: '11px',
-                                    fontWeight: '600',
-                                    cursor: auditor.currentWorkload >= auditor.maxCapacity ? 'not-allowed' : 'pointer',
-                                    whiteSpace: 'nowrap'
-                                  }}
-                                >
-                                  {auditor.currentWorkload >= auditor.maxCapacity ? 'AT CAPACITY' : 'Assign'}
-                                </button>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <div style={{ color: '#ff5252', fontSize: '11px', marginBottom: '12px' }}>
-                          No recommendations available for this case
-                        </div>
-                      )}
-
-                      {/* Manual Selection Fallback */}
-                      <div>
-                        <label style={{
-                          fontSize: '11px',
-                          color: '#8b949e',
-                          display: 'block',
-                          marginBottom: '6px'
-                        }}>
-                          Or select different auditor:
-                        </label>
-                        <select
-                          onChange={(e) => {
-                            if (e.target.value) {
-                              handleAssignToAuditor(c.id, e.target.value);
-                              e.target.value = '';
-                            }
+                    {/* Action Area (Always visible if not assigned) */}
+                    {!isAssigned && (
+                      <div style={{
+                        background: '#0f1419',
+                        borderTop: '1px solid #30363d',
+                        padding: '16px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: '12px'
+                      }}>
+                        <p style={{ fontSize: '12px', color: '#8b949e', margin: 0, flex: 1 }}>
+                          Review the case details and click to accept it into your team's workload. 
+                          The system will automatically allocate this case to the best available auditor on your team.
+                        </p>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleProcessAssignment(c.id);
                           }}
                           style={{
-                            width: '100%',
-                            padding: '8px',
-                            border: '1px solid #30363d',
-                            borderRadius: '4px',
-                            background: '#0f1419',
-                            color: '#f0f6fc',
-                            fontSize: '11px',
-                            cursor: 'pointer'
+                            padding: '10px 20px',
+                            background: '#4caf50',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '6px',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            whiteSpace: 'nowrap'
                           }}
                         >
-                          <option value="">Choose auditor...</option>
-                          {myAuditors
-                            .filter(a => a.currentWorkload < a.maxCapacity)
-                            .map(a => (
-                              <option key={a.id} value={a.id}>
-                                {a.fullName} ({a.currentWorkload}/{a.maxCapacity})
-                              </option>
-                            ))}
-                        </select>
+                          <i className="fas fa-check-circle"></i> Accept & Process
+                        </button>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   {/* Assigned Status */}
                   {isAssigned && (
@@ -510,7 +629,6 @@ function AssignToAuditorsView() {
                       background: '#0f1419',
                       borderTop: '1px solid #30363d',
                       padding: '12px',
-                      borderRadius: '0 0 6px 6px'
                     }}>
                       <span style={{ color: '#4caf50', fontSize: '11px', fontWeight: 'bold' }}>
                         ✓ Assigned to {
@@ -540,6 +658,180 @@ function AssignToAuditorsView() {
               Pending: <strong>{casesByTeamLeader.filter(c => c.assignment?.currentState !== ASSIGNMENT_STATES.ASSIGNED_TO_AUDITOR).length}</strong>
             </p>
           </div>
+
+          {/* Process Confirmation Modal */}
+          {processConfirmation && (
+            <div style={{
+              position: 'fixed',
+              top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.8)',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              zIndex: 1000
+            }}>
+              <div style={{
+                background: '#1c2128',
+                borderRadius: '12px',
+                width: '500px',
+                maxWidth: '90%',
+                border: '1px solid #30363d',
+                boxShadow: '0 24px 48px rgba(0,0,0,0.5)'
+              }}>
+                <div style={{ padding: '20px 24px', borderBottom: '1px solid #30363d' }}>
+                  <h3 style={{ margin: 0, color: '#f0f6fc', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <i className="fas fa-check-square" style={{ color: '#4caf50' }}></i> Process Assignment
+                  </h3>
+                </div>
+                
+                <div style={{ padding: '24px' }}>
+                  <p style={{ color: '#8b949e', marginBottom: '20px' }}>
+                    Confirm to process this assignment and allocate to the best available auditor:
+                  </p>
+                  
+                  <div style={{ background: '#0f1419', borderRadius: '8px', padding: '16px', marginBottom: '20px', border: '1px solid #30363d' }}>
+                    <div style={{ marginBottom: '12px' }}>
+                      <span style={{ color: '#8b949e', fontSize: '12px' }}>Case ID:</span>
+                      <p style={{ margin: '4px 0 0 0', color: '#f0f6fc', fontWeight: 'bold' }}>{processConfirmation.caseId}</p>
+                    </div>
+                    <div style={{ marginBottom: '12px' }}>
+                      <span style={{ color: '#8b949e', fontSize: '12px' }}>Taxpayer:</span>
+                      <p style={{ margin: '4px 0 0 0', color: '#f0f6fc' }}>{processConfirmation.caseName}</p>
+                    </div>
+                    <div style={{ marginBottom: '12px' }}>
+                      <span style={{ color: '#8b949e', fontSize: '12px' }}>Audit Type:</span>
+                      <p style={{ margin: '4px 0 0 0', color: '#f0f6fc' }}>{processConfirmation.auditType}</p>
+                    </div>
+                    <div style={{ marginBottom: '12px' }}>
+                      <span style={{ color: '#8b949e', fontSize: '12px' }}>Risk Level:</span>
+                      <p style={{ 
+                        margin: '4px 0 0 0', 
+                        display: 'inline-block',
+                        background: processConfirmation.riskLevel === 'Critical' ? '#ff5252' : processConfirmation.riskLevel === 'High' ? '#ff9800' : '#ffc107',
+                        color: '#fff',
+                        padding: '3px 8px',
+                        borderRadius: '3px',
+                        fontSize: '12px',
+                        fontWeight: 'bold'
+                      }}>
+                        {processConfirmation.riskLevel}
+                      </p>
+                    </div>
+                    <div>
+                      <span style={{ color: '#8b949e', fontSize: '12px' }}>Estimated Hours:</span>
+                      <p style={{ margin: '4px 0 0 0', color: '#f0f6fc' }}>{processConfirmation.estimatedHours} hours</p>
+                    </div>
+                  </div>
+
+                  <p style={{ color: '#8b949e', fontSize: '12px', margin: '0 0 20px 0' }}>
+                    <i className="fas fa-info-circle"></i> The system will automatically assign this case to your team member with the lowest current workload.
+                  </p>
+                </div>
+
+                <div style={{ padding: '16px 24px', borderTop: '1px solid #30363d', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                  <button 
+                    onClick={() => {
+                      setProcessConfirmation(null);
+                      setProcessingCase(null);
+                    }}
+                    style={{ 
+                      padding: '8px 16px', 
+                      background: '#2d333b', 
+                      color: '#f0f6fc', 
+                      border: '1px solid #30363d', 
+                      borderRadius: '6px', 
+                      cursor: 'pointer',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={confirmProcessAssignment}
+                    style={{ 
+                      padding: '8px 16px', 
+                      background: '#4caf50', 
+                      color: '#fff', 
+                      border: 'none', 
+                      borderRadius: '6px', 
+                      cursor: 'pointer',
+                      fontWeight: 'bold',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    <i className="fas fa-check"></i> Confirm & Process
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Assignment Summary Modal */}
+          {assignmentSummary && (
+            <div style={{
+              position: 'fixed',
+              top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.8)',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              zIndex: 1000
+            }}>
+              <div style={{
+                background: '#1c2128',
+                borderRadius: '12px',
+                width: '800px',
+                maxWidth: '90%',
+                maxHeight: '90vh',
+                display: 'flex',
+                flexDirection: 'column',
+                border: '1px solid #30363d',
+                boxShadow: '0 24px 48px rgba(0,0,0,0.5)'
+              }}>
+                <div style={{ padding: '20px 24px', borderBottom: '1px solid #30363d', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3 style={{ margin: 0, color: '#f0f6fc', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <i className="fas fa-check-circle" style={{ color: '#4caf50' }}></i> Auditor Assignment Complete
+                  </h3>
+                  <button onClick={() => setAssignmentSummary(null)} style={{ background: 'none', border: 'none', color: '#8b949e', cursor: 'pointer', fontSize: '16px' }}>✖</button>
+                </div>
+                
+                <div style={{ padding: '24px', overflowY: 'auto' }}>
+                  <p style={{ color: '#8b949e', marginTop: 0, marginBottom: '20px' }}>
+                    Successfully allocated <strong>{assignmentSummary.length}</strong> cases evenly across your team (max 2 consecutive assignments per auditor).
+                  </p>
+                  
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                    <thead>
+                      <tr style={{ background: '#0f1419', color: '#8b949e', textAlign: 'left' }}>
+                        <th style={{ padding: '12px', borderBottom: '1px solid #30363d' }}>Case ID</th>
+                        <th style={{ padding: '12px', borderBottom: '1px solid #30363d' }}>Audit Type</th>
+                        <th style={{ padding: '12px', borderBottom: '1px solid #30363d' }}>Assigned Auditor</th>
+                        <th style={{ padding: '12px', borderBottom: '1px solid #30363d' }}>Auditor ID</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {assignmentSummary.map((s, idx) => (
+                        <tr key={idx} style={{ borderBottom: '1px solid #30363d' }}>
+                          <td style={{ padding: '12px', color: '#f0f6fc' }}>{s.caseId.substring(0, 15)}...</td>
+                          <td style={{ padding: '12px', color: '#8b949e' }}>{s.auditType}</td>
+                          <td style={{ padding: '12px', color: '#4caf50', fontWeight: 'bold' }}>{s.auditorName}</td>
+                          <td style={{ padding: '12px', color: '#58a6ff' }}>{s.auditorId}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div style={{ padding: '16px 24px', borderTop: '1px solid #30363d', display: 'flex', justifyContent: 'flex-end' }}>
+                  <button onClick={() => setAssignmentSummary(null)} style={{ padding: '8px 16px', background: '#2196f3', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
+                    Close Summary
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>

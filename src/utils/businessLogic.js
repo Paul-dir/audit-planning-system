@@ -18,7 +18,7 @@ export function createAuditPlan(planData) {
     endDate: planData.endDate,
     strategy: planData.strategy || '',
     name: planData.name || `Annual Audit Plan ${planData.fiscalYear}`,
-    status: 'SUBMITTED_TO_DIRECTOR',
+    status: planData.submitImmediate ? 'SUBMITTED_TO_DIRECTOR' : (planData.status || 'DRAFT'),
     createdDate: new Date().toISOString(),
     lastModified: new Date().toISOString(),
     auditTypeAllocation: planData.auditTypeAllocation || {},

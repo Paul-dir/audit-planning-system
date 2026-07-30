@@ -21,6 +21,8 @@ function AuditCasesListView() {
   // Use user's assigned region and tax center from auth context
   const selectedRegion = userInfo?.orgContext?.assignedRegion || assignedTaxCenterRegion || 'Oromia';
   const selectedTaxCenter = userInfo?.orgContext?.assignedTaxCenter || assignedTaxCenter || 'Tax Center 1';
+  const userRole = userInfo?.role;
+  const userId = userInfo?.userId || userInfo?.id;
   
   const [allCases, setAllCases] = useState([]);
   const [filteredCases, setFilteredCases] = useState([]);
@@ -58,27 +60,57 @@ function AuditCasesListView() {
   const loadCases = () => {
     const data = loadData();
     const cases = data.auditCases || [];
+    const assignments = (data.assignments || []).filter(a => Boolean(a.caseId));
     
     console.log('🔍 AuditCasesListView - Loading cases:', {
       totalCasesInSystem: cases.length,
       selectedTaxCenter,
       selectedRegion,
+      userRole,
+      userId,
       allCases: cases.map(c => ({ id: c.id, taxCenter: c.taxCenter, region: c.region }))
     });
     
-    // Filter to only show cases for THIS tax center
-    const taxCenterCases = cases.filter(c => 
+    // Step 1: Filter to only show cases for THIS tax center
+    let filtered = cases.filter(c => 
       c.taxCenter === selectedTaxCenter && 
       c.region === selectedRegion
     );
+
+    // Step 2: For team leaders, further scope to only their assigned cases
+    if (userRole === 'team_leader') {
+      const myAssignmentCaseIds = new Set(
+        assignments
+          .filter(a => a.currentOwner === userId && a.currentOwnerRole === 'TEAM_LEADER')
+          .map(a => a.caseId)
+      );
+      if (myAssignmentCaseIds.size > 0) {
+        filtered = filtered.filter(c => myAssignmentCaseIds.has(c.id));
+        console.log('� Scoped to team leader cases:', { userId, caseCount: filtered.length });
+      }
+    }
+
+    // Step 3: For auditors, further scope to only their own assigned cases
+    if (userRole === 'auditor') {
+      const myAssignmentCaseIds = new Set(
+        assignments
+          .filter(a => a.currentOwner === userId && a.currentOwnerRole === 'AUDITOR')
+          .map(a => a.caseId)
+      );
+      if (myAssignmentCaseIds.size > 0) {
+        filtered = filtered.filter(c => myAssignmentCaseIds.has(c.id));
+        console.log('🔒 Scoped to auditor cases:', { userId, caseCount: filtered.length });
+      }
+    }
     
-    console.log('📋 Filtered cases for selected tax center:', {
-      count: taxCenterCases.length,
+    console.log('📋 Filtered cases for role:', {
+      count: filtered.length,
+      role: userRole,
       filter: { taxCenter: selectedTaxCenter, region: selectedRegion },
-      filtered: taxCenterCases.map(c => ({ id: c.id, tin: c.tin, name: c.taxpayerName }))
+      filtered: filtered.map(c => ({ id: c.id, tin: c.tin, name: c.taxpayerName }))
     });
     
-    setAllCases(taxCenterCases);
+    setAllCases(filtered);
     setLoading(false);
   };
 
@@ -116,20 +148,24 @@ function AuditCasesListView() {
 
   const getStatusColor = (status) => {
     const colors = {
-      'ASSIGNED': '#ffb74d',      // Pending - newly assigned
-      'IN_PROGRESS': '#4a8fd9',   // Active - being worked on
-      'CLOSED': '#4caf50',        // Completed
-      'Created': '#ffb74d'        // Fallback for old status
+      'Created': '#ffb74d',
+      'STORED_FOR_ASSIGNMENT': '#9c27b0', // Purple
+      'ASSIGNED_TO_TEAM_LEADER': '#2196f3', // Blue
+      'ASSIGNED_TO_AUDITOR': '#ff9800', // Orange
+      'IN_PROGRESS': '#4caf50', // Green
+      'CLOSED': '#607d8b' // Grey
     };
     return colors[status] || '#999';
   };
 
   const getStatusLabel = (status) => {
     const labels = {
-      'ASSIGNED': 'Assigned',
+      'Created': 'Created',
+      'STORED_FOR_ASSIGNMENT': 'Stored',
+      'ASSIGNED_TO_TEAM_LEADER': 'Assigned (TL)',
+      'ASSIGNED_TO_AUDITOR': 'Assigned (Auditor)',
       'IN_PROGRESS': 'In Progress',
-      'CLOSED': 'Closed',
-      'Created': 'Created'
+      'CLOSED': 'Closed'
     };
     return labels[status] || status;
   };
@@ -176,11 +212,12 @@ function AuditCasesListView() {
       ) : (
         <>
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
             <Card title="Total Cases" number={casesToShow.length} icon="fas fa-briefcase" />
-            <Card title="Assigned (Pending)" number={casesToShow.filter(c => c.status === 'ASSIGNED').length} icon="fas fa-clipboard-list" />
+            <Card title="Stored" number={casesToShow.filter(c => c.status === 'STORED_FOR_ASSIGNMENT').length} icon="fas fa-archive" />
+            <Card title="Assigned (TL)" number={casesToShow.filter(c => c.status === 'ASSIGNED_TO_TEAM_LEADER').length} icon="fas fa-users" />
+            <Card title="Assigned (Auditor)" number={casesToShow.filter(c => c.status === 'ASSIGNED_TO_AUDITOR').length} icon="fas fa-user-check" />
             <Card title="In Progress" number={casesToShow.filter(c => c.status === 'IN_PROGRESS').length} icon="fas fa-hourglass-half" />
-            <Card title="Closed" number={casesToShow.filter(c => c.status === 'CLOSED').length} icon="fas fa-check-circle" />
           </div>
 
           {/* Filters */}
