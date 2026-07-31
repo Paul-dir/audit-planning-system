@@ -119,16 +119,58 @@ export function autoLoadAuditorsForContext(region, taxCenter, auditType = null) 
 
 /**
  * Load all team leaders for a specific tax center
+ * 
+ * DYNAMIC APPROACH (Preferred):
+ * Uses getAllUsers() from org structure to get live Team Leaders
+ * Ensures thousands of TLs are available without hardcoding
+ * 
+ * FALLBACK:
+ * If org structure unavailable, uses stored data
+ * 
  * @param {string} region - Region name
  * @param {string} taxCenter - Tax center name
- * @returns {array} Array of team leaders
+ * @returns {array} Array of team leaders with proper formatting
  */
 export function loadTeamLeaders(region, taxCenter) {
   try {
+    // PRIMARY: Try dynamic loading from org structure
+    const allUsers = getAllUsers();
+    
+    // Filter for Team Leaders in this region/tax center
+    const dynamicTLs = allUsers.filter(u =>
+      u.role === 'team_leader' &&
+      u.org_context?.assignedRegion === region &&
+      u.org_context?.assignedTaxCenter === taxCenter
+    );
+    
+    if (dynamicTLs.length > 0) {
+      console.log(`✓ Dynamically loaded ${dynamicTLs.length} team leaders for ${region} - ${taxCenter}`);
+      
+      // Map to standard format
+      return dynamicTLs.map(tl => ({
+        id: tl.id,
+        fullName: tl.full_name,
+        full_name: tl.full_name,
+        email: tl.email,
+        role: 'team_leader',
+        region: tl.org_context?.assignedRegion,
+        taxCenter: tl.org_context?.assignedTaxCenter,
+        teamId: tl.org_context?.teamId,
+        teamName: tl.org_context?.teamName,
+        auditType: tl.org_context?.auditType, // ← IMPORTANT: For filtering by audit type
+        currentWorkload: tl.workload?.currentCases || 0,
+        maxCapacity: tl.workload?.maxCapacity || 12,
+        status: 'ACTIVE',
+        org_context: tl.org_context
+      }));
+    }
+    
+    // FALLBACK: Use storage if org structure empty
+    console.warn('⚠️  No dynamic Team Leaders found, falling back to storage');
     const data = loadData();
     
     if (!data.teamLeaders || data.teamLeaders.length === 0) {
-      console.warn('No team leaders in storage, initializing default data');
+      console.warn('No team leaders in storage either, initializing default data');
       initializeDefaultData(region, taxCenter);
       const newData = loadData();
       return newData.teamLeaders.filter(tl => tl.region === region && tl.taxCenter === taxCenter);
@@ -138,8 +180,9 @@ export function loadTeamLeaders(region, taxCenter) {
       tl.region === region && tl.taxCenter === taxCenter
     );
     
-    console.log(`✓ Loaded ${filtered.length} team leaders for ${region} - ${taxCenter}`);
+    console.log(`✓ Loaded ${filtered.length} team leaders from storage`);
     return filtered;
+    
   } catch (error) {
     console.error('Error loading team leaders:', error);
     return getDefaultTeamLeaders(region, taxCenter);

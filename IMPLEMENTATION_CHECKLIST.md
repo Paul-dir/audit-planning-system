@@ -1,293 +1,368 @@
-# Implementation Checklist - Planning Team Pages
-
-**Created:** July 26, 2026  
-**Strategy:** Apply standard modern enterprise pattern to all remaining pages  
-**Exception:** CreateAnnualPlanModal stays colorful (already complete ✅)
+# Hierarchical Routing Implementation Checklist
+**Status**: ✅ PHASE 1 COMPLETE - Code Implementation Done  
+**Next**: Testing & UI Integration
 
 ---
 
-## Planning Team Pages - Priority 1
+## PHASE 1: CODE IMPLEMENTATION ✅ DONE
 
-### 1. ConfigurationManagementView
-**Status:** ⏳ Ready to Start  
-**File:** `src/components/views/ConfigurationManagementView.jsx`
+### New Files Created ✅
+- [x] `src/utils/caseDistribution.js` - Hierarchical distribution engine
+  - [x] `cascadePlanToTeamLeadersByAuditType()` - Main distribution function
+  - [x] `getTeamLeadersForAuditType()` - Filter TLs by audit type
+  - [x] `distributeToTeamLeadersIntelligently()` - Load-balanced distribution
+  - [x] `getAuditorsForTeamLeader()` - Get auditors of same audit type
+  - [x] `validateAuditTypeConsistency()` - Validate TL↔Auditor match
+  - [x] `getDistributionStats()` - Get distribution statistics
+  - [x] Build: ✅ Exit Code 0 (125 modules)
 
-**Tasks:**
-- [ ] Read current file and analyze 8 tabs
-- [ ] Convert Tab 1: Audit Types Configuration
-  - [ ] Add page wrapper (space-y-6 p-8 bg-neutral-900 min-h-screen)
-  - [ ] Add page header with blue accent bar
-  - [ ] Convert table to standard pattern styling
-  - [ ] Update form inputs to dark theme
-- [ ] Convert Tab 2: Skills Configuration
-  - [ ] Apply same pattern
-- [ ] Convert Tab 3: Risk Levels Configuration
-  - [ ] Apply same pattern
-- [ ] Convert Tab 4: Effort Calculation
-  - [ ] Apply same pattern
-- [ ] Convert Tabs 5-8 (if they exist)
-- [ ] Update buttons with semantic colors
-- [ ] Add icons to tabs for visual interest (but subtle)
-- [ ] Test build
-- [ ] Verify all functionality preserved
+### Files Modified ✅
+- [x] `src/components/views/assignments/AssignToTeamLeadersView.jsx`
+  - [x] Added imports for caseDistribution functions
+  - [x] Enhanced `loadCasesAndTeamLeaders()` with audit type validation tracing
+  - [x] Updated `handleAssignCase()` with audit type consistency check
+  - [x] Added `handleHierarchicalAutoAssign()` function
+  - [x] Build: ✅ Exit Code 0
 
-**Design Rules:**
-- Use standard pattern ONLY
-- Dark backgrounds (#0F172A, #1E293B)
-- Semantic colors only (primary, info, success, warning, danger)
-- Icons for clarity, not decoration
-- No gradients except header bars
-- No rainbow effects
-- Professional appearance
+### Documentation ✅
+- [x] `HIERARCHICAL_ROUTING_LOGIC.md` - Complete technical spec
+- [x] `ROUTING_FIX_SUMMARY.md` - Quick reference guide
+- [x] Console tracing added with 🔍 📊 ✅ ❌ emoji indicators
 
 ---
 
-### 2. FeedbackReviewView
-**Status:** ⏳ Ready to Start  
-**File:** `src/components/views/FeedbackReviewView.jsx`
+## PHASE 2: TESTING (IN PROGRESS)
 
-**Tasks:**
-- [ ] Read current file and understand structure
-- [ ] Add page wrapper with proper spacing
-- [ ] Add page header with blue accent bar
-- [ ] Design plan amendment UI
-- [ ] Update form styling to dark theme
-- [ ] Add tables with standard pattern
-- [ ] Update buttons with semantic colors
-- [ ] Test build
-- [ ] Verify all functionality preserved
+### Test Data Requirements
+- [ ] Verify Team Leaders have `org_context.auditType` set
+  - [ ] desk_audit Team Leaders
+  - [ ] field_audit Team Leaders
+  - [ ] joint_audit Team Leaders
+  - [ ] transfer_pricing Team Leaders
 
-**Design Rules:**
-- Follow DESIGN_TEMPLATE_PATTERN.md
-- Use standard modern enterprise design
-- No colorful enhancements
+- [ ] Verify Auditors have matching `org_context.auditType`
+  - [ ] Desk audit auditors under desk audit TLs
+  - [ ] Field audit auditors under field audit TLs
+  - [ ] Joint audit auditors under joint audit TLs
+
+- [ ] Sample test cases (32 total)
+  - [ ] 15 desk audit cases
+  - [ ] 10 field audit cases
+  - [ ] 7 joint audit cases
+
+### Functional Testing
+- [ ] **Test 1: Load Cases by Audit Type**
+  - [ ] Open AssignToTeamLeadersView
+  - [ ] Verify cases grouped by audit type in console
+  - [ ] Check trace logs show breakdown by type
+  - [ ] Expected: `desk_audit: 15, field_audit: 10, joint_audit: 7`
+
+- [ ] **Test 2: Validate Team Leader Filtering**
+  - [ ] Check getTeamLeadersForAuditType() returns only matching TLs
+  - [ ] Expected console output:
+    ```
+    desk_audit Team Leaders: 2
+    field_audit Team Leaders: 2
+    joint_audit Team Leaders: 1
+    ```
+
+- [ ] **Test 3: Manual Assignment with Validation**
+  - [ ] Try assigning desk audit case to field audit TL
+  - [ ] Should see error: "AUDIT TYPE MISMATCH"
+  - [ ] Try assigning desk audit case to desk audit TL
+  - [ ] Should succeed with confirmation message
+
+- [ ] **Test 4: Hierarchical Auto-Assignment**
+  - [ ] Click "Auto-Assign by Audit Type" button (when added to UI)
+  - [ ] Monitor console for distribution logs
+  - [ ] Expected trace:
+    ```
+    📋 [CASCADE] Starting hierarchical distribution
+    ✅ Step 1: Loaded 32 unassigned cases
+    ✅ Step 2: Grouped into audit types: desk_audit(15), field_audit(10), joint_audit(7)
+    
+    🔄 Processing audit type: desk_audit (15 cases)
+       Found 2 Team Leaders for desk_audit
+       📊 Distributing 15 desk_audit cases across 2 Team Leaders
+        📍 Case CAA-0001 → TL-Desk-1 (5/12)
+        ... (13 more)
+       ✅ Distributed 15/15 cases
+    
+    (Similar for field_audit and joint_audit)
+    
+    ✅ [CASCADE] Hierarchical distribution complete
+    ```
+
+- [ ] **Test 5: Team Leader receives only their audit type**
+  - [ ] Login as Desk Audit Team Leader
+  - [ ] Go to AssignToAuditorsView
+  - [ ] Verify cases are ALL desk audit type
+  - [ ] Check cannot see field or joint audit cases
+
+- [ ] **Test 6: Auditor receives only their audit type**
+  - [ ] Login as Auditor under desk audit team
+  - [ ] Go to "My Cases"
+  - [ ] Verify cases are ALL desk audit type
+  - [ ] Check workload shows only desk audit cases
+
+### Console Output Verification
+Look for these traces in browser console:
+
+```javascript
+// When loading:
+📊 [AssignToTeamLeaders] Stored cases: 32
+   desk_audit: 15 cases
+   field_audit: 10 cases
+   joint_audit: 7 cases
+   desk_audit Team Leaders: 2
+   field_audit Team Leaders: 2
+   joint_audit Team Leaders: 1
+✅ [AssignToTeamLeaders] Data loaded successfully
+
+// When validating assignment:
+🔍 [AssignCase] Validating audit type:
+   caseType: desk_audit
+   tlType: desk_audit
+   match: true
+✅ [AssignCase] Case assigned to TL-Desk-1
+
+// When auto-assigning:
+🔄 [HierarchicalAutoAssign] Starting for Addis Ababa TC1
+📋 [CASCADE] Starting hierarchical distribution
+✅ Step 1: Loaded 32 unassigned cases
+... (distribution process)
+✅ [CASCADE] Hierarchical distribution complete
+```
 
 ---
 
-## Other Role Pages - Priority 2+
+## PHASE 3: UI INTEGRATION (TODO)
 
-### Dashboard Pages (8 total)
-Each dashboard should be reviewed and updated with the modern design pattern:
+### UI Updates Needed
 
-1. **AuditDirectorDashboard**
-   - [ ] Status: Review needed
-   - [ ] File: `src/components/dashboards/AuditDirectorDashboard.jsx`
-
-2. **AuditorDashboard**
-   - [ ] Status: Review needed
-   - [ ] File: `src/components/dashboards/AuditorDashboard.jsx`
-
-3. **AuditTeamDashboard**
-   - [ ] Status: Review needed
-   - [ ] File: `src/components/dashboards/AuditTeamDashboard.jsx`
-
-4. **CascadeTeamDashboard**
-   - [ ] Status: Review needed
-   - [ ] File: `src/components/dashboards/CascadeTeamDashboard.jsx`
-
-5. **RegionalDirectorDashboard**
-   - [ ] Status: Review needed
-   - [ ] File: `src/components/dashboards/RegionalDirectorDashboard.jsx`
-
-6. **SeniorManagementDashboard**
-   - [ ] Status: Review needed
-   - [ ] File: `src/components/dashboards/SeniorManagementDashboard.jsx`
-
-7. **TaxCenterManagerDashboard**
-   - [ ] Status: Review needed
-   - [ ] File: `src/components/dashboards/TaxCenterManagerDashboard.jsx`
-
-8. **TeamLeaderDashboard**
-   - [ ] Status: Review needed
-   - [ ] File: `src/components/dashboards/TeamLeaderDashboard.jsx`
-
----
-
-## Reference Files
-
-**Use these as guides for standard pattern:**
-1. `DESIGN_TEMPLATE_PATTERN.md` - Complete pattern documentation
-2. `src/components/views/AuditPlanningView.jsx` - Reference implementation (already done)
-3. `src/components/views/RiskEngineView.jsx` - Reference implementation (already done)
-
-**Use this as the EXCEPTION (colorful):**
-- `src/components/modals/CreateAnnualPlanModal.jsx` - NOT a pattern to follow
-
----
-
-## Standard Pattern Quick Reference
-
-### Page Wrapper
+#### 1. AssignToTeamLeadersView.jsx - Add UI Button
+**Location**: After "Select All" button  
+**Button**: "Auto-Assign by Audit Type"
 ```jsx
-<div className="space-y-6 p-8 bg-neutral-900 min-h-screen">
-```
-
-### Page Header
-```jsx
-<div>
-  <div className="flex items-center gap-3 mb-2">
-    <div className="w-1 h-8 bg-primary-600 rounded-sm"></div>
-    <h1 className="text-3xl font-serif font-bold text-neutral-50">Title</h1>
-  </div>
-  <p className="text-neutral-400 text-sm">Subtitle</p>
-</div>
-```
-
-### Metric Card
-```jsx
-<div className="bg-neutral-800 border border-neutral-700 border-l-4 border-l-primary-600 rounded-lg p-6 shadow-sm">
-  <h3 className="text-xs uppercase font-semibold tracking-wider text-neutral-400 mb-2">Title</h3>
-  <div className="text-4xl font-bold text-neutral-50">{value}</div>
-  <i className="fas fa-icon text-2xl text-neutral-400 opacity-75"></i>
-</div>
-```
-
-### Table
-```jsx
-<div className="bg-neutral-800 border border-neutral-700 rounded-lg overflow-hidden shadow-sm">
-  <div className="overflow-x-auto">
-    <table className="w-full">
-      <thead>
-        <tr className="bg-neutral-800 border-b border-neutral-700">
-          <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-300 uppercase tracking-wider">Header</th>
-        </tr>
-      </thead>
-      <tbody className="divide-y divide-neutral-700">
-        <tr className="hover:bg-neutral-700/50">
-          <td className="px-6 py-4 text-sm text-neutral-50">Data</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</div>
-```
-
-### Form Input
-```jsx
-<input
-  type="text"
-  className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-neutral-50 font-medium focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20"
-/>
-```
-
-### Button
-```jsx
-<button className="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-neutral-50 font-semibold rounded-lg transition-colors">
-  Button
+<button 
+  onClick={handleHierarchicalAutoAssign}
+  style={{ background: '#4caf50', color: '#fff', padding: '10px 20px' }}
+>
+  <i className="fas fa-magic"></i> Auto-Assign by Audit Type
 </button>
 ```
 
----
-
-## Color Usage Guidelines
-
-### Semantic Colors
-- **Primary (#2563EB):** Main actions, drafts, planning
-- **Info (#3B82F6):** Information, secondary metrics
-- **Success (#10B981):** Approved, completed, finalized
-- **Warning (#F59E0B):** Pending, in revision, warnings
-- **Danger (#F87171):** Errors, rejections, critical
-
-### Text Colors
-- **text-neutral-50:** Primary text (bright white)
-- **text-neutral-300:** Headers, secondary labels
-- **text-neutral-400:** Subtitles, muted text
-- **text-neutral-600:** Icons, very muted
-
-### Background Colors
-- **bg-neutral-900:** Page background
-- **bg-neutral-800:** Cards, panels
-- **bg-neutral-700:** Hover states, borders
-
----
-
-## Dos and Don'ts
-
-### ✅ DO
-
-- [ ] Follow DESIGN_TEMPLATE_PATTERN.md exactly
-- [ ] Use dark theme consistently
-- [ ] Apply semantic colors for meaning
-- [ ] Add professional icons for clarity
-- [ ] Use proper spacing and typography
-- [ ] Add hover effects for interactivity
-- [ ] Preserve all business logic
-- [ ] Test build after changes
-- [ ] Use null checks: `(value || 0).toLocaleString()`
-
-### ❌ DON'T
-
-- [ ] Add rainbow gradients (except in CreateAnnualPlanModal)
-- [ ] Use multiple colors on single cards
-- [ ] Add unnecessary animations
-- [ ] Deviate from established pattern
-- [ ] Use inline styles
-- [ ] Change semantic meaning of colors
-- [ ] Forget responsive design
-- [ ] Remove any functionality
-- [ ] Mix light and dark themes
-
----
-
-## Verification Checklist
-
-After each page redesign, verify:
-
-- [ ] Build passes with zero errors
-- [ ] CSS file size reasonable (11-13 KB gzipped)
-- [ ] All functionality works correctly
-- [ ] Dark theme applied consistently
-- [ ] Typography matches pattern
-- [ ] Spacing follows system
-- [ ] Colors used semantically
-- [ ] Icons placed appropriately
-- [ ] Responsive design works
-- [ ] No regressions in functionality
-
----
-
-## Build Command
-
-```bash
-npm run build
+#### 2. Case Card Display - Show Audit Type
+**Current**: Shows case ID, risk level  
+**Add**: Audit type badge
+```jsx
+<span style={{ background: '#2196f3', color: '#fff', padding: '4px 8px' }}>
+  {auditCase.auditType.replace(/_/g, ' ').toUpperCase()}
+</span>
 ```
 
-Expected output:
-- ✅ 110 modules transformed
-- ✅ 11-13 KB CSS gzipped
-- ✅ ~3-7s build time
-- ✅ Zero errors
+#### 3. Team Leader Dropdown - Group by Audit Type
+**Current**: All TLs in one list  
+**New**: Optgroups by audit type
+```jsx
+<optgroup label="Desk Audit">
+  <option>TL-Desk-1</option>
+  <option>TL-Desk-2</option>
+</optgroup>
+<optgroup label="Field Audit">
+  <option>TL-Field-1</option>
+  <option>TL-Field-2</option>
+</optgroup>
+```
+
+#### 4. Summary Modal
+Show distribution results after auto-assign:
+```
+✅ Auto-Assignment Complete
+
+Desk Audit: 15/15 assigned
+├─ TL-Desk-1: 8 cases
+└─ TL-Desk-2: 7 cases
+
+Field Audit: 10/10 assigned
+├─ TL-Field-1: 5 cases
+└─ TL-Field-2: 5 cases
+
+Joint Audit: 7/7 assigned
+└─ TL-Joint-1: 7 cases
+
+Total: 32/32 assigned
+```
 
 ---
 
-## Notes
+## PHASE 4: DATA VALIDATION (TODO)
 
-1. **CreateAnnualPlanModal is the exception** - It's colorful and that's intentional
-2. **Other pages use standard pattern** - Professional, clean, consistent
-3. **Start with Planning Team pages** - Complete ConfigurationManagementView and FeedbackReviewView first
-4. **Then move to other roles** - Update remaining dashboards systematically
-5. **Use reference files** - AuditPlanningView and RiskEngineView show what done looks like
+### OrgStructure Verification
+Check `src/data/orgStructure.js`:
+- [ ] All Team Leaders have `org_context.auditType`
+- [ ] All Auditors have `org_context.auditType`
+- [ ] Auditors' audit type matches their Team Leader's type
+- [ ] Correct `teamId` for grouping
+
+**Command to check**:
+```javascript
+// In browser console:
+const users = getAllUsers();
+const tls = users.filter(u => u.role === 'team_leader');
+const auditors = users.filter(u => u.role === 'auditor');
+
+console.table(tls.map(t => ({
+  name: t.full_name,
+  auditType: t.org_context.auditType,
+  teamId: t.org_context.teamId
+})));
+
+console.table(auditors.map(a => ({
+  name: a.full_name,
+  auditType: a.org_context.auditType,
+  teamId: a.org_context.teamId
+})));
+```
 
 ---
 
-## Status Tracking
+## PHASE 5: INTEGRATION WITH OTHER VIEWS (TODO)
 
-| Page | Status | Notes |
-|------|--------|-------|
-| CreateAnnualPlanModal | ✅ Done | Colorful, beautiful - keep as is |
-| ConfigurationManagementView | ⏳ Next | 8 tabs - use standard pattern |
-| FeedbackReviewView | ⏳ Next | Plan amendments - use standard pattern |
-| AuditDirectorDashboard | ⏳ Todo | Standard pattern |
-| AuditorDashboard | ⏳ Todo | Standard pattern |
-| AuditTeamDashboard | ⏳ Todo | Standard pattern |
-| CascadeTeamDashboard | ⏳ Todo | Standard pattern |
-| RegionalDirectorDashboard | ⏳ Todo | Standard pattern |
-| SeniorManagementDashboard | ⏳ Todo | Standard pattern |
-| TaxCenterManagerDashboard | ⏳ Todo | Standard pattern |
-| TeamLeaderDashboard | ⏳ Todo | Standard pattern |
+### Views to Update
+
+#### 1. CasePrioritizationView.jsx
+- [ ] Add button for hierarchical cascade
+- [ ] Show audit type in case cards
+- [ ] Group stored cases by audit type
+
+#### 2. AuditCasesListView.jsx
+- [ ] Show audit type filter
+- [ ] Filter cases by audit type
+- [ ] Display audit type in list
+
+#### 3. ProcessOwnerCaseTrackingView.jsx
+- [ ] Show distribution stats by audit type
+- [ ] Show TLs grouped by audit type
+- [ ] Display audit type in case list
+
+#### 4. TeamLeaderCaseManagementView.jsx
+- [ ] Show only cases matching TL's audit type
+- [ ] Show only auditors matching TL's audit type
+- [ ] Validate audit type before assignment
 
 ---
 
-**Ready to begin Phase 2:** ConfigurationManagementView redesign ✅
+## PHASE 6: ERROR HANDLING (TODO)
 
-**Current Build Status:** ✅ Successful (12.34 KB CSS, 110 modules, 3.73s)
+### Error Scenarios to Handle
+
+#### 1. No Team Leaders for Audit Type
+**Current**: Logs warning, skips cases  
+**Todo**: 
+- [ ] Show user-friendly error message
+- [ ] Don't skip cases silently
+- [ ] Offer alternative (manual assignment)
+
+#### 2. No Auditors for Team Leader
+**Current**: Logs warning  
+**Todo**:
+- [ ] Prevent Team Leader from accepting cases
+- [ ] Show capacity issue to user
+- [ ] Suggest alternative TL
+
+#### 3. Audit Type Mismatch
+**Current**: Prevents assignment with error  
+**Todo** ✅ DONE:
+- [x] Shows clear error message
+- [x] Explains what went wrong
+
+#### 4. All TLs at Capacity
+**Current**: Logs warning, may leave cases unassigned  
+**Todo**:
+- [ ] Provide queue/waiting list
+- [ ] Notify when capacity opens
+- [ ] Suggest overflow to other region
+
+---
+
+## PHASE 7: PERFORMANCE & MONITORING (TODO)
+
+### Performance Checks
+- [ ] Distribution of 1000 cases completes in < 5 seconds
+- [ ] No memory leaks with large datasets
+- [ ] Console logs don't impact performance
+- [ ] Database queries are indexed
+
+### Monitoring
+- [ ] Track distribution success rate
+- [ ] Monitor TL capacity utilization
+- [ ] Alert if TLs consistently overloaded
+- [ ] Track assignment errors/mismatches
+
+---
+
+## BUILD STATUS
+
+✅ **Current Build**: Exit Code 0 (125 modules)
+- All new code compiled successfully
+- No import errors
+- No type errors
+- Ready for testing
+
+---
+
+## KNOWN ISSUES
+
+1. **Large Chunk Warning** (NOT A PROBLEM)
+   - Bundle is 991KB due to size of all audit types
+   - Doesn't affect functionality
+   - Can be optimized later with code-splitting
+
+---
+
+## NEXT STEPS (IN ORDER)
+
+1. **Immediate** (Next session):
+   - [ ] Verify Team Leader/Auditor audit types in orgStructure.js
+   - [ ] Run Test 1-3 from Testing phase
+   - [ ] Verify console output matches expected traces
+
+2. **Short-term** (Next 2 sessions):
+   - [ ] Add UI button for auto-assign
+   - [ ] Run Test 4-6 complete flow
+   - [ ] Fix any bugs found
+
+3. **Medium-term** (Next 3-4 sessions):
+   - [ ] Update all related views
+   - [ ] Add comprehensive error handling
+   - [ ] Performance testing with large datasets
+
+4. **Long-term** (Next 5+ sessions):
+   - [ ] Monitoring & alerts
+   - [ ] Code splitting for bundle optimization
+   - [ ] Documentation updates for deployment
+
+---
+
+## SUCCESS CRITERIA
+
+✅ **All criteria must pass before going to production**:
+
+1. [ ] Cases maintain audit type through entire path
+2. [ ] Each TL sees only their audit type cases
+3. [ ] Each Auditor sees only their audit type cases
+4. [ ] Auto-assignment distributes by audit type correctly
+5. [ ] Manual assignment validates audit type
+6. [ ] Console shows correct trace logs
+7. [ ] No errors in browser console
+8. [ ] Performance within SLA (< 5 seconds for 1000 cases)
+9. [ ] All UI buttons work correctly
+10. [ ] User feedback is clear and helpful
+
+---
+
+**Created**: July 30, 2026  
+**Version**: 1.0  
+**Status**: Implementation Phase Complete - Ready for Testing
+

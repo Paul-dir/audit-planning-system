@@ -8,7 +8,7 @@
  * National → Region → Tax Center → [Group by Audit Type] → Team Leaders of that type
  */
 
-import { loadData } from './data';
+import { loadData, saveData } from './data';
 import { getAllUsers } from '../data/orgStructure';
 
 /**
@@ -191,6 +191,7 @@ export function distributeToTeamLeadersIntelligently(
     );
     
     const distribution = [];
+    const data = loadData(); // ✅ LOAD ONCE, OUTSIDE THE LOOP
     let tlIndex = 0;
     let skippedCases = 0;
     
@@ -226,15 +227,18 @@ export function distributeToTeamLeadersIntelligently(
         continue;
       }
       
-      // Save assignment to storage
+      // Save assignment to storage (data already loaded above)
       const updatedCase = {
         ...auditCase,
         status: 'ASSIGNED_TO_TEAM_LEADER',
         assignedTeamLeaderId: selectedTL.id,
-        assignedTeamLeader: selectedTL.full_name
+        assignedTeamLeader: selectedTL.full_name,
+        // ✅ FIX: Store MULTIPLE ID formats for reliable Team Leader lookup
+        assignedTeamLeaderUserId: selectedTL.userId || selectedTL.id,
+        assignedTeamLeaderEmail: selectedTL.email,
+        // ✅ FIX: Ensure planYear is set (default to 2027 if missing)
+        planYear: auditCase.planYear || 2027
       };
-      
-      const data = loadData();
       const caseIdx = data.auditCases.findIndex(c => c.id === auditCase.id);
       if (caseIdx !== -1) {
         data.auditCases[caseIdx] = updatedCase;
@@ -243,6 +247,15 @@ export function distributeToTeamLeadersIntelligently(
           caseId: auditCase.id,
           teamLeaderId: selectedTL.id,
           timestamp: new Date().toISOString()
+        });
+        
+        // ✅ VERIFICATION LOG
+        console.log('🔍 [BULK ASSIGN DEBUG]', {
+          caseId: auditCase.id,
+          savedTeamLeaderId: data.auditCases[caseIdx].assignedTeamLeaderId,
+          savedTeamLeader: data.auditCases[caseIdx].assignedTeamLeader,
+          savedStatus: data.auditCases[caseIdx].status,
+          savedPlanYear: data.auditCases[caseIdx].planYear
         });
       }
       
@@ -260,11 +273,8 @@ export function distributeToTeamLeadersIntelligently(
       tlIndex++;
     }
     
-    if (distribution.length > 0) {
-      const data = loadData();
-      // Save all changes
-      import('./data').then(module => module.saveData(data));
-    }
+    // ✅ SAVE ALL CHANGES AT ONCE (only after loop completes)
+    saveData(data);
     
     console.log(
       `  ✅ Distributed ${distribution.length}/${cases.length} cases` +

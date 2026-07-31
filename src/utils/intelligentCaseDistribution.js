@@ -205,7 +205,14 @@ export function intelligentDistributeCases(selectedCaseIds, data, userInfo) {
       data.auditCases[caseIdx].storedBy = userInfo?.fullName || 'Process Owner';
       data.auditCases[caseIdx].assignedTeamLeader = bestTL.teamLeader.full_name;
       data.auditCases[caseIdx].assignedTeamLeaderId = bestTL.teamLeader.id;
+      // ✅ FIX: Store MULTIPLE ID formats for reliable Team Leader lookup
+      data.auditCases[caseIdx].assignedTeamLeaderUserId = bestTL.teamLeader.userId || bestTL.teamLeader.id;
+      data.auditCases[caseIdx].assignedTeamLeaderEmail = bestTL.teamLeader.email;
       data.auditCases[caseIdx].status = 'ASSIGNED_TO_TEAM_LEADER';
+      // ✅ FIX: Ensure planYear is set (default to 2027 if missing)
+      if (!data.auditCases[caseIdx].planYear) {
+        data.auditCases[caseIdx].planYear = 2027;
+      }
 
       // ===== STEP 2: Find best auditor under this Team Leader =====
       const bestAuditor = getBestAvailableAuditor(bestTL.teamLeader.id, data);

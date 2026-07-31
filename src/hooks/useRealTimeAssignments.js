@@ -154,37 +154,71 @@ export function useTeamLeaderAssignments(teamLeaderId) {
     try {
       setLoading(true);
       setError(null);
+      
+      // 🔍 TRACE 1: Check if teamLeaderId is provided
+      console.log(`🔍 [useTeamLeaderAssignments] Called with teamLeaderId:`, teamLeaderId);
+      
+      if (!teamLeaderId) {
+        console.warn(`⚠️ [useTeamLeaderAssignments] No teamLeaderId provided - skipping load`);
+        setError('Team Leader ID not provided');
+        setLoading(false);
+        return;
+      }
+
       const data = loadData();
       const allOrgUsers = getAllUsers();
+      
+      console.log(`📊 [useTeamLeaderAssignments] Loaded ${allOrgUsers.length} org users`);
 
       // Get current Team Leader
       let currentTL = allOrgUsers.find(u => u.id === teamLeaderId && u.role === 'team_leader');
+      
+      console.log(`🔍 [useTeamLeaderAssignments] Direct org lookup result:`, currentTL ? `Found ${currentTL.full_name}` : 'Not found');
       
       // If not found in org structure, it might be a demo/cached user
       // Try to get from auth context stored in localStorage
       if (!currentTL) {
         const authContext = localStorage.getItem('auth_context');
+        console.log(`🔍 [useTeamLeaderAssignments] Checking auth cache...`);
+        
         if (authContext) {
-          const auth = JSON.parse(authContext);
-          if (auth.userId === teamLeaderId && auth.role === 'team_leader') {
-            // Use the auth context as fallback
-            currentTL = {
-              id: auth.userId,
-              full_name: auth.fullName,
+          try {
+            const auth = JSON.parse(authContext);
+            console.log(`📝 [useTeamLeaderAssignments] Auth cache content:`, {
+              userId: auth.userId,
               role: auth.role,
-              org_context: auth.org_context || {}
-            };
-            console.log(`✓ Using cached Team Leader from auth context: ${auth.fullName}`);
+              fullName: auth.fullName
+            });
+            
+            if (auth.userId === teamLeaderId && auth.role === 'team_leader') {
+              // Use the auth context as fallback
+              currentTL = {
+                id: auth.userId,
+                full_name: auth.fullName,
+                role: auth.role,
+                org_context: auth.org_context || {}
+              };
+              console.log(`✅ [useTeamLeaderAssignments] Using cached Team Leader: ${auth.fullName}`);
+            }
+          } catch (parseErr) {
+            console.error(`❌ [useTeamLeaderAssignments] Error parsing auth cache:`, parseErr);
           }
         }
       }
       
       if (!currentTL) {
-        console.warn(`⚠️ Team Leader not found: ${teamLeaderId}`);
-        console.warn(`   Searched in org structure and auth cache`);
+        console.warn(`⚠️ [useTeamLeaderAssignments] Team Leader not found: ${teamLeaderId}`);
+        console.warn(`   Searched in org structure (${allOrgUsers.length} users) and auth cache`);
         setError('Team Leader not found');
+        setLoading(false);
         return;
       }
+      
+      console.log(`✅ [useTeamLeaderAssignments] Team Leader resolved:`, {
+        id: currentTL.id,
+        fullName: currentTL.full_name,
+        teamId: currentTL.org_context?.teamId
+      });
 
       // Get ALL cases assigned to this TL (both new and historical)
       const tlCases = (data.auditCases || [])
@@ -201,11 +235,15 @@ export function useTeamLeaderAssignments(teamLeaderId) {
         })
         .sort((a, b) => (b.riskScore || 0) - (a.riskScore || 0));
 
+      console.log(`📋 [useTeamLeaderAssignments] Loaded ${tlCases.length} cases for TL ${currentTL.full_name}`);
+
       // Get all auditors under this Team Leader (same team)
       const tlAuditors = allOrgUsers.filter(u =>
         u.role === 'auditor' &&
         u.org_context.teamId === currentTL.org_context.teamId
       );
+      
+      console.log(`👥 [useTeamLeaderAssignments] Team has ${tlAuditors.length} auditors`);
 
       // Calculate stats for each auditor
       const audStats = {};
@@ -217,6 +255,7 @@ export function useTeamLeaderAssignments(teamLeaderId) {
           pending: auditorCases.filter(c => c.status === 'ASSIGNED_TO_TEAM_LEADER').length,
           inExecution: auditorCases.filter(c => c.status === 'IN_EXECUTION').length
         };
+        console.log(`  📊 Auditor ${auditor.full_name}: ${audStats[auditor.id].total} cases`);
       });
 
       setAssignedCases(tlCases);
@@ -224,13 +263,13 @@ export function useTeamLeaderAssignments(teamLeaderId) {
       setAuditorStats(audStats);
       setError(null);
 
-      console.log('🔄 Team Leader real-time data loaded:', {
+      console.log('✅ [useTeamLeaderAssignments] Data loaded successfully:', {
         totalCases: tlCases.length,
         totalAuditors: tlAuditors.length,
         timestamp: new Date().toLocaleTimeString()
       });
     } catch (err) {
-      console.error('Error loading TL assignments:', err);
+      console.error('❌ [useTeamLeaderAssignments] Error loading TL assignments:', err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -239,18 +278,29 @@ export function useTeamLeaderAssignments(teamLeaderId) {
 
   // Load on mount
   useEffect(() => {
+    console.log(`🔷 [useTeamLeaderAssignments] Mount effect - teamLeaderId:`, teamLeaderId);
     loadAssignments();
   }, [loadAssignments]);
 
   // Set up auto-refresh every 5 seconds
   useEffect(() => {
+    if (!teamLeaderId) {
+      console.log(`⏸️  [useTeamLeaderAssignments] Skipping interval - no teamLeaderId`);
+      return;
+    }
+    
+    console.log(`🔄 [useTeamLeaderAssignments] Setting up 5-second auto-refresh`);
     const interval = setInterval(() => {
+      console.log(`🔄 [useTeamLeaderAssignments] Auto-refresh triggered`);
       loadAssignments();
       setRefreshCount(prev => prev + 1);
     }, 5000); // Refresh every 5 seconds
 
-    return () => clearInterval(interval);
-  }, [loadAssignments]);
+    return () => {
+      console.log(`🔴 [useTeamLeaderAssignments] Clearing interval`);
+      clearInterval(interval);
+    };
+  }, [loadAssignments, teamLeaderId]);
 
   // Manual refresh function
   const refresh = useCallback(() => {

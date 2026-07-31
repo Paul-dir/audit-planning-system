@@ -207,10 +207,6 @@ function CasePrioritizationView() {
     const userRegion = userInfo?.orgContext?.assignedRegion;
     const userTaxCenter = userInfo?.orgContext?.assignedTaxCenter;
     
-    // Get plan year from current plan or use 2027 as default
-    const currentPlan = (data.plans || []).find(p => p.status === 'APPROVED' || p.status === 'SUBMITTED_TO_DIRECTOR');
-    const planYear = currentPlan?.fiscalYear || 2027;
-    
     // CRITICAL FIX: Only store cases for THIS tax center!
     if (!userRegion || !userTaxCenter) {
       alert('❌ No tax center assigned. Cannot store cases.');
@@ -231,7 +227,6 @@ function CasePrioritizationView() {
             c.storageStatus = 'STORED';
             c.priorityRank = getCaseRank(c.id);
             c.status = 'STORED_FOR_ASSIGNMENT';
-            c.planYear = planYear; // ✅ ADD PLAN YEAR FOR FILTERING
             count++;
             console.log(`✅ Stored case ${c.id} for ${userTaxCenter}`);
           } else {
@@ -251,7 +246,7 @@ function CasePrioritizationView() {
     
     const message = skipped > 0 
       ? `✅ Stored ${count} cases. ⚠️ Skipped ${skipped} cases (not in ${userTaxCenter}).`
-      : `✅ Successfully prioritized and stored ${count} cases for Plan Year ${planYear}.`;
+      : `✅ Successfully prioritized and stored ${count} cases for assignment.`;
     
     alert(message);
   };

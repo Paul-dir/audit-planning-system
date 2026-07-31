@@ -7,6 +7,10 @@ import { loadTeamLeaders, loadAssignment, saveAssignment, updateTeamLeaderWorklo
 import { createAssignment, ASSIGNMENT_STATES } from '../../../utils/assignmentDataModels';
 import { executeTransition } from '../../../utils/assignmentStateMachine';
 import { intelligentDistributeCases, dynamicRerouteIfNeeded } from '../../../utils/intelligentCaseDistribution';
+import { 
+  getTeamLeadersForAuditType,
+  distributeToTeamLeadersIntelligently
+} from '../../../utils/caseDistribution';
 
 /**
  * AssignToTeamLeadersView - Tax Center Manager
@@ -26,6 +30,8 @@ function AssignToTeamLeadersView() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState(null);
   const [assignmentSummary, setAssignmentSummary] = useState(null);
+  const [auditTypeFilter, setAuditTypeFilter] = useState(null);
+  const [selectedPlanYear, setSelectedPlanYear] = useState(null);
 
   useEffect(() => {
     loadCasesAndTeamLeaders();
@@ -43,12 +49,12 @@ function AssignToTeamLeadersView() {
         return;
       }
 
-      // Get stored cases
+      // Get stored and assigned cases (for this tax center)
+      // ✅ Include BOTH 'STORED_FOR_ASSIGNMENT' (not yet assigned) and 'ASSIGNED_TO_TEAM_LEADER' (already assigned)
       const stored = (data.auditCases || []).filter(c =>
-        c.storageStatus === 'STORED' &&
-        c.status === 'STORED_FOR_ASSIGNMENT' &&
         c.region === userRegion &&
-        c.taxCenter === userTaxCenter
+        c.taxCenter === userTaxCenter &&
+        (c.status === 'STORED_FOR_ASSIGNMENT' || c.status === 'ASSIGNED_TO_TEAM_LEADER')
       );
 
       setStoredCases(stored);
@@ -132,10 +138,31 @@ function AssignToTeamLeadersView() {
       const data = loadData();
       const caseIdx = (data.auditCases || []).findIndex(c => c.id === caseId);
       if (caseIdx !== -1) {
+        // ✅ FIX: Store MULTIPLE ID formats for reliable Team Leader lookup
         data.auditCases[caseIdx].status = 'ASSIGNED_TO_TEAM_LEADER';
         data.auditCases[caseIdx].assignedTeamLeader = tl.fullName || tl.full_name;
         data.auditCases[caseIdx].assignedTeamLeaderId = tl.id;
+        data.auditCases[caseIdx].assignedTeamLeaderUserId = tl.userId || tl.id; // Extra ID variant
+        data.auditCases[caseIdx].assignedTeamLeaderEmail = tl.email; // Email as backup
+        
+        // ✅ FIX: Ensure planYear is set (default to 2027 if missing)
+        if (!data.auditCases[caseIdx].planYear) {
+          data.auditCases[caseIdx].planYear = 2027;
+        }
+        
         saveData(data);
+        
+        // ✅ VERIFICATION: Confirm data was saved
+        const verifyData = loadData();
+        const verifiedCase = verifyData.auditCases.find(c => c.id === caseId);
+        console.log('🔍 [ASSIGNMENT DEBUG]', {
+          caseId,
+          savedTeamLeaderId: verifiedCase?.assignedTeamLeaderId,
+          savedTeamLeader: verifiedCase?.assignedTeamLeader,
+          savedStatus: verifiedCase?.status,
+          savedPlanYear: verifiedCase?.planYear,
+          verificationPassed: verifiedCase?.status === 'ASSIGNED_TO_TEAM_LEADER'
+        });
       }
 
       // Update local state
@@ -144,6 +171,57 @@ function AssignToTeamLeadersView() {
     } catch (error) {
       console.error('Error assigning case:', error);
       setMessage({ type: 'error', text: error.message });
+    }
+  };
+
+  /**
+   * ✅ NEW FEATURE: Unassign case from Team Leader
+   * Allows Tax Center Manager to remove incorrect assignments
+   * Resets case back to STORED_FOR_ASSIGNMENT status
+   */
+  const handleUnassignCase = (caseId) => {
+    try {
+      const auditCase = storedCases.find(c => c.id === caseId);
+      if (!auditCase) return;
+
+      const assignment = assignments[caseId];
+      if (!assignment) {
+        setMessage({ type: 'warning', text: 'Case is not assigned' });
+        return;
+      }
+
+      // Get the currently assigned team leader to update their workload
+      const currentTLId = assignment.currentOwner;
+      if (currentTLId) {
+        updateTeamLeaderWorkload(currentTLId, -1); // Decrease workload
+      }
+
+      // Update data.auditCases - reset assignment fields
+      const data = loadData();
+      const caseIdx = (data.auditCases || []).findIndex(c => c.id === caseId);
+      if (caseIdx !== -1) {
+        data.auditCases[caseIdx].status = 'STORED_FOR_ASSIGNMENT';
+        data.auditCases[caseIdx].assignedTeamLeader = null;
+        data.auditCases[caseIdx].assignedTeamLeaderId = null;
+        data.auditCases[caseIdx].assignedTeamLeaderUserId = null;
+        data.auditCases[caseIdx].assignedTeamLeaderEmail = null;
+        saveData(data);
+      }
+
+      // Remove assignment
+      const updatedAssignments = { ...assignments };
+      delete updatedAssignments[caseId];
+      setAssignments(updatedAssignments);
+
+      // Reload to refresh state
+      loadCasesAndTeamLeaders();
+
+      setMessage({ type: 'success', text: `Case unassigned successfully` });
+      console.log(`✅ [UNASSIGN] Case ${caseId} unassigned from Team Leader`);
+
+    } catch (error) {
+      console.error('Error unassigning case:', error);
+      setMessage({ type: 'error', text: 'Error unassigning case' });
     }
   };
 
@@ -156,6 +234,84 @@ function AssignToTeamLeadersView() {
       newSelected.add(caseId);
     }
     setSelectedCases(newSelected);
+  };
+
+  /**
+   * ✅ NEW: Assign all cases of a specific audit type to their matching Team Leaders
+   * This maintains hierarchical routing by:
+   * 1. Filtering cases by selected audit type
+   * 2. Getting Team Leaders specialized in that audit type ONLY
+   * 3. Distributing cases intelligently by workload
+   */
+  const handleAssignByAuditType = (auditType) => {
+    try {
+      if (!auditType) {
+        setMessage({ type: 'warning', text: 'Please select an audit type' });
+        return;
+      }
+
+      const userRegion = userInfo?.orgContext?.assignedRegion;
+      const userTaxCenter = userInfo?.orgContext?.assignedTaxCenter;
+
+      // Step 1: Get all UNASSIGNED cases of this audit type
+      const casesOfType = (casesByAuditType[auditType] || []).filter(c => !assignments[c.id]);
+
+      if (casesOfType.length === 0) {
+        setMessage({ type: 'warning', text: `No unassigned cases found for ${auditType}` });
+        return;
+      }
+
+      console.log(`🔄 [AssignByAuditType] Processing ${auditType}`);
+      console.log(`   Found ${casesOfType.length} unassigned cases`);
+
+      // Step 2: Get ONLY Team Leaders for this audit type
+      const tlsForType = getTeamLeadersForAuditType(userRegion, userTaxCenter, auditType);
+
+      if (tlsForType.length === 0) {
+        setMessage({ type: 'error', text: `❌ No Team Leaders available for ${auditType}` });
+        console.error(`No Team Leaders found for ${auditType}`);
+        return;
+      }
+
+      console.log(`   Found ${tlsForType.length} Team Leaders for ${auditType}`);
+
+      // Step 3: Distribute cases to Team Leaders by workload
+      const distribution = distributeToTeamLeadersIntelligently(
+        casesOfType,
+        tlsForType,
+        auditType,
+        userTaxCenter,
+        userRegion
+      );
+
+      if (distribution.length === 0) {
+        setMessage({ type: 'warning', text: `Could not distribute any cases for ${auditType}` });
+        return;
+      }
+
+      // ✅ VERIFY DATA WAS SAVED
+      const data = loadData();
+      const savedCases = (data.auditCases || []).filter(c => 
+        c.status === 'ASSIGNED_TO_TEAM_LEADER' && c.auditType === auditType
+      );
+      console.log(`✅ VERIFIED: ${savedCases.length} cases now have status ASSIGNED_TO_TEAM_LEADER`);
+      
+      // Reload to show updated assignments
+      loadCasesAndTeamLeaders();
+      setSelectedCases(new Set());
+      setAuditTypeFilter(null);
+
+      setMessage({
+        type: 'success',
+        text: `✅ Assigned ${distribution.length}/${casesOfType.length} ${auditType} cases to Team Leaders`
+      });
+
+      console.log(`✅ [AssignByAuditType] Complete - Assigned ${distribution.length} cases`);
+
+    } catch (error) {
+      console.error('❌ [AssignByAuditType] Error:', error);
+      setMessage({ type: 'error', text: `Error assigning ${auditType} cases: ${error.message}` });
+    }
   };
 
   const handleAutoAssignSelected = () => {
@@ -254,6 +410,64 @@ function AssignToTeamLeadersView() {
         </div>
       ) : (
         <>
+          {/* AUDIT TYPE SELECTOR - NEW */}
+          <div style={{
+            background: '#0f1419',
+            border: '1px solid #30363d',
+            borderRadius: '8px',
+            padding: '16px',
+            marginBottom: '24px'
+          }}>
+            <div style={{ marginBottom: '12px' }}>
+              <small style={{ color: '#8b949e', fontWeight: '600' }}>📋 SELECT AUDIT TYPE TO ASSIGN:</small>
+            </div>
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              flexWrap: 'wrap',
+              marginBottom: '12px'
+            }}>
+              {Object.entries(casesByAuditType).map(([auditType, cases]) => (
+                <button
+                  key={auditType}
+                  onClick={() => setAuditTypeFilter(auditTypeFilter === auditType ? null : auditType)}
+                  style={{
+                    padding: '10px 16px',
+                    background: auditTypeFilter === auditType ? '#2196f3' : '#1c2128',
+                    color: auditTypeFilter === auditType ? '#fff' : '#8b949e',
+                    border: auditTypeFilter === auditType ? '2px solid #2196f3' : '1px solid #30363d',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {auditType.replace(/_/g, ' ')} ({cases.length})
+                </button>
+              ))}
+            </div>
+
+            {auditTypeFilter && (
+              <button
+                onClick={() => handleAssignByAuditType(auditTypeFilter)}
+                style={{
+                  padding: '12px 16px',
+                  background: '#4caf50',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  width: '100%'
+                }}
+              >
+                <i className="fas fa-check-circle"></i> ✅ Assign All {auditTypeFilter.replace(/_/g, ' ')} Cases to Matching Team Leaders
+              </button>
+            )}
+          </div>
+
           {/* Action buttons */}
           <div style={{
             background: '#1a3a1a',
@@ -409,9 +623,35 @@ function AssignToTeamLeadersView() {
 
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                           {assignment ? (
-                            <span style={{ color: '#4caf50', fontSize: '11px', fontWeight: 'bold' }}>
-                              ✓ Assigned to {assignedTL?.fullName || 'TL'}
-                            </span>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                              <span style={{ color: '#4caf50', fontSize: '11px', fontWeight: 'bold' }}>
+                                ✓ Assigned to {assignedTL?.fullName || c.assignedTeamLeader || 'TL'}
+                              </span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (window.confirm(`Unassign this case from ${assignedTL?.fullName || c.assignedTeamLeader || 'Team Leader'}?`)) {
+                                    handleUnassignCase(c.id);
+                                  }
+                                }}
+                                style={{
+                                  padding: '4px 8px',
+                                  background: '#ff5252',
+                                  color: '#fff',
+                                  border: 'none',
+                                  borderRadius: '4px',
+                                  fontSize: '10px',
+                                  fontWeight: '600',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}
+                                title="Remove this assignment and return case to unassigned pool"
+                              >
+                                <i className="fas fa-times"></i> Unassign
+                              </button>
+                            </div>
                           ) : (
                             <select
                               onChange={(e) => {

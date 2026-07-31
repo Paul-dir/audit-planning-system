@@ -17,6 +17,7 @@ import { createAssignment, ASSIGNMENT_STATES } from '../../../utils/assignmentDa
 import { executeTransition } from '../../../utils/assignmentStateMachine';
 import { rankAuditors } from '../../../utils/assignmentScoring';
 import { getBestAvailableAuditor } from '../../../utils/intelligentCaseDistribution';
+import { acceptAndDistributeCaseToAuditor } from '../../../utils/teamLeaderDistribution';
 
 /**
  * AssignToAuditorsView - Team Leader
@@ -39,9 +40,20 @@ function AssignToAuditorsView() {
   const [assignmentSummary, setAssignmentSummary] = useState(null);
   const [processingCase, setProcessingCase] = useState(null);
   const [processConfirmation, setProcessConfirmation] = useState(null);
+  const [caseAcceptanceModal, setCaseAcceptanceModal] = useState(null);
+  const [availablePlanYears, setAvailablePlanYears] = useState([]);
+  const [selectedPlanYear, setSelectedPlanYear] = useState(null);
 
   useEffect(() => {
     loadCasesAndAuditors();
+    
+    // ✅ FIX: Auto-refresh every 10 seconds to catch new assignments
+    const refreshInterval = setInterval(() => {
+      console.log('🔄 [AUTO-REFRESH] Checking for new case assignments...');
+      loadCasesAndAuditors();
+    }, 10000); // Refresh every 10 seconds
+    
+    return () => clearInterval(refreshInterval);
   }, []);
 
   const loadCasesAndAuditors = () => {
@@ -50,6 +62,42 @@ function AssignToAuditorsView() {
       const userRegion = userInfo?.orgContext?.assignedRegion;
       const userTaxCenter = userInfo?.orgContext?.assignedTaxCenter;
       const tlId = userInfo?.userId || userInfo?.id;
+
+      // ✅ LOAD DATA FIRST - needed for all filters
+      const data = loadData();
+
+
+      console.log(`🔄 [LoadCases] Starting load for Team Leader:`);
+      console.log(`   tlId: ${tlId}`);
+      console.log(`   fullName: ${userInfo?.fullName || userInfo?.full_name}`);
+      console.log(`   region: ${userRegion}`);
+      console.log(`   taxCenter: ${userTaxCenter}`);
+
+      // Get available plan years from stored cases
+      // Get available plan years from stored cases
+      // ✅ Include cases even if planYear not explicitly set (default to 2027)
+      const planYearsArray = [...new Set((data.auditCases || [])
+        .filter(c => {
+          // Match by Team Leader ID with flexible format
+          const isForThisTL = 
+            c.status === 'ASSIGNED_TO_TEAM_LEADER' && (
+              c.assignedTeamLeaderId === tlId ||
+              c.assignedTeamLeaderId === userInfo?.userId ||
+              c.assignedTeamLeaderId === userInfo?.id
+            );
+          return isForThisTL;
+        })
+        .map(c => c.planYear || 2027)  // ✅ Default to 2027 if not set
+      )].sort((a, b) => b - a);
+      
+      // Use first available plan year or default
+      const planYear = selectedPlanYear || (planYearsArray.length > 0 ? planYearsArray[0] : 2027);
+      setSelectedPlanYear(planYear);
+      
+      console.log(`   availablePlanYears: ${planYearsArray.join(', ')}`);
+            setAvailablePlanYears(planYearsArray);
+      
+console.log(`   using planYear: ${planYear}`);
 
       if (!userRegion || !userTaxCenter || !tlId) {
         setMessage({ type: 'error', text: 'Missing assignment context' });
@@ -61,16 +109,79 @@ function AssignToAuditorsView() {
       setMyAuditors(auditors);
 
       // Load assigned cases for Team Leader (combining assignments and auditCases)
-      const data = loadData();
       let myAssignments = loadAssignmentsByUser(tlId, 'TEAM_LEADER');
 
+      console.log(`   myAssignments from storage: ${myAssignments.length}`);
+
       // Find cases matching this Team Leader in auditCases directly
-      const directCases = (data.auditCases || []).filter(c => 
-        c.status === 'ASSIGNED_TO_TEAM_LEADER' &&
-        (c.assignedTeamLeaderId === tlId || 
-         c.assignedTeamLeader === userInfo?.fullName || 
-         c.assignedTeamLeader === userInfo?.full_name)
-      );
+      const directCases = (data.auditCases || []).filter(c => {
+        // ✅ DEBUG: Log EVERY case with ASSIGNED_TO_TEAM_LEADER status
+        if (c.status === 'ASSIGNED_TO_TEAM_LEADER') {
+          console.log(`🔍 [DEBUG] Case ${c.id}:`);
+          console.log(`     status: ${c.status}`);
+          console.log(`     assignedTeamLeaderId: ${c.assignedTeamLeaderId}`);
+          console.log(`     assignedTeamLeaderUserId: ${c.assignedTeamLeaderUserId}`);
+          console.log(`     assignedTeamLeader: ${c.assignedTeamLeader}`);
+          console.log(`     assignedTeamLeaderEmail: ${c.assignedTeamLeaderEmail}`);
+          console.log(`     planYear: ${c.planYear}`);
+          console.log(`   Checking against:`);
+          console.log(`     tlId: ${tlId}`);
+          console.log(`     userInfo.userId: ${userInfo?.userId}`);
+          console.log(`     userInfo.id: ${userInfo?.id}`);
+          console.log(`     userInfo.fullName: ${userInfo?.fullName}`);
+          console.log(`     userInfo.full_name: ${userInfo?.full_name}`);
+          console.log(`     userInfo.email: ${userInfo?.email}`);
+        }
+        
+        // Check status first
+        if (c.status !== 'ASSIGNED_TO_TEAM_LEADER') {
+          return false;
+        }
+        
+        // ✅ ENHANCED ID MATCHING - handle MULTIPLE ID formats for robust matching
+        const idMatch = 
+          c.assignedTeamLeaderId === tlId ||
+          c.assignedTeamLeaderId === userInfo?.userId ||
+          c.assignedTeamLeaderId === userInfo?.id ||
+          c.assignedTeamLeaderUserId === tlId ||
+          c.assignedTeamLeaderUserId === userInfo?.userId ||
+          c.assignedTeamLeaderUserId === userInfo?.id ||
+          c.assignedTeamLeader === userInfo?.fullName ||
+          c.assignedTeamLeader === userInfo?.full_name ||
+          c.assignedTeamLeaderEmail === userInfo?.email;
+        
+        if (!idMatch) {
+          console.log(`     ❌ NO MATCH for case ${c.id}`);
+          return false;
+        }
+        
+        // ✅ Filter by planYear as well (but allow missing planYear with default)
+        const caseYear = c.planYear || 2027; // Default to 2027 if not set
+        const yearMatch = !planYear || caseYear === planYear;
+        
+        if (idMatch && yearMatch) {
+          console.log(`     ✅ MATCHED case ${c.id} for TL: ${tlId} (year: ${caseYear})`);
+        } else if (idMatch && !yearMatch) {
+          console.log(`     ⚠️ ID matched but wrong year: case year=${caseYear}, filter year=${planYear}`);
+        }
+        
+        return idMatch && yearMatch;
+      });
+
+      // ✅ DETAILED LOGGING for debugging
+      console.log(`   Total cases in system: ${data.auditCases.length}`);
+      console.log(`   Checking for cases with status ASSIGNED_TO_TEAM_LEADER...`);
+      
+      const allTLAssigned = (data.auditCases || []).filter(c => 
+        c.status === 'ASSIGNED_TO_TEAM_LEADER'
+      ).length;
+      console.log(`   Cases with ASSIGNED_TO_TEAM_LEADER status: ${allTLAssigned}`);
+      
+      directCases.forEach(c => {
+        console.log(`     ✅ MATCHED: ${c.id} | TL: ${c.assignedTeamLeaderId || c.assignedTeamLeader} | PlanYear: ${c.planYear}`);
+      });
+      
+      console.log(`   directCases matched: ${directCases.length}`);
 
       // Combine cases into Map to deduplicate by ID
       const caseMap = new Map();
@@ -95,6 +206,7 @@ function AssignToAuditorsView() {
       });
 
       const cases = Array.from(caseMap.values());
+      console.log(`   ✅ Total cases to show: ${cases.length}`);
       setCasesByTeamLeader(cases);
 
       // Generate recommendations for each case
@@ -164,7 +276,6 @@ function AssignToAuditorsView() {
       saveAssignment(assignment);
 
       // Also update data.auditCases directly
-      const data = loadData();
       const caseIdx = (data.auditCases || []).findIndex(c => c.id === caseId);
       if (caseIdx !== -1) {
         data.auditCases[caseIdx].status = 'ASSIGNED_TO_AUDITOR';
@@ -199,6 +310,65 @@ function AssignToAuditorsView() {
   };
 
   const handleProcessAssignment = (caseId) => {
+    const auditCase = casesByTeamLeader.find(c => c.id === caseId);
+    if (!auditCase) return;
+
+    // Show case acceptance modal
+    setCaseAcceptanceModal({
+      caseId,
+      caseName: auditCase.taxpayerName,
+      auditType: auditCase.auditType,
+      riskLevel: auditCase.riskLevel,
+      estimatedHours: auditCase.estimatedHours
+    });
+  };
+
+  /**
+   * ✅ NEW: Accept case and smart-assign to best auditor
+   * Uses same logic as Tax Center → Team Leader assignment
+   * Automatically assigns to least-loaded auditor
+   */
+  const handleAcceptAndAssignCase = () => {
+    if (!caseAcceptanceModal) return;
+
+    try {
+      const { caseId } = caseAcceptanceModal;
+      const tlId = userInfo?.userId || userInfo?.id;
+
+      // ✅ LOAD DATA FIRST - needed for all filters
+      const data = loadData();
+
+
+      console.log(`🔄 [AcceptCase] Accepting and assigning case ${caseId}`);
+
+      // Use smart distribution to assign to best auditor
+      const result = acceptAndDistributeCaseToAuditor(caseId, tlId);
+
+      if (!result.success) {
+        setMessage({ type: 'error', text: `❌ Error: ${result.message}` });
+        setCaseAcceptanceModal(null);
+        return;
+      }
+
+      // Reload data
+      loadCasesAndAuditors();
+      setCaseAcceptanceModal(null);
+
+      setMessage({
+        type: 'success',
+        text: `✅ Case accepted and assigned to ${result.distribution.auditorName}`
+      });
+
+      console.log(`✅ [AcceptCase] Success - Assigned to ${result.distribution.auditorName}`);
+
+    } catch (error) {
+      console.error('❌ [AcceptCase] Error:', error);
+      setMessage({ type: 'error', text: 'Error processing assignment' });
+      setCaseAcceptanceModal(null);
+    }
+  };
+
+  const handleProcessAssignment_old = (caseId) => {
     const auditCase = casesByTeamLeader.find(c => c.id === caseId);
     if (!auditCase) return;
 
@@ -272,7 +442,6 @@ function AssignToAuditorsView() {
 
       const summaryList = [];
       const updatedCases = [...casesByTeamLeader];
-      const data = loadData();
 
       casesToAssign.forEach((c) => {
         try {
@@ -409,6 +578,78 @@ function AssignToAuditorsView() {
           {message.text}
         </div>
       )}
+
+      {/* ✅ DEBUG PANEL: Show what we're looking for */}
+      <div style={{
+        background: '#1a1f36',
+        border: '2px solid #ffc107',
+        borderRadius: '8px',
+        padding: '16px',
+        marginBottom: '24px',
+        fontSize: '11px',
+        fontFamily: 'monospace'
+      }}>
+        <div style={{ color: '#ffc107', fontWeight: 'bold', marginBottom: '8px' }}>
+          🔍 DEBUG: Team Leader Identity Check
+        </div>
+        <div style={{ color: '#f0f6fc', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+          <div><strong>userId:</strong> {userInfo?.userId || 'null'}</div>
+          <div><strong>id:</strong> {userInfo?.id || 'null'}</div>
+          <div><strong>fullName:</strong> {userInfo?.fullName || 'null'}</div>
+          <div><strong>full_name:</strong> {userInfo?.full_name || 'null'}</div>
+          <div><strong>email:</strong> {userInfo?.email || 'null'}</div>
+          <div><strong>role:</strong> {userInfo?.role || 'null'}</div>
+        </div>
+        <div style={{ color: '#8b949e', marginTop: '8px', fontSize: '10px' }}>
+          💡 The system is looking for cases where <code>assignedTeamLeaderId</code> or <code>assignedTeamLeader</code> matches ANY of the above values.
+          Open browser console (F12) to see detailed matching logs for each case.
+        </div>
+      </div>
+
+      <div style={{
+        background: '#0f1419',
+        border: '1px solid #30363d',
+        borderRadius: '8px',
+        padding: '16px',
+        marginBottom: '24px'
+      }}>
+        <div style={{ marginBottom: '12px' }}>
+          <small style={{ color: '#8b949e', fontWeight: '600' }}>📅 SELECT PLAN YEAR:</small>
+        </div>
+        <div style={{
+          display: 'flex',
+          gap: '12px',
+          flexWrap: 'wrap',
+          marginBottom: '12px'
+        }}>
+          {availablePlanYears.length > 0 ? (
+            availablePlanYears.map((year) => (
+              <button
+                key={year}
+                onClick={() => {
+                  setSelectedPlanYear(year);
+                  loadCasesAndAuditors();
+                }}
+                style={{
+                  padding: '10px 16px',
+                  background: selectedPlanYear === year ? '#2196f3' : '#1c2128',
+                  color: selectedPlanYear === year ? '#fff' : '#8b949e',
+                  border: selectedPlanYear === year ? '2px solid #2196f3' : '1px solid #30363d',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  transition: 'all 0.2s'
+                }}
+              >
+                Fiscal Year {year}
+              </button>
+            ))
+          ) : (
+            <span style={{ color: '#8b949e', fontSize: '12px' }}>No plan years available</span>
+          )}
+        </div>
+      </div>
 
       <div style={{
         background: '#1a3a1a',
@@ -659,7 +900,113 @@ function AssignToAuditorsView() {
             </p>
           </div>
 
-          {/* Process Confirmation Modal */}
+          {/* Case Acceptance Modal - NEW */}
+          {caseAcceptanceModal && (
+            <div style={{
+              position: 'fixed',
+              top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.8)',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              zIndex: 1001
+            }}>
+              <div style={{
+                background: '#1c2128',
+                borderRadius: '12px',
+                width: '500px',
+                maxWidth: '90%',
+                border: '1px solid #30363d',
+                boxShadow: '0 24px 48px rgba(0,0,0,0.5)'
+              }}>
+                <div style={{ padding: '20px 24px', borderBottom: '1px solid #30363d' }}>
+                  <h3 style={{ margin: 0, color: '#f0f6fc', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <i className="fas fa-check-double" style={{ color: '#4caf50' }}></i> Accept & Assign Case
+                  </h3>
+                </div>
+                
+                <div style={{ padding: '24px' }}>
+                  <p style={{ color: '#8b949e', marginBottom: '20px' }}>
+                    Click confirm to accept this case into your workload. The system will automatically assign it to your best available auditor:
+                  </p>
+                  
+                  <div style={{ background: '#0f1419', borderRadius: '8px', padding: '16px', marginBottom: '20px', border: '1px solid #30363d' }}>
+                    <div style={{ marginBottom: '12px' }}>
+                      <span style={{ color: '#8b949e', fontSize: '12px' }}>Case ID:</span>
+                      <p style={{ margin: '4px 0 0 0', color: '#f0f6fc', fontWeight: 'bold' }}>{caseAcceptanceModal.caseId}</p>
+                    </div>
+                    <div style={{ marginBottom: '12px' }}>
+                      <span style={{ color: '#8b949e', fontSize: '12px' }}>Taxpayer:</span>
+                      <p style={{ margin: '4px 0 0 0', color: '#f0f6fc' }}>{caseAcceptanceModal.caseName}</p>
+                    </div>
+                    <div style={{ marginBottom: '12px' }}>
+                      <span style={{ color: '#8b949e', fontSize: '12px' }}>Audit Type:</span>
+                      <p style={{ margin: '4px 0 0 0', color: '#f0f6fc' }}>{caseAcceptanceModal.auditType.replace(/_/g, ' ')}</p>
+                    </div>
+                    <div style={{ marginBottom: '12px' }}>
+                      <span style={{ color: '#8b949e', fontSize: '12px' }}>Risk Level:</span>
+                      <p style={{ 
+                        margin: '4px 0 0 0', 
+                        display: 'inline-block',
+                        background: caseAcceptanceModal.riskLevel === 'Critical' ? '#ff5252' : caseAcceptanceModal.riskLevel === 'High' ? '#ff9800' : '#ffc107',
+                        color: '#fff',
+                        padding: '3px 8px',
+                        borderRadius: '3px',
+                        fontSize: '12px',
+                        fontWeight: 'bold'
+                      }}>
+                        {caseAcceptanceModal.riskLevel}
+                      </p>
+                    </div>
+                    <div>
+                      <span style={{ color: '#8b949e', fontSize: '12px' }}>Estimated Hours:</span>
+                      <p style={{ margin: '4px 0 0 0', color: '#f0f6fc' }}>{caseAcceptanceModal.estimatedHours} hours</p>
+                    </div>
+                  </div>
+
+                  <p style={{ color: '#8b949e', fontSize: '12px', margin: '0 0 20px 0' }}>
+                    <i className="fas fa-info-circle"></i> The system will find your team member with the lowest current workload and assign this case to them automatically.
+                  </p>
+                </div>
+
+                <div style={{ padding: '16px 24px', borderTop: '1px solid #30363d', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                  <button 
+                    onClick={() => setCaseAcceptanceModal(null)}
+                    style={{ 
+                      padding: '8px 16px', 
+                      background: '#2d333b', 
+                      color: '#f0f6fc', 
+                      border: '1px solid #30363d', 
+                      borderRadius: '6px', 
+                      cursor: 'pointer',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={handleAcceptAndAssignCase}
+                    style={{ 
+                      padding: '8px 16px', 
+                      background: '#4caf50', 
+                      color: '#fff', 
+                      border: 'none', 
+                      borderRadius: '6px', 
+                      cursor: 'pointer',
+                      fontWeight: 'bold',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    <i className="fas fa-check-circle"></i> Accept & Assign
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Process Confirmation Modal - OLD (kept for reference) */}
           {processConfirmation && (
             <div style={{
               position: 'fixed',
