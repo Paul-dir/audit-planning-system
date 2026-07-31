@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getDisplayRegionName, denormalizeRegionName } from '../../utils/regionNormalizer';
 import Card from '../Card';
 import Badge from '../Badge';
 import RiskEngineView from './RiskEngineView';
@@ -11,6 +12,7 @@ import { loadData, saveData } from '../../utils/data';
 import { getStatusDisplay, getBadgeClass } from '../../utils/businessLogic';
 import { useRegional } from '../../context/RegionalContext';
 import { useAuth } from '../../context/AuthContext';
+import planService from '../../services/planService';
 
 /**
  * RegionalFeedbackView - Regional Director Feedback Management
@@ -28,7 +30,9 @@ function RegionalFeedbackView({ currentView }) {
   
   // Use user's assigned region from auth context (auto-loaded from login)
   // Falls back to context, then assignedRegion, then localStorage
-  const selectedRegion = userInfo?.orgContext?.assignedRegion || contextSelectedRegion || assignedRegion || localStorage.getItem('user_assigned_region') || 'Oromia';
+  // ✅ CRITICAL: Must normalize to lowercase_underscore for data lookups
+  let rawRegion = userInfo?.orgContext?.assignedRegion || contextSelectedRegion || assignedRegion || localStorage.getItem('user_assigned_region') || 'oromia';
+  const selectedRegion = denormalizeRegionName(rawRegion);
   const [viewMode, setViewMode] = useState('list');
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [plans, setPlans] = useState([]);
@@ -62,24 +66,47 @@ function RegionalFeedbackView({ currentView }) {
     return alloc?.status || 'UNKNOWN';
   };
 
-  // Load plans for current region
+  // Load plans for current region using Plan Service
   useEffect(() => {
+    loadPlansUsingService();
+  }, [selectedRegion]);
+
+  /**
+   * Load plans using PlanService (API-first, with fallback to local data)
+   * ✅ Uses dynamic status checking via planService.isReadyForRegionalFeedback()
+   */
+  const loadPlansUsingService = () => {
     const data = loadData();
-    // Get APPROVED plans that have regional allocations for this region
-    // Regional directors can only see plans approved by Director
+    
+    // Filter plans that match ALL three conditions:
+    // 1. Have regional allocation for this region
+    // 2. Were explicitly sent to this region by Director
+    // 3. Are ready for regional feedback (dynamic check via planService)
     const regionPlans = data.plans.filter(p => {
       const hasAllocation = p.regionalAllocation && p.regionalAllocation[selectedRegion];
-      const isApproved = p.status === 'APPROVED' || p.status === 'DIRECTOR_APPROVED' || p.status === 'AWAITING_REGIONAL_FEEDBACK' || p.status === 'FEEDBACK_COLLECTED';
-      return hasAllocation && isApproved;
+      const wasSentHere = p.sentToRegions && p.sentToRegions.includes(selectedRegion);
+      
+      // ✅ DYNAMIC STATUS CHECK using PlanService
+      // NOT hardcoded - uses planService.isReadyForRegionalFeedback()
+      const isReady = planService.isReadyForRegionalFeedback(p);
+      
+      const matches = hasAllocation && wasSentHere && isReady;
+      
+      if (!matches && hasAllocation) {
+        console.log(`Plan ${p.id}: Has allocation ✓, Sent to ${selectedRegion}: ${wasSentHere}, Ready for feedback: ${isReady} (status: ${p.status})`);
+      }
+      
+      return matches;
     });
-    console.log('RegionalFeedbackView: Found', regionPlans.length, 'APPROVED plans for', selectedRegion);
-    setPlans(regionPlans);
     
-    // Auto-select first plan if not already selected
+    console.log('✅ Plans ready for feedback:', regionPlans.length, 'for', selectedRegion);
+    setPlans(regionPlans);
+
+    // Auto-select first plan
     if (regionPlans.length > 0 && !selectedPlan) {
       setSelectedPlan(regionPlans[0].id);
     }
-  }, [selectedRegion]);
+  };
 
   // Update selected plan status when plan selection changes
   useEffect(() => {
@@ -158,12 +185,13 @@ function RegionalFeedbackView({ currentView }) {
           <select
             value={selectedRegion}
             onChange={(e) => {
-              setContextRegion(e.target.value);
+              const newRegion = denormalizeRegionName(e.target.value);
+              setContextRegion(newRegion);
             }}
             className="px-3 py-2 rounded-lg border border-border dark:border-border bg-ink dark:bg-panel text-text-hi dark:text-text-hi text-sm cursor-pointer"
           >
             {regions.map(region => (
-              <option key={region} value={region}>
+              <option key={region} value={denormalizeRegionName(region)}>
                 {region}
               </option>
             ))}
@@ -209,7 +237,7 @@ function RegionalFeedbackView({ currentView }) {
       </div>
 
       <div className="flex items-center gap-3 pl-4 border-l-4 border-gold dark:border-gold my-6">
-        <h2 className="text-2xl font-bold"><i className="fas fa-map-pin"></i> Regional Director - {selectedRegion}</h2>
+        <h2 className="text-2xl font-bold"><i className="fas fa-map-pin"></i> Regional Director - {getDisplayRegionName(selectedRegion)}</h2>
         <div className="flex gap-2 items-center ml-auto">
           {selectedPlan && selectedPlanStatus && (
             <>
@@ -226,7 +254,7 @@ function RegionalFeedbackView({ currentView }) {
       <div className="cards">
         <Card 
           title="Region" 
-          number={selectedRegion} 
+          number={getDisplayRegionName(selectedRegion)} 
           icon="fas fa-map-pin" 
         />
         <Card 
@@ -253,7 +281,7 @@ function RegionalFeedbackView({ currentView }) {
           <i className="fas fa-info-circle text-2xl text-blue dark:text-blue mb-3 block"></i>
           <h3 className="m-2 text-gold dark:text-gold">Select a Plan to Continue</h3>
           <p className="text-gold dark:text-gold m-2 text-xs">
-            Please select a plan from the dropdown above to access regional director functions.
+            Please select a plan from the dropdown above to access regional director functions for {getDisplayRegionName(selectedRegion)}.
           </p>
         </div>
       ) : (

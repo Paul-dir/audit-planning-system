@@ -425,9 +425,9 @@ export function submitToSeniorManagement(planId) {
   const plan = data.plans.find(p => p.id === planId);
   if (!plan) return false;
 
-  // Prevent resubmission - only allow from FEEDBACK_COLLECTED status
-  if (plan.status !== 'FEEDBACK_COLLECTED') {
-    console.warn(`Cannot submit to Senior Management. Plan status is ${plan.status}, but must be FEEDBACK_COLLECTED.`);
+  // Prevent resubmission - allow from FEEDBACK_COLLECTED or DIRECTOR_APPROVED status
+  if (plan.status !== 'FEEDBACK_COLLECTED' && plan.status !== 'DIRECTOR_APPROVED') {
+    console.warn(`Cannot submit to Senior Management. Plan status is ${plan.status}, but must be FEEDBACK_COLLECTED or DIRECTOR_APPROVED.`);
     return false;
   }
 

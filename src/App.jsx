@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import EnterpriseLoginForm from './components/EnterpriseLoginForm';
+import MORLoginPage from './components/MORLoginPage';
 import ConfigurationDashboard from './components/configuration/ConfigurationDashboard';
+import RegionFormatTest from './components/RegionFormatTest';
 import { RegionalProvider } from './context/RegionalContext';
 import { useAuth } from './context/AuthContext';
 // Import role-specific view containers
@@ -16,17 +17,27 @@ import RequesterDashboardView from './components/roleViews/RequesterDashboardVie
 function AppContent() {
   const { isAuthenticated, authContext } = useAuth();
 
+  // Check if running tests
+  const urlParams = new URLSearchParams(window.location.search);
+  const runTests = urlParams.get('test') === 'region-format';
+
+  if (runTests) {
+    return <RegionFormatTest />;
+  }
+
   // Use role from auth context
   const currentRole = authContext?.role;
 
   // Render role-specific view container
   const renderRoleView = () => {
     if (!isAuthenticated) {
-      return <EnterpriseLoginForm />;
+      return <MORLoginPage />;
     }
 
     switch (currentRole) {
       case 'audit_team':
+      case 'cascade_audit_team':
+        // Both audit_team and cascade_audit_team use AuditTeamView
         return <AuditTeamView />;
       case 'audit_director':
         return <AuditDirectorView />;
@@ -51,7 +62,7 @@ function AppContent() {
 
   return (
     <RegionalProvider userRole={currentRole}>
-      {renderRoleView()}
+      {isAuthenticated ? renderRoleView() : <MORLoginPage />}
     </RegionalProvider>
   );
 }

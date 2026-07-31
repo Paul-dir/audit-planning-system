@@ -3,6 +3,7 @@ import Card from '../Card';
 import Badge from '../Badge';
 import { loadData } from '../../utils/data';
 import { useRegional } from '../../context/RegionalContext';
+import { getDisplayRegionName } from '../../utils/regionNormalizer';
 
 /**
  * RegionalPlanReviewView - Plan Review Interface (Simplified)
@@ -95,7 +96,7 @@ function RegionalPlanReviewView({ currentView }) {
     return (
       <div className="min-h-screen bg-ink dark:bg-ink p-8">
         <div className="flex items-center gap-3 pl-4 border-l-4 border-gold dark:border-gold mb-6">
-          <h2 className="text-2xl font-bold"><i className="fas fa-inbox"></i> Plans Sent from Director - {selectedRegion}</h2>
+          <h2 className="text-2xl font-bold"><i className="fas fa-inbox"></i> Plans Sent from Director - {getDisplayRegionName(selectedRegion)}</h2>
           <Badge status={`${plans.length} plans`} className="director-approved" />
         </div>
 
@@ -144,7 +145,7 @@ function RegionalPlanReviewView({ currentView }) {
     return (
       <div className="min-h-screen bg-ink dark:bg-ink p-8">
         <div className="flex items-center gap-3 pl-4 border-l-4 border-gold dark:border-gold mb-6">
-          <h2 className="text-2xl font-bold"><i className="fas fa-inbox"></i> Plan Review - {selectedRegion}</h2>
+          <h2 className="text-2xl font-bold"><i className="fas fa-inbox"></i> Plan Review - {getDisplayRegionName(selectedRegion)}</h2>
         </div>
         <div className="bg-blue-900 dark:bg-blue-900 p-4 rounded-lg border border-blue dark:border-blue mt-6">
           <strong className="text-blue dark:text-blue"><i className="fas fa-info-circle"></i> No Plan</strong>
@@ -178,7 +179,7 @@ function RegionalPlanReviewView({ currentView }) {
       </div>
 
       <div className="flex items-center gap-3 pl-4 border-l-4 border-gold dark:border-gold mb-6">
-        <h2 className="text-2xl font-bold"><i className="fas fa-tasks"></i> Review Plan from Director - {selectedRegion}</h2>
+        <h2 className="text-2xl font-bold"><i className="fas fa-tasks"></i> Review Plan from Director - {getDisplayRegionName(selectedRegion)}</h2>
         <Badge status="Review" className="director-approved" />
       </div>
 
@@ -186,7 +187,7 @@ function RegionalPlanReviewView({ currentView }) {
       <div className="bg-green-900 dark:bg-green-900 p-4 rounded-lg mb-6 border border-teal dark:border-teal">
         <strong className="text-teal dark:text-teal"><i className="fas fa-check-circle"></i> Step 1: Review Plan from Director</strong>
         <p className="text-text-mid dark:text-text-mid mt-2 mb-0 text-xs leading-relaxed">
-          You have received the {selectedPlan.name || 'Annual Audit Plan'} for {selectedRegion} region. Total cases: <strong>{regionAllocation.totalCases}</strong>
+          You have received the {selectedPlan.name || 'Annual Audit Plan'} for {getDisplayRegionName(selectedRegion)} region. Total cases: <strong>{regionAllocation.totalCases}</strong>
         </p>
       </div>
 
@@ -215,7 +216,7 @@ function RegionalPlanReviewView({ currentView }) {
 
       {/* Audit Type Breakdown */}
       <div className="section-title mt-6 mb-3">
-        <i className="fas fa-chart-pie"></i> Audit Type Breakdown for {selectedRegion}
+        <i className="fas fa-chart-pie"></i> Audit Type Breakdown for {getDisplayRegionName(selectedRegion)}
       </div>
       <div className="table-container mb-6 w-full overflow-x-auto">
         <table className="w-full text-sm">

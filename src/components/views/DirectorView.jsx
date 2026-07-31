@@ -107,7 +107,7 @@ function DirectorView({ currentView }) {
     const canApprove = selectedPlan.status === 'SUBMITTED_TO_DIRECTOR';
     const canRequestRevision = selectedPlan.status === 'SUBMITTED_TO_DIRECTOR';
     const canSendToRegions = selectedPlan.status === 'DIRECTOR_APPROVED';
-    const canSendToSeniorManagement = selectedPlan.status === 'FEEDBACK_COLLECTED';
+    const canSendToSeniorManagement = selectedPlan.status === 'FEEDBACK_COLLECTED' || selectedPlan.status === 'DIRECTOR_APPROVED';
     const hasRegionalFeedback = selectedPlan.regionalFeedback && selectedPlan.regionalFeedback.length > 0;
     const isAwaitingRegionalFeedback = selectedPlan.status === 'AWAITING_REGIONAL_FEEDBACK';
 
@@ -194,7 +194,7 @@ function DirectorView({ currentView }) {
               </div>
             )}
 
-            {canSendToSeniorManagement && hasRegionalFeedback && (
+            {canSendToSeniorManagement && (
               <button 
                 className="group flex flex-col items-center justify-center gap-2 rounded-xl border border-indigo-500/30 bg-indigo-950/20 p-5 hover:bg-indigo-900/40 hover:border-indigo-500/60 transition-all duration-200 shadow-lg"
                 onClick={() => { 

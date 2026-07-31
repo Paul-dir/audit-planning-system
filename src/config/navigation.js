@@ -13,10 +13,39 @@ export const ROLE_NAVIGATION = {
         ],
       },
       {
-        label: 'Management',
+        label: 'Planning',
         items: [
           { id: 'create-plan', label: 'Create annual plan', icon: 'fas fa-bullseye' },
           { id: 'my-plans', label: 'My plans', icon: 'fas fa-folder-open' },
+          { id: 'cascade-plan-cases', label: 'Cascade to cases', icon: 'fas fa-sitemap' },
+        ],
+      },
+      {
+        label: 'Analysis',
+        items: [
+          { id: 'risk-engine', label: 'Risk engine analysis', icon: 'fas fa-bolt' },
+          { id: 'feedback-review', label: 'Regional feedback', icon: 'fas fa-comments' },
+          { id: 'reports', label: 'Reports & analytics', icon: 'fas fa-chart-bar' },
+        ],
+      },
+    ],
+    footer: { id: 'configuration', label: 'Settings', icon: 'fas fa-cog' },
+  },
+
+  cascade_audit_team: {
+    categories: [
+      {
+        label: 'Overview',
+        items: [
+          { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-th-large' },
+        ],
+      },
+      {
+        label: 'Planning',
+        items: [
+          { id: 'create-plan', label: 'Create annual plan', icon: 'fas fa-bullseye' },
+          { id: 'my-plans', label: 'My plans', icon: 'fas fa-folder-open' },
+          { id: 'cascade-plan-cases', label: 'Cascade to cases', icon: 'fas fa-sitemap' },
         ],
       },
       {

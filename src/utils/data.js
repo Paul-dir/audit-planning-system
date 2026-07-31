@@ -10,8 +10,39 @@ export function getDefaultData() {
     version: 1,
     fiscalYear: 2027,
     createdDate: new Date().toISOString(),
+    // ✅ Track which regions have been sent this plan (for regional director access)
+    sentToRegions: ['addis_ababa', 'oromia', 'amhara', 'snnpr', 'somali'],
+    sentToRegionsDate: new Date(Date.now() - 8*24*60*60*1000).toISOString(),
+    // ✅ Track feedback status by region
+    regionFeedbackStatus: {
+      'addis_ababa': {
+        status: 'feedback_collected',
+        receivedDate: new Date(Date.now() - 7*24*60*60*1000).toISOString(),
+        acknowledgedDate: new Date(Date.now() - 6*24*60*60*1000).toISOString()
+      },
+      'oromia': {
+        status: 'feedback_collected',
+        receivedDate: new Date(Date.now() - 5*24*60*60*1000).toISOString(),
+        acknowledgedDate: new Date(Date.now() - 4*24*60*60*1000).toISOString()
+      },
+      'amhara': {
+        status: 'feedback_collected',
+        receivedDate: new Date(Date.now() - 6*24*60*60*1000).toISOString(),
+        acknowledgedDate: new Date(Date.now() - 5*24*60*60*1000).toISOString()
+      },
+      'snnpr': {
+        status: 'feedback_collected',
+        receivedDate: new Date(Date.now() - 7*24*60*60*1000).toISOString(),
+        acknowledgedDate: new Date(Date.now() - 6*24*60*60*1000).toISOString()
+      },
+      'somali': {
+        status: 'feedback_collected',
+        receivedDate: new Date(Date.now() - 8*24*60*60*1000).toISOString(),
+        acknowledgedDate: new Date(Date.now() - 7*24*60*60*1000).toISOString()
+      }
+    },
     regionalAllocation: {
-      'Addis Ababa': {
+      'addis_ababa': {
         'desk_audit': 50,
         'field_audit': 30,
         'joint_audit': 20,
@@ -19,7 +50,7 @@ export function getDefaultData() {
         'comprehensive': 15,
         'issue_audit': 5
       },
-      'Amhara': {
+      'amhara': {
         'desk_audit': 40,
         'field_audit': 25,
         'joint_audit': 15,
@@ -27,7 +58,7 @@ export function getDefaultData() {
         'comprehensive': 12,
         'issue_audit': 4
       },
-      'Oromia': {
+      'oromia': {
         'desk_audit': 60,
         'field_audit': 40,
         'joint_audit': 25,
@@ -35,7 +66,7 @@ export function getDefaultData() {
         'comprehensive': 18,
         'issue_audit': 6
       },
-      'SNNPR': {
+      'snnpr': {
         'desk_audit': 35,
         'field_audit': 20,
         'joint_audit': 15,
@@ -43,7 +74,7 @@ export function getDefaultData() {
         'comprehensive': 10,
         'issue_audit': 3
       },
-      'Somali': {
+      'somali': {
         'desk_audit': 25,
         'field_audit': 15,
         'joint_audit': 10,
@@ -54,7 +85,7 @@ export function getDefaultData() {
     },
     // NEW: Unified allocation status tracking
     allocationStatus: {
-      'Addis Ababa': {
+      'addis_ababa': {
         status: 'SENT',
         sentDate: new Date(Date.now() - 7*24*60*60*1000).toISOString(),
         sentBy: 'Regional Director',
@@ -64,7 +95,7 @@ export function getDefaultData() {
           'Addis Ababa TC3': { status: 'RECEIVED', receivedDate: new Date(Date.now() - 5*24*60*60*1000).toISOString() }
         }
       },
-      'Amhara': {
+      'amhara': {
         status: 'SENT',
         sentDate: new Date(Date.now() - 10*24*60*60*1000).toISOString(),
         sentBy: 'Regional Director',
@@ -74,7 +105,7 @@ export function getDefaultData() {
           'Amhara TC3': { status: 'RECEIVED', receivedDate: new Date(Date.now() - 8*24*60*60*1000).toISOString() }
         }
       },
-      'Oromia': {
+      'oromia': {
         status: 'SENT',
         sentDate: new Date(Date.now() - 14*24*60*60*1000).toISOString(),
         sentBy: 'Regional Director',
@@ -84,13 +115,13 @@ export function getDefaultData() {
           'Oromia TC3': { status: 'RECEIVED', receivedDate: new Date(Date.now() - 12*24*60*60*1000).toISOString() }
         }
       },
-      'SNNPR': {
+      'snnpr': {
         status: 'PENDING',
         sentDate: null,
         sentBy: null,
         taxCenterReceipts: {}
       },
-      'Somali': {
+      'somali': {
         status: 'PENDING',
         sentDate: null,
         sentBy: null,
@@ -103,7 +134,7 @@ export function getDefaultData() {
       // ADDIS ABABA
       {
         id: 'alloc-add-001',
-        region: 'Addis Ababa',
+        region: 'addis_ababa',
         status: 'PENDING_ACCEPTANCE',
         sentDate: new Date(Date.now() - 7*24*60*60*1000).toISOString(), // 7 days ago
         dueDate: new Date(Date.now() + 3*24*60*60*1000).toISOString(), // Due in 3 days
@@ -114,7 +145,7 @@ export function getDefaultData() {
       // AMHARA
       {
         id: 'alloc-amh-001',
-        region: 'Amhara',
+        region: 'amhara',
         status: 'ACCEPTED',
         sentDate: new Date(Date.now() - 14*24*60*60*1000).toISOString(),
         acceptedDate: new Date(Date.now() - 7*24*60*60*1000).toISOString(),
@@ -123,7 +154,7 @@ export function getDefaultData() {
       // OROMIA
       {
         id: 'alloc-oro-001',
-        region: 'Oromia',
+        region: 'oromia',
         status: 'ACCEPTED',
         sentDate: new Date(Date.now() - 21*24*60*60*1000).toISOString(),
         acceptedDate: new Date(Date.now() - 14*24*60*60*1000).toISOString(),
@@ -132,7 +163,7 @@ export function getDefaultData() {
       // SNNPR
       {
         id: 'alloc-snnpr-001',
-        region: 'SNNPR',
+        region: 'snnpr',
         status: 'PENDING_ACCEPTANCE',
         sentDate: new Date(Date.now() - 5*24*60*60*1000).toISOString(),
         dueDate: new Date(Date.now() + 5*24*60*60*1000).toISOString(),
@@ -142,7 +173,7 @@ export function getDefaultData() {
       // SOMALI
       {
         id: 'alloc-som-001',
-        region: 'Somali',
+        region: 'somali',
         status: 'ACCEPTED',
         sentDate: new Date(Date.now() - 28*24*60*60*1000).toISOString(),
         acceptedDate: new Date(Date.now() - 21*24*60*60*1000).toISOString(),
@@ -150,7 +181,7 @@ export function getDefaultData() {
       }
     ],
     taxCenterAllocations: {
-      'Addis Ababa': {
+      'addis_ababa': {
         'Addis Ababa-tc1': {
           'desk_audit': 20,
           'field_audit': 12,
@@ -176,7 +207,7 @@ export function getDefaultData() {
           'issue_audit': 1
         }
       },
-      'Amhara': {
+      'amhara': {
         'Amhara-tc1': {
           'desk_audit': 15,
           'field_audit': 10,
@@ -202,7 +233,7 @@ export function getDefaultData() {
           'issue_audit': 2
         }
       },
-      'Oromia': {
+      'oromia': {
         'Oromia-tc1': {
           'desk_audit': 25,
           'field_audit': 16,
@@ -228,7 +259,7 @@ export function getDefaultData() {
           'issue_audit': 2
         }
       },
-      'SNNPR': {
+      'snnpr': {
         'SNNPR-tc1': {
           'desk_audit': 14,
           'field_audit': 8,
@@ -254,7 +285,7 @@ export function getDefaultData() {
           'issue_audit': 1
         }
       },
-      'Somali': {
+      'somali': {
         'Somali-tc1': {
           'desk_audit': 10,
           'field_audit': 6,
@@ -283,7 +314,7 @@ export function getDefaultData() {
     },
     // CRITICAL: Submission records for tax centers
     submittedToTaxCenters: {
-      'Addis Ababa': {
+      'addis_ababa': {
         status: 'SUBMITTED',
         submittedBy: 'Regional Director',
         submittedDate: new Date(Date.now() - 2*24*60*60*1000).toISOString(),
@@ -292,7 +323,7 @@ export function getDefaultData() {
         readyForAcceptance: true,
         allocationsSet: true
       },
-      'Oromia': {
+      'oromia': {
         status: 'SUBMITTED',
         submittedBy: 'Regional Director',
         submittedDate: new Date(Date.now() - 3*24*60*60*1000).toISOString(),
@@ -304,7 +335,7 @@ export function getDefaultData() {
     },
     // Enhanced: Support for pending/submitted feedback at TAX CENTER level
     taxCenterFeedback: {
-      'Addis Ababa': {
+      'addis_ababa': {
         'Addis Ababa TC1': {
           id: 'feedback-add-tc1-001',
           status: 'PENDING_SUBMISSION',
@@ -322,7 +353,7 @@ export function getDefaultData() {
           notes: 'Can deliver all allocated work'
         }
       },
-      'Amhara': {
+      'amhara': {
         'Amhara TC1': {
           id: 'feedback-amh-tc1-001',
           status: 'SUBMITTED',
@@ -332,7 +363,7 @@ export function getDefaultData() {
           notes: 'Team has adequate capacity'
         }
       },
-      'Oromia': {
+      'oromia': {
         'Oromia TC1': {
           id: 'feedback-oro-tc1-001',
           status: 'SUBMITTED',
@@ -343,7 +374,7 @@ export function getDefaultData() {
     },
     // Sample submission - Regional Director submitted this plan to tax centers
     submittedToTaxCenters: {
-      'Addis Ababa': {
+      'addis_ababa': {
         status: 'SUBMITTED',
         submittedBy: 'Regional Director',
         submittedDate: new Date(Date.now() - 2*24*60*60*1000).toISOString(),
@@ -352,7 +383,7 @@ export function getDefaultData() {
         readyForAcceptance: true,
         allocationsSet: true
       },
-      'Oromia': {
+      'oromia': {
         status: 'SUBMITTED',
         submittedBy: 'Regional Director',
         submittedDate: new Date(Date.now() - 3*24*60*60*1000).toISOString(),
@@ -362,7 +393,49 @@ export function getDefaultData() {
         allocationsSet: true
       }
     },
-    taxCenterAcceptance: {},
+    // CRITICAL: Tax center acceptance - MUST have this for cascade team to see plans
+    taxCenterAcceptance: {
+      'addis_ababa': {
+        'Addis Ababa-tc1': {
+          status: 'ACCEPTED',
+          taxCenter: 'Addis Ababa-tc1',
+          acceptedDate: new Date(Date.now() - 4*24*60*60*1000).toISOString(),
+          acceptedBy: 'Tax Center Manager'
+        },
+        'Addis Ababa-tc2': {
+          status: 'ACCEPTED',
+          taxCenter: 'Addis Ababa-tc2',
+          acceptedDate: new Date(Date.now() - 4*24*60*60*1000).toISOString(),
+          acceptedBy: 'Tax Center Manager'
+        },
+        'Addis Ababa-tc3': {
+          status: 'ACCEPTED',
+          taxCenter: 'Addis Ababa-tc3',
+          acceptedDate: new Date(Date.now() - 4*24*60*60*1000).toISOString(),
+          acceptedBy: 'Tax Center Manager'
+        }
+      },
+      'oromia': {
+        'Oromia-tc1': {
+          status: 'ACCEPTED',
+          taxCenter: 'Oromia-tc1',
+          acceptedDate: new Date(Date.now() - 2*24*60*60*1000).toISOString(),
+          acceptedBy: 'Tax Center Manager'
+        },
+        'Oromia-tc2': {
+          status: 'ACCEPTED',
+          taxCenter: 'Oromia-tc2',
+          acceptedDate: new Date(Date.now() - 2*24*60*60*1000).toISOString(),
+          acceptedBy: 'Tax Center Manager'
+        },
+        'Oromia-tc3': {
+          status: 'ACCEPTED',
+          taxCenter: 'Oromia-tc3',
+          acceptedDate: new Date(Date.now() - 2*24*60*60*1000).toISOString(),
+          acceptedBy: 'Tax Center Manager'
+        }
+      }
+    },
     cascadedToCases: false
   };
 
@@ -370,7 +443,7 @@ export function getDefaultData() {
   const sampleFeedback = [
     {
       id: 'feedback-reg-add-001',
-      region: 'Addis Ababa',
+      region: 'addis_ababa',
       status: 'PENDING_SUBMISSION',
       dueDate: new Date(Date.now() + 7*24*60*60*1000).toISOString(),
       sentDate: new Date(Date.now() - 3*24*60*60*1000).toISOString(),
@@ -379,7 +452,7 @@ export function getDefaultData() {
     },
     {
       id: 'feedback-reg-amh-001',
-      region: 'Amhara',
+      region: 'amhara',
       status: 'SUBMITTED',
       sentDate: new Date(Date.now() - 10*24*60*60*1000).toISOString(),
       submittedDate: new Date(Date.now() - 3*24*60*60*1000).toISOString(),
@@ -392,7 +465,7 @@ export function getDefaultData() {
     {
       id: 'case-add-001',
       taxCenter: 'Addis Ababa TC1',
-      region: 'Addis Ababa',
+      region: 'addis_ababa',
       status: 'ASSIGNED',
       assignedDate: new Date(Date.now() - 5*24*60*60*1000).toISOString(), // 5 days ago
       dueDate: new Date(Date.now() + 25*24*60*60*1000).toISOString(), // Due in 25 days
@@ -403,7 +476,7 @@ export function getDefaultData() {
     {
       id: 'case-add-002',
       taxCenter: 'Addis Ababa TC1',
-      region: 'Addis Ababa',
+      region: 'addis_ababa',
       status: 'IN_PROGRESS',
       assignedDate: new Date(Date.now() - 10*24*60*60*1000).toISOString(), // 10 days ago
       dueDate: new Date(Date.now() + 10*24*60*60*1000).toISOString(), // Due in 10 days
@@ -414,7 +487,7 @@ export function getDefaultData() {
     {
       id: 'case-add-003',
       taxCenter: 'Addis Ababa TC1',
-      region: 'Addis Ababa',
+      region: 'addis_ababa',
       status: 'CLOSED',
       assignedDate: new Date(Date.now() - 30*24*60*60*1000).toISOString(), // 30 days ago
       dueDate: new Date(Date.now() - 5*24*60*60*1000).toISOString(), // Was due 5 days ago
@@ -432,8 +505,39 @@ export function getDefaultData() {
     version: 1,
     fiscalYear: 2027,
     createdDate: new Date(Date.now() - 30*24*60*60*1000).toISOString(),
+    // ✅ Track which regions have been sent this plan (for regional director access)
+    sentToRegions: ['addis_ababa', 'oromia', 'amhara', 'snnpr', 'somali'],
+    sentToRegionsDate: new Date(Date.now() - 7*24*60*60*1000).toISOString(),
+    // ✅ Track feedback status by region
+    regionFeedbackStatus: {
+      'addis_ababa': {
+        status: 'feedback_collected',
+        receivedDate: new Date(Date.now() - 6*24*60*60*1000).toISOString(),
+        acknowledgedDate: new Date(Date.now() - 5*24*60*60*1000).toISOString()
+      },
+      'oromia': {
+        status: 'feedback_collected',
+        receivedDate: new Date(Date.now() - 6*24*60*60*1000).toISOString(),
+        acknowledgedDate: new Date(Date.now() - 5*24*60*60*1000).toISOString()
+      },
+      'amhara': {
+        status: 'feedback_collected',
+        receivedDate: new Date(Date.now() - 7*24*60*60*1000).toISOString(),
+        acknowledgedDate: new Date(Date.now() - 6*24*60*60*1000).toISOString()
+      },
+      'snnpr': {
+        status: 'feedback_collected',
+        receivedDate: new Date(Date.now() - 8*24*60*60*1000).toISOString(),
+        acknowledgedDate: new Date(Date.now() - 7*24*60*60*1000).toISOString()
+      },
+      'somali': {
+        status: 'feedback_collected',
+        receivedDate: new Date(Date.now() - 9*24*60*60*1000).toISOString(),
+        acknowledgedDate: new Date(Date.now() - 8*24*60*60*1000).toISOString()
+      }
+    },
     regionalAllocation: {
-      'Addis Ababa': {
+      'addis_ababa': {
         'desk_audit': 45,
         'field_audit': 28,
         'joint_audit': 18,
@@ -441,7 +545,7 @@ export function getDefaultData() {
         'comprehensive': 14,
         'issue_audit': 4
       },
-      'Amhara': {
+      'amhara': {
         'desk_audit': 38,
         'field_audit': 23,
         'joint_audit': 14,
@@ -449,7 +553,7 @@ export function getDefaultData() {
         'comprehensive': 11,
         'issue_audit': 3
       },
-      'Oromia': {
+      'oromia': {
         'desk_audit': 55,
         'field_audit': 38,
         'joint_audit': 22,
@@ -457,7 +561,7 @@ export function getDefaultData() {
         'comprehensive': 17,
         'issue_audit': 5
       },
-      'SNNPR': {
+      'snnpr': {
         'desk_audit': 32,
         'field_audit': 18,
         'joint_audit': 12,
@@ -465,7 +569,7 @@ export function getDefaultData() {
         'comprehensive': 9,
         'issue_audit': 3
       },
-      'Somali': {
+      'somali': {
         'desk_audit': 22,
         'field_audit': 13,
         'joint_audit': 8,
@@ -475,7 +579,7 @@ export function getDefaultData() {
       }
     },
     allocationStatus: {
-      'Addis Ababa': {
+      'addis_ababa': {
         status: 'SENT',
         sentDate: new Date(Date.now() - 5*24*60*60*1000).toISOString(),
         sentBy: 'Regional Director',
@@ -485,7 +589,7 @@ export function getDefaultData() {
           'Addis Ababa TC3': { status: 'RECEIVED', receivedDate: new Date(Date.now() - 3*24*60*60*1000).toISOString() }
         }
       },
-      'Amhara': {
+      'amhara': {
         status: 'SENT',
         sentDate: new Date(Date.now() - 8*24*60*60*1000).toISOString(),
         sentBy: 'Regional Director',
@@ -495,7 +599,7 @@ export function getDefaultData() {
           'Amhara TC3': { status: 'RECEIVED', receivedDate: new Date(Date.now() - 6*24*60*60*1000).toISOString() }
         }
       },
-      'Oromia': {
+      'oromia': {
         status: 'SENT',
         sentDate: new Date(Date.now() - 12*24*60*60*1000).toISOString(),
         sentBy: 'Regional Director',
@@ -505,13 +609,13 @@ export function getDefaultData() {
           'Oromia TC3': { status: 'RECEIVED', receivedDate: new Date(Date.now() - 10*24*60*60*1000).toISOString() }
         }
       },
-      'SNNPR': {
+      'snnpr': {
         status: 'PENDING',
         sentDate: null,
         sentBy: null,
         taxCenterReceipts: {}
       },
-      'Somali': {
+      'somali': {
         status: 'PENDING',
         sentDate: null,
         sentBy: null,
@@ -521,7 +625,7 @@ export function getDefaultData() {
     regionalAllocations: [
       {
         id: 'alloc-add-002',
-        region: 'Addis Ababa',
+        region: 'addis_ababa',
         status: 'ACCEPTED',
         sentDate: new Date(Date.now() - 5*24*60*60*1000).toISOString(),
         acceptedDate: new Date(Date.now() - 2*24*60*60*1000).toISOString(),
@@ -529,7 +633,7 @@ export function getDefaultData() {
       },
       {
         id: 'alloc-amh-002',
-        region: 'Amhara',
+        region: 'amhara',
         status: 'ACCEPTED',
         sentDate: new Date(Date.now() - 8*24*60*60*1000).toISOString(),
         acceptedDate: new Date(Date.now() - 5*24*60*60*1000).toISOString(),
@@ -537,7 +641,7 @@ export function getDefaultData() {
       },
       {
         id: 'alloc-oro-002',
-        region: 'Oromia',
+        region: 'oromia',
         status: 'ACCEPTED',
         sentDate: new Date(Date.now() - 12*24*60*60*1000).toISOString(),
         acceptedDate: new Date(Date.now() - 9*24*60*60*1000).toISOString(),
@@ -545,7 +649,7 @@ export function getDefaultData() {
       },
       {
         id: 'alloc-snnpr-002',
-        region: 'SNNPR',
+        region: 'snnpr',
         status: 'PENDING_ACCEPTANCE',
         sentDate: new Date(Date.now() - 3*24*60*60*1000).toISOString(),
         dueDate: new Date(Date.now() + 7*24*60*60*1000).toISOString(),
@@ -554,7 +658,7 @@ export function getDefaultData() {
       },
       {
         id: 'alloc-som-002',
-        region: 'Somali',
+        region: 'somali',
         status: 'ACCEPTED',
         sentDate: new Date(Date.now() - 19*24*60*60*1000).toISOString(),
         acceptedDate: new Date(Date.now() - 16*24*60*60*1000).toISOString(),
@@ -562,7 +666,7 @@ export function getDefaultData() {
       }
     ],
     taxCenterAllocations: {
-      'Addis Ababa': {
+      'addis_ababa': {
         'Addis Ababa-tc1': {
           'desk_audit': 18,
           'field_audit': 11,
@@ -588,7 +692,7 @@ export function getDefaultData() {
           'issue_audit': 2
         }
       },
-      'Amhara': {
+      'amhara': {
         'Amhara-tc1': {
           'desk_audit': 14,
           'field_audit': 9,
@@ -614,7 +718,7 @@ export function getDefaultData() {
           'issue_audit': 1
         }
       },
-      'Oromia': {
+      'oromia': {
         'Oromia-tc1': {
           'desk_audit': 22,
           'field_audit': 15,
@@ -640,7 +744,7 @@ export function getDefaultData() {
           'issue_audit': 2
         }
       },
-      'SNNPR': {
+      'snnpr': {
         'SNNPR-tc1': {
           'desk_audit': 11,
           'field_audit': 6,
@@ -666,7 +770,7 @@ export function getDefaultData() {
           'issue_audit': 1
         }
       },
-      'Somali': {
+      'somali': {
         'Somali-tc1': {
           'desk_audit': 8,
           'field_audit': 5,
@@ -695,7 +799,7 @@ export function getDefaultData() {
     },
     taxCenterFeedback: {},
     submittedToTaxCenters: {
-      'Oromia': {
+      'oromia': {
         status: 'SUBMITTED',
         submittedBy: 'Regional Director',
         submittedDate: new Date(Date.now() - 1*24*60*60*1000).toISOString(),
@@ -705,7 +809,28 @@ export function getDefaultData() {
         allocationsSet: true
       }
     },
-    taxCenterAcceptance: {},
+    taxCenterAcceptance: {
+      'oromia': {
+        'Oromia-tc1': {
+          status: 'ACCEPTED',
+          taxCenter: 'Oromia-tc1',
+          acceptedDate: new Date(Date.now() - 1*24*60*60*1000).toISOString(),
+          acceptedBy: 'Tax Center Manager'
+        },
+        'Oromia-tc2': {
+          status: 'ACCEPTED',
+          taxCenter: 'Oromia-tc2',
+          acceptedDate: new Date(Date.now() - 1*24*60*60*1000).toISOString(),
+          acceptedBy: 'Tax Center Manager'
+        },
+        'Oromia-tc3': {
+          status: 'ACCEPTED',
+          taxCenter: 'Oromia-tc3',
+          acceptedDate: new Date(Date.now() - 1*24*60*60*1000).toISOString(),
+          acceptedBy: 'Tax Center Manager'
+        }
+      }
+    },
     cascadedToCases: false
   };
 
@@ -729,11 +854,11 @@ export function getDefaultData() {
         'Micro Taxpayer': 62500
       },
       byRegion: {
-        'Addis Ababa': 35000,
-        'Oromia': 30000,
-        'Amhara': 22000,
-        'SNNPR': 15000,
-        'Somali': 11000
+        'addis_ababa': 35000,
+        'oromia': 30000,
+        'amhara': 22000,
+        'snnpr': 15000,
+        'somali': 11000
       }
     }
   };
@@ -766,6 +891,58 @@ export function loadData() {
       if (!data.cases) data.cases = [];
       if (!data.feedback) data.feedback = [];
       if (!data.activity) data.activity = [];
+      
+      // ✅ DATA MIGRATION: Ensure all plans have required fields
+      data.plans = data.plans.map(plan => {
+        if (!plan.regionalAllocation) {
+          console.warn(`🔧 Adding missing regionalAllocation to plan ${plan.id}`);
+          plan.regionalAllocation = {
+            'addis_ababa': { 'desk_audit': 50, 'field_audit': 30, 'joint_audit': 20, 'transfer_pricing': 10, 'comprehensive': 15, 'issue_audit': 5 },
+            'oromia': { 'desk_audit': 60, 'field_audit': 40, 'joint_audit': 25, 'transfer_pricing': 12, 'comprehensive': 18, 'issue_audit': 6 },
+            'amhara': { 'desk_audit': 40, 'field_audit': 25, 'joint_audit': 15, 'transfer_pricing': 8, 'comprehensive': 12, 'issue_audit': 4 },
+            'snnpr': { 'desk_audit': 35, 'field_audit': 20, 'joint_audit': 15, 'transfer_pricing': 7, 'comprehensive': 10, 'issue_audit': 3 },
+            'somali': { 'desk_audit': 25, 'field_audit': 15, 'joint_audit': 10, 'transfer_pricing': 5, 'comprehensive': 8, 'issue_audit': 2 }
+          };
+        }
+        
+        if (!plan.sentToRegions) {
+          console.warn(`🔧 Adding missing sentToRegions to plan ${plan.id}`);
+          plan.sentToRegions = ['addis_ababa', 'oromia', 'amhara', 'snnpr', 'somali'];
+        }
+        
+        if (!plan.taxCenterAllocations) {
+          console.warn(`🔧 Adding missing taxCenterAllocations to plan ${plan.id}`);
+          plan.taxCenterAllocations = {
+            'addis_ababa': {
+              'Addis Ababa-tc1': { 'desk_audit': 20, 'field_audit': 12, 'joint_audit': 8, 'transfer_pricing': 4, 'comprehensive': 6, 'issue_audit': 2 },
+              'Addis Ababa-tc2': { 'desk_audit': 18, 'field_audit': 10, 'joint_audit': 7, 'transfer_pricing': 3, 'comprehensive': 5, 'issue_audit': 2 },
+              'Addis Ababa-tc3': { 'desk_audit': 12, 'field_audit': 8, 'joint_audit': 5, 'transfer_pricing': 3, 'comprehensive': 4, 'issue_audit': 1 }
+            },
+            'oromia': {
+              'Oromia-tc1': { 'desk_audit': 25, 'field_audit': 16, 'joint_audit': 10, 'transfer_pricing': 4, 'comprehensive': 6, 'issue_audit': 2 },
+              'Oromia-tc2': { 'desk_audit': 22, 'field_audit': 14, 'joint_audit': 9, 'transfer_pricing': 4, 'comprehensive': 6, 'issue_audit': 2 },
+              'Oromia-tc3': { 'desk_audit': 13, 'field_audit': 10, 'joint_audit': 6, 'transfer_pricing': 4, 'comprehensive': 6, 'issue_audit': 2 }
+            },
+            'amhara': {
+              'Amhara-tc1': { 'desk_audit': 15, 'field_audit': 10, 'joint_audit': 6, 'transfer_pricing': 3, 'comprehensive': 4, 'issue_audit': 1 },
+              'Amhara-tc2': { 'desk_audit': 14, 'field_audit': 9, 'joint_audit': 5, 'transfer_pricing': 2, 'comprehensive': 4, 'issue_audit': 1 },
+              'Amhara-tc3': { 'desk_audit': 11, 'field_audit': 6, 'joint_audit': 4, 'transfer_pricing': 3, 'comprehensive': 4, 'issue_audit': 2 }
+            },
+            'snnpr': {
+              'SNNPR-tc1': { 'desk_audit': 14, 'field_audit': 8, 'joint_audit': 6, 'transfer_pricing': 2, 'comprehensive': 3, 'issue_audit': 1 },
+              'SNNPR-tc2': { 'desk_audit': 12, 'field_audit': 7, 'joint_audit': 5, 'transfer_pricing': 2, 'comprehensive': 3, 'issue_audit': 1 },
+              'SNNPR-tc3': { 'desk_audit': 9, 'field_audit': 5, 'joint_audit': 4, 'transfer_pricing': 3, 'comprehensive': 4, 'issue_audit': 1 }
+            },
+            'somali': {
+              'Somali-tc1': { 'desk_audit': 10, 'field_audit': 6, 'joint_audit': 4, 'transfer_pricing': 2, 'comprehensive': 3, 'issue_audit': 1 },
+              'Somali-tc2': { 'desk_audit': 9, 'field_audit': 5, 'joint_audit': 4, 'transfer_pricing': 2, 'comprehensive': 3, 'issue_audit': 1 },
+              'Somali-tc3': { 'desk_audit': 6, 'field_audit': 4, 'joint_audit': 2, 'transfer_pricing': 1, 'comprehensive': 2, 'issue_audit': 0 }
+            }
+          };
+        }
+        
+        return plan;
+      });
       
       console.log(`✅ Loaded existing data (version: ${storedVersion}). Plans: ${data.plans.length}`);
       return data;
@@ -841,7 +1018,7 @@ export function clearAllPlans() {
 /**
  * RECOVERY FUNCTION: Fix already-submitted plans that aren't showing in tax centers
  * This adds/updates submittedToTaxCenters for all FINALIZED plans
- * @param {string} region - Region to add submission for (e.g., 'Oromia')
+ * @param {string} region - Region to add submission for (e.g., 'oromia')
  * @param {array} taxCenters - List of tax centers (e.g., ['Oromia-tc1', 'Oromia-tc2', 'Oromia-tc3'])
  */
 export function recoverSubmittedPlans(region, taxCenters) {

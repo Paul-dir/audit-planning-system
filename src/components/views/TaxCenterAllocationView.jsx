@@ -4,6 +4,7 @@ import Badge from '../Badge';
 import PlanSelector from '../PlanSelector';
 import { loadData, saveData } from '../../utils/data';
 import { useRegional } from '../../context/RegionalContext';
+import { getDisplayRegionName, denormalizeRegionName } from '../../utils/regionNormalizer';
 
 function TaxCenterAllocationView({ currentView, selectedPlan: propSelectedPlan, plans: propPlans, onPlanChange }) {
   const { selectedRegion: contextSelectedRegion, assignedRegion, setSelectedRegion: setContextRegion } = useRegional();
@@ -18,8 +19,10 @@ function TaxCenterAllocationView({ currentView, selectedPlan: propSelectedPlan, 
 
   // Use context region if available, otherwise use assigned region
   useEffect(() => {
-    const region = contextSelectedRegion || assignedRegion;
+    let region = contextSelectedRegion || assignedRegion;
     if (region) {
+      // Normalize to lowercase_underscore format
+      region = denormalizeRegionName(region);
       console.log('Setting region from context:', region);
       setSelectedRegion(region);
     }
@@ -284,7 +287,7 @@ function TaxCenterAllocationView({ currentView, selectedPlan: propSelectedPlan, 
       
       // Check if already sent to this region
       if (currentPlan.taxCenterAllocations && currentPlan.taxCenterAllocations[selectedRegion]) {
-        alert('⚠️ Allocations have already been sent to tax centers in ' + selectedRegion + '. Cannot send again.');
+        alert('⚠️ Allocations have already been sent to tax centers in ' + getDisplayRegionName(selectedRegion) + '. Cannot send again.');
         return;
       }
 
@@ -402,7 +405,7 @@ function TaxCenterAllocationView({ currentView, selectedPlan: propSelectedPlan, 
         <div className="detail-header">
           <h2 className="text-2xl font-bold text-text-hi dark:text-text-hi">No Plan Available</h2>
         </div>
-        <p className="text-text-primary dark:text-text-primary mt-4">No plan found with regional allocation for {selectedRegion}</p>
+        <p className="text-text-primary dark:text-text-primary mt-4">No plan found with regional allocation for {getDisplayRegionName(selectedRegion)}</p>
         <p className="text-xs text-text-mid dark:text-text-mid mt-2">
           Total plans in system: {allPlans.length}
         </p>
@@ -411,7 +414,7 @@ function TaxCenterAllocationView({ currentView, selectedPlan: propSelectedPlan, 
             <p className="text-text-primary dark:text-text-primary font-semibold">Available plans:</p>
             {allPlans.map(p => (
               <div key={p.id} className="text-text-mid dark:text-text-mid mt-1">
-                {p.id}: {p.regionalAllocation ? Object.keys(p.regionalAllocation).join(', ') : 'no regional allocation'}
+                {p.id}: {p.regionalAllocation ? Object.keys(p.regionalAllocation).map(r => getDisplayRegionName(r)).join(', ') : 'no regional allocation'}
               </div>
             ))}
           </div>
@@ -437,7 +440,7 @@ function TaxCenterAllocationView({ currentView, selectedPlan: propSelectedPlan, 
       {/* Header */}
       <div className="detail-header mb-6">
         <h2 className="text-2xl font-bold text-text-hi dark:text-text-hi flex items-center gap-2">
-          <i className="fas fa-tasks"></i> Allocate to Tax Centers - {selectedRegion}
+          <i className="fas fa-tasks"></i> Allocate to Tax Centers - {getDisplayRegionName(selectedRegion)}
         </h2>
         <Badge status="Manual Distribution" className="director-approved" />
       </div>
@@ -490,7 +493,7 @@ function TaxCenterAllocationView({ currentView, selectedPlan: propSelectedPlan, 
       <div className="bg-teal/20 dark:bg-teal/20 border border-teal dark:border-teal rounded-lg px-4 py-3 mb-6">
         <strong className="flex items-center gap-2 text-text-hi dark:text-text-hi"><i className="fas fa-check-circle"></i> Step 1: Review Plan from Director</strong>
         <p className="text-text-mid dark:text-text-mid mt-2 text-xs leading-relaxed">
-          You have received the {plan.name || 'Annual Audit Plan'} for {selectedRegion} region. Total cases: <strong>{regionAllocation.totalCases}</strong>
+          You have received the {plan.name || 'Annual Audit Plan'} for {getDisplayRegionName(selectedRegion)} region. Total cases: <strong>{regionAllocation.totalCases}</strong>
         </p>
       </div>
 
@@ -519,7 +522,7 @@ function TaxCenterAllocationView({ currentView, selectedPlan: propSelectedPlan, 
 
       {/* Audit Type Breakdown */}
       <div className="section-title mt-6 mb-4 flex items-center gap-2 text-text-hi dark:text-text-hi font-bold">
-        <i className="fas fa-chart-pie"></i> Audit Type Breakdown for {selectedRegion}
+        <i className="fas fa-chart-pie"></i> Audit Type Breakdown for {getDisplayRegionName(selectedRegion)}
       </div>
       <div className="overflow-x-auto mb-6 border border-border dark:border-border rounded-lg">
         <table className="w-full text-xs bg-panel dark:bg-panel">

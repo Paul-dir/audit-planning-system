@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Card from '../Card';
 import Badge from '../Badge';
 import { loadData, saveData } from '../../utils/data';
+import { getDisplayRegionName } from '../../utils/regionNormalizer';
 
 /**
  * DirectorAmendedPlansView - Director reviews amended plans from Planning Team
@@ -130,13 +131,13 @@ function DirectorAmendedPlansView({ currentView }) {
         </div>
 
         <div className="detail-header">
-          <h2>{selectedRegion} - Regional Capacity Review</h2>
+          <h2>{getDisplayRegionName(selectedRegion)} - Regional Capacity Review</h2>
           <Badge status="Amended" className="pending" />
         </div>
 
         <div className="cards">
           <Card title="Plan ID" number={selectedPlan.id} icon="fas fa-file-alt" />
-          <Card title="Region" number={selectedRegion} icon="fas fa-map-pin" />
+          <Card title="Region" number={getDisplayRegionName(selectedRegion)} icon="fas fa-map-pin" />
           <Card title="Version" number={`v${selectedPlan.version}`} icon="fas fa-code-branch" />
           <Card title="Tax Centers" number={feedback.totalTaxCenters} icon="fas fa-building" />
         </div>

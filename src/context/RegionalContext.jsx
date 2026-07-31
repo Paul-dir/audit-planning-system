@@ -1,17 +1,20 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { loadData } from '../utils/data';
+import { denormalizeRegionName, getApiRegionName } from '../utils/regionNormalizer';
 
 // Create the context
 const RegionalContext = createContext();
 
-// Tax center mapping: region -> list of tax centers
+// Tax center mapping: region (lowercase_underscore) -> list of tax centers
+// IMPORTANT: All keys MUST be in lowercase_underscore format to match API/data format
 const TAX_CENTER_MAPPING = {
-  'Addis Ababa': ['Addis Ababa-tc1', 'Addis Ababa-tc2', 'Addis Ababa-tc3'],
-  'Oromia': ['Oromia-tc1', 'Oromia-tc2', 'Oromia-tc3'],
-  'Amhara': ['Amhara-tc1', 'Amhara-tc2', 'Amhara-tc3'],
-  'Sidama': ['Sidama-tc1', 'Sidama-tc2', 'Sidama-tc3'],
-  'Dire Dawa': ['Dire Dawa-tc1', 'Dire Dawa-tc2', 'Dire Dawa-tc3'],
-  'Somali': ['Somali-tc1', 'Somali-tc2', 'Somali-tc3']
+  'addis_ababa': ['addis_ababa-tc1', 'addis_ababa-tc2', 'addis_ababa-tc3'],
+  'oromia': ['oromia-tc1', 'oromia-tc2', 'oromia-tc3'],
+  'amhara': ['amhara-tc1', 'amhara-tc2', 'amhara-tc3'],
+  'snnpr': ['snnpr-tc1', 'snnpr-tc2', 'snnpr-tc3'],
+  'somali': ['somali-tc1', 'somali-tc2', 'somali-tc3'],
+  'dire_dawa': ['dire_dawa-tc1', 'dire_dawa-tc2', 'dire_dawa-tc3'],
+  'tigray': ['tigray-tc1', 'tigray-tc2', 'tigray-tc3']
 };
 
 // Provider component
@@ -21,11 +24,17 @@ export function RegionalProvider({ children, userRole }) {
   const [storageUpdateTrigger, setStorageUpdateTrigger] = useState(0);
   
   // Assigned region for regional directors - now DYNAMIC from multiple sources
+  // CRITICAL: Must be in lowercase_underscore format
   let assignedRegion = null;
   
   if (userRole === 'regional') {
     // Try localStorage first (set when plan is sent)
     assignedRegion = localStorage.getItem('user_assigned_region');
+    
+    // Normalize if titlecase was stored
+    if (assignedRegion) {
+      assignedRegion = denormalizeRegionName(assignedRegion);
+    }
     
     // If not found, check for plan-based regional assignments
     if (!assignedRegion) {
@@ -36,7 +45,7 @@ export function RegionalProvider({ children, userRole }) {
           .filter(([_, a]) => a.status === 'active');
         
         if (assignments.length > 0) {
-          assignedRegion = assignments[0][0]; // Get first assigned region
+          assignedRegion = denormalizeRegionName(assignments[0][0]); // Get first assigned region
           // Store it in localStorage for quick access
           localStorage.setItem('user_assigned_region', assignedRegion);
         }
@@ -63,7 +72,7 @@ export function RegionalProvider({ children, userRole }) {
                        localStorage.getItem('tax_center_0') ||
                        null;
     
-    // Get the region for this tax center - MUST use matching region key
+    // Get the region for this tax center - MUST use matching region key in lowercase_underscore
     // Priority: use tax_center_selection_region if tax_center_selection is set
     const selectedTaxCenter = localStorage.getItem('tax_center_selection');
     if (selectedTaxCenter) {
@@ -76,6 +85,11 @@ export function RegionalProvider({ children, userRole }) {
                                localStorage.getItem('tax_center_1_region') ||
                                localStorage.getItem('tax_center_2_region') ||
                                null;
+    }
+    
+    // Normalize region to lowercase_underscore format
+    if (assignedTaxCenterRegion) {
+      assignedTaxCenterRegion = denormalizeRegionName(assignedTaxCenterRegion);
     }
     
     console.log('🏢 Tax Center Assignment:', { 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Badge from '../Badge';
 import { loadData, saveData } from '../../utils/data';
 import { useRegional } from '../../context/RegionalContext';
+import { getDisplayRegionName } from '../../utils/regionNormalizer';
 
 /**
  * TaxCenterFeedbackReviewView - Regional Director reviews all tax center feedback
@@ -247,7 +248,7 @@ function TaxCenterFeedbackReviewView({ currentView, selectedPlan: propSelectedPl
         <div className="detail-header">
           <h2>No Allocations Sent Yet</h2>
         </div>
-        <p className="text-text-mid dark:text-text-mid">No allocations have been sent to tax centers in {selectedRegion} yet.</p>
+        <p className="text-text-mid dark:text-text-mid">No allocations have been sent to tax centers in {getDisplayRegionName(selectedRegion)} yet.</p>
         <p className="text-xs text-text-mid dark:text-text-mid mt-3">
           <strong>Next step</strong>: Regional director must allocate cases to tax centers first.
         </p>
@@ -285,7 +286,7 @@ function TaxCenterFeedbackReviewView({ currentView, selectedPlan: propSelectedPl
 
       {/* Header */}
       <div className="detail-header">
-        <h2 className="flex items-center gap-2"><i className="fas fa-comments"></i> Tax Center Feedback Collection - {selectedRegion}</h2>
+        <h2 className="flex items-center gap-2"><i className="fas fa-comments"></i> Tax Center Feedback Collection - {getDisplayRegionName(selectedRegion)}</h2>
         <Badge status={`${receivedCount}/${totalCount} responses`} className={receivedCount === totalCount ? 'director-approved' : 'pending'} />
       </div>
 

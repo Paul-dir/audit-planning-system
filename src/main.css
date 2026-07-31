@@ -742,27 +742,27 @@ html.dark {
   }
 
   .badge-primary {
-    @apply badge bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-200;
+    @apply badge bg-primary-100 text-primary-700;
   }
 
   .badge-success {
-    @apply badge bg-success-100 dark:bg-success-900/30 text-success-700 dark:text-success-200;
+    @apply badge bg-success-100 text-success-700;
   }
 
   .badge-danger {
-    @apply badge bg-danger-100 dark:bg-danger-900/30 text-danger-700 dark:text-danger-200;
+    @apply badge bg-danger-100 text-danger-700;
   }
 
   .badge-warning {
-    @apply badge bg-warning-100 dark:bg-warning-900/30 text-warning-700 dark:text-warning-200;
+    @apply badge bg-warning-100 text-warning-700;
   }
 
   .badge-info {
-    @apply badge bg-info-100 dark:bg-info-900/30 text-info-700 dark:text-info-200;
+    @apply badge bg-info-100 text-info-700;
   }
 
   .badge-gold {
-    @apply badge bg-gold-100 dark:bg-gold-900/30 text-gold-700 dark:text-gold-200;
+    @apply badge bg-gold-100 text-gold-700;
   }
 
   .badge-draft {
@@ -784,23 +784,22 @@ html.dark {
   }
 
   .status-submitted {
-    @apply status-badge bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-200;
+    @apply status-badge bg-primary-100 text-primary-700;
   }
 
   .status-approved {
-    @apply status-badge bg-success-100 dark:bg-success-900/30 text-success-700 dark:text-success-200;
+    @apply status-badge bg-success-100 text-success-700;
   }
 
   .status-rejected {
-    @apply status-badge bg-danger-100 dark:bg-danger-900/30 text-danger-700 dark:text-danger-200;
+    @apply status-badge bg-danger-100 text-danger-700;
   }
 
   .status-pending {
-    @apply status-badge bg-warning-100 dark:bg-warning-900/30 text-warning-700 dark:text-warning-200;
+    @apply status-badge bg-warning-100 text-warning-700;
   }
 
   .status-feedback {
-    @apply status-badge bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-200;
   }
 
   /* ===== MODALS & DIALOGS ===== */
@@ -859,7 +858,6 @@ html.dark {
   }
 
   .dropdown-item.active {
-    @apply bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-200;
   }
 
   .dropdown-divider {
@@ -883,8 +881,6 @@ html.dark {
   }
 
   .nav-item-active {
-    @apply bg-primary-50 dark:bg-primary-900/20;
-    @apply text-primary-700 dark:text-primary-200;
     @apply border-l-4 border-primary-600;
     @apply pl-3;
   }
@@ -945,7 +941,6 @@ html.dark {
   }
 
   .stepper-item.active .stepper-label {
-    @apply text-primary-700 dark:text-primary-200 font-semibold;
   }
 
   .stepper-line {
@@ -966,19 +961,15 @@ html.dark {
   }
 
   .alert-primary {
-    @apply alert bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-200;
   }
 
   .alert-success {
-    @apply alert bg-success-50 dark:bg-success-900/20 text-success-700 dark:text-success-200;
   }
 
   .alert-danger {
-    @apply alert bg-danger-50 dark:bg-danger-900/20 text-danger-700 dark:text-danger-200;
   }
 
   .alert-warning {
-    @apply alert bg-warning-50 dark:bg-warning-900/20 text-warning-700 dark:text-warning-200;
   }
 
   /* ===== EMPTY STATES ===== */

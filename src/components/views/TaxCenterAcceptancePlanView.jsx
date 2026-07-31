@@ -4,6 +4,7 @@ import Badge from '../Badge';
 import { loadData, saveData } from '../../utils/data';
 import { useRegional } from '../../context/RegionalContext';
 import { useAuth } from '../../context/AuthContext';
+import { getDisplayRegionName } from '../../utils/regionNormalizer';
 
 /**
  * TaxCenterAcceptancePlanView - Tax centers formally accept submitted approved plans
@@ -321,7 +322,7 @@ function TaxCenterAcceptancePlanView() {
       <div className="mb-6 p-3 bg-ink dark:bg-ink border border-border dark:border-border rounded">
         <div className="flex gap-8 text-sm">
           <div>
-            <span className="text-text-mid dark:text-text-mid">📍 Region:</span> <strong className="text-text-hi dark:text-text-hi">{selectedRegion}</strong>
+            <span className="text-text-mid dark:text-text-mid">📍 Region:</span> <strong className="text-text-hi dark:text-text-hi">{getDisplayRegionName(selectedRegion)}</strong>
           </div>
           <div>
             <span className="text-text-mid dark:text-text-mid">🏛️ Tax Center:</span> <strong className="text-text-hi dark:text-text-hi">{selectedTaxCenter}</strong>
@@ -377,7 +378,7 @@ function TaxCenterAcceptancePlanView() {
       )}
 
       <div className="cards">
-        <Card title="Region" number={selectedRegion} icon="fas fa-map-pin" />
+        <Card title="Region" number={getDisplayRegionName(selectedRegion)} icon="fas fa-map-pin" />
         <Card title="Tax Center" number={selectedTaxCenter} icon="fas fa-building" />
         <Card title="Plans Submitted" number={plans.length} icon="fas fa-inbox" />
         <Card title="Accepted" number={Object.values(accepted).filter(a => a).length} icon="fas fa-check-circle" />

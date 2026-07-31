@@ -3,6 +3,7 @@ import Badge from '../Badge';
 import Card from '../Card';
 import { loadData, saveData } from '../../utils/data';
 import { useRegional } from '../../context/RegionalContext';
+import { getDisplayRegionName } from '../../utils/regionNormalizer';
 
 /**
  * RegionalFeedbackSubmissionView - Feedback Submission Form
@@ -227,7 +228,7 @@ function RegionalFeedbackSubmissionView({ currentView }) {
     <div className="min-h-screen bg-ink dark:bg-ink p-8">
       {/* Header */}
       <div className="flex items-center gap-3 pl-4 border-l-4 border-gold dark:border-gold mb-6">
-        <h2 className="text-2xl font-bold"><i className="fas fa-paper-plane"></i> Submit Regional Feedback - {selectedRegion}</h2>
+        <h2 className="text-2xl font-bold"><i className="fas fa-paper-plane"></i> Submit Regional Feedback - {getDisplayRegionName(selectedRegion)}</h2>
         <Badge 
           status={submitted ? 'Submitted' : (allReceived ? 'Ready to Submit' : 'Pending')}
           className={submitted ? 'director-approved' : (allReceived ? 'pending' : 'pending')}

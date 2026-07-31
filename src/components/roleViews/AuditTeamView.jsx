@@ -4,6 +4,7 @@ import RoleLayout from '../layouts/RoleLayout';
 import AuditTeamDashboard from '../dashboards/AuditTeamDashboard';
 import AuditPlanningView from '../views/AuditPlanningView';
 import ConfigurationView from '../views/ConfigurationView';
+import CascadePlanToCasesView from '../views/CascadePlanToCasesView';
 
 /**
  * Audit Team View Container
@@ -23,6 +24,8 @@ function AuditTeamView() {
       case 'revisions':
       case 'reports':
         return <AuditPlanningView currentView={currentView} />;
+      case 'cascade-plan-cases':
+        return <CascadePlanToCasesView />;
       case 'configuration':
         return <ConfigurationView />;
       default:
@@ -31,7 +34,7 @@ function AuditTeamView() {
   };
 
   return (
-    <ProtectedRoute requiredRoles={['audit_team']}>
+    <ProtectedRoute requiredRoles={['audit_team', 'cascade_audit_team']}>
       <RoleLayout currentView={currentView} onNavigate={setCurrentView}>
         {renderContent()}
       </RoleLayout>

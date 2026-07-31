@@ -4,6 +4,7 @@ import Badge from '../Badge';
 import { auditConfig } from '../../config/auditConfig';
 import { clearAllPlans, resetAllData, loadData, saveData } from '../../utils/data';
 import { useAuth } from '../../context/AuthContext';
+import { getDisplayRegionName } from '../../utils/regionNormalizer';
 
 /**
  * ConfigurationView
@@ -37,7 +38,7 @@ function ConfigurationView() {
   const isReadOnly = isNationalLevel && !canEditConfig;
 
   const getRoleSpecificTitle = () => {
-    if (isRegionalLevel) return `${userInfo.orgContext?.assignedRegion} Regional Configuration`;
+    if (isRegionalLevel) return `${getDisplayRegionName(userInfo.orgContext?.assignedRegion)} Regional Configuration`;
     if (isTaxCenterLevel) return `${userInfo.orgContext?.assignedTaxCenter} Tax Center Configuration`;
     return 'National Configuration & Standards';
   };
