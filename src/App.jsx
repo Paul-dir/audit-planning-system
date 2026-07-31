@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import MORLoginPage from './components/MORLoginPage';
 import ConfigurationDashboard from './components/configuration/ConfigurationDashboard';
 import RegionFormatTest from './components/RegionFormatTest';
+import { DataProvider } from './services/dataService';
 import { RegionalProvider } from './context/RegionalContext';
 import { useAuth } from './context/AuthContext';
 // Import role-specific view containers
@@ -69,9 +70,11 @@ function AppContent() {
 
 function App() {
   return (
-    <RegionalProvider userRole={null}>
-      <AppContent />
-    </RegionalProvider>
+    <DataProvider>
+      <RegionalProvider userRole={null}>
+        <AppContent />
+      </RegionalProvider>
+    </DataProvider>
   );
 }
 
