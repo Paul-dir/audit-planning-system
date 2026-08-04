@@ -3,7 +3,7 @@ import Sidebar from '../Sidebar';
 import TopBar from '../TopBar';
 import Badge from '../Badge';
 import Card from '../Card';
-import { loadData, saveData } from '../../utils/data';
+import { useData } from '../../services/dataService';
 import { useAuth } from '../../context/AuthContext';
 
 /**
@@ -16,6 +16,7 @@ import { useAuth } from '../../context/AuthContext';
 
 function DirectorateRequesterView() {
   const { getUserInfo } = useAuth();
+  const { data, updateData } = useData();
   const userInfo = getUserInfo();
 
   const [currentView, setCurrentView] = useState('submit');
@@ -43,7 +44,7 @@ function DirectorateRequesterView() {
   }, []);
 
   const loadRequests = () => {
-    const data = loadData();
+    // Using data from hook
     const allReqs = data.auditRequests || [];
     
     // Filter for requests submitted by this directorate
@@ -86,7 +87,7 @@ function DirectorateRequesterView() {
       return;
     }
 
-    const data = loadData();
+    // Using data from hook
     if (!data.auditRequests) {
       data.auditRequests = [];
     }
@@ -103,7 +104,7 @@ function DirectorateRequesterView() {
     };
 
     data.auditRequests.push(newRequest);
-    saveData(data);
+    updateData(data);
 
     console.log('✓ Audit request submitted:', newRequest.id);
     alert(`✓ Audit request submitted successfully\nRequest ID: ${newRequest.id}`);

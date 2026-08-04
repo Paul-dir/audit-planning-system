@@ -2,15 +2,16 @@ import React, { useState, useEffect } from 'react';
 import Card from '../Card';
 import Badge from '../Badge';
 import CreatePlanModal from '../modals/CreatePlanModal';
-import { loadData } from '../../utils/data';
+import { useData } from '../../services/dataService';
 import { submitPlanToDirector, cascadePlanToCases, getStatusDisplay, getBadgeClass } from '../../utils/businessLogic';
 
 function AuditTeamView() {
   const [plans, setPlans] = useState([]);
+  const { data, updateData } = useData();
   const [showModal, setShowModal] = useState(false);
 
   const loadPlans = () => {
-    const data = loadData();
+    // Using data from hook
     setPlans(data.plans);
   };
 

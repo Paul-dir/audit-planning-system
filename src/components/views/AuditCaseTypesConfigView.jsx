@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../Card';
 import Badge from '../Badge';
-import { loadData, saveData } from '../../utils/data';
+import { useData } from '../../services/dataService';
 
 /**
  * AuditCaseTypesConfigView - Process Owner
@@ -10,6 +10,7 @@ import { loadData, saveData } from '../../utils/data';
 
 function AuditCaseTypesConfigView() {
   const [caseTypes, setCaseTypes] = useState([]);
+  const { data, updateData } = useData();
   const [editingId, setEditingId] = useState(null);
   const [newType, setNewType] = useState({
     id: '',
@@ -32,10 +33,10 @@ function AuditCaseTypesConfigView() {
   }, []);
 
   const loadCaseTypes = () => {
-    const data = loadData();
+    // Using data from hook
     if (!data.auditCaseTypes) {
       data.auditCaseTypes = getDefaultCaseTypes();
-      saveData(data);
+      updateData(data);
     }
     setCaseTypes(data.auditCaseTypes);
   };
@@ -144,7 +145,7 @@ function AuditCaseTypesConfigView() {
       return;
     }
 
-    const data = loadData();
+    // Using data from hook
     if (!data.auditCaseTypes) {
       data.auditCaseTypes = [];
     }
@@ -156,7 +157,7 @@ function AuditCaseTypesConfigView() {
       data.auditCaseTypes.push(newType);
     }
 
-    saveData(data);
+    updateData(data);
     loadCaseTypes();
     setEditingId(null);
     setNewType(getEmptyType());
@@ -165,9 +166,9 @@ function AuditCaseTypesConfigView() {
 
   const handleDeleteType = (id) => {
     if (window.confirm('Are you sure you want to delete this case type?')) {
-      const data = loadData();
+      // Using data from hook
       data.auditCaseTypes = data.auditCaseTypes.filter(t => t.id !== id);
-      saveData(data);
+      updateData(data);
       loadCaseTypes();
       alert('✓ Case type deleted');
     }

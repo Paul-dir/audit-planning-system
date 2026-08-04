@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../Card';
 import Badge from '../Badge';
-import { loadData, saveData } from '../../utils/data';
+import { useData } from '../../services/dataService';
 import { useRegional } from '../../context/RegionalContext';
 import { useAuth } from '../../context/AuthContext';
 import { getDisplayRegionName } from '../../utils/regionNormalizer';
@@ -13,6 +13,7 @@ import { getDisplayRegionName } from '../../utils/regionNormalizer';
 function TaxCenterAcceptancePlanView() {
   const { assignedTaxCenter, assignedTaxCenterRegion } = useRegional();
   const { getUserInfo } = useAuth();
+  const { data, updateData } = useData();
   const userInfo = getUserInfo();
   
   const selectedRegion = userInfo?.orgContext?.assignedRegion || assignedTaxCenterRegion || 'Oromia';
@@ -28,7 +29,7 @@ function TaxCenterAcceptancePlanView() {
   const [approvedPlans, setApprovedPlans] = useState([]);
 
   useEffect(() => {
-    const data = loadData();
+    // Using data from hook
     const regions = [...new Set(data.plans.flatMap(p => Object.keys(p.regionalAllocation || {})))];
     setAllRegions(regions.length > 0 ? regions : ['Oromia', 'SNNPR', 'Addis Ababa', 'Amhara', 'Tigray']);
     
@@ -60,7 +61,7 @@ function TaxCenterAcceptancePlanView() {
     
     console.log('📍 Tax Center Selection Stored:', { selectedTaxCenter, selectedRegion });
 
-    const data = loadData();
+    // Using data from hook
 
     // Normalize tax center name format
     // Format 1: "Addis Ababa TC1" (from auth) → "Addis Ababa-tc1"
@@ -149,7 +150,7 @@ function TaxCenterAcceptancePlanView() {
   };
 
   const handleSelectPlan = (planId) => {
-    const data = loadData();
+    // Using data from hook
     const plan = data.plans.find(p => p.id === planId);
     setSelectedPlan(planId);
     setPlanDetails(plan);
@@ -170,7 +171,7 @@ function TaxCenterAcceptancePlanView() {
       taxCenterName = `${taxCenterRegion}-tc${tcNum}`;
     }
 
-    const data = loadData();
+    // Using data from hook
     const planIndex = data.plans.findIndex(p => p.id === selectedPlan);
 
     if (planIndex >= 0) {
@@ -214,7 +215,7 @@ function TaxCenterAcceptancePlanView() {
         version: plan.version
       });
 
-      saveData(data);
+      updateData(data);
       
       setAccepted(prev => ({ 
         ...prev, 
@@ -227,7 +228,7 @@ function TaxCenterAcceptancePlanView() {
     }
   };
 
-  const handleSendToCascadeTeam = () => {
+  const handleSendToAuditTeamLeader = () => {
     if (!selectedPlan) {
       alert('❌ No plan selected');
       return;
@@ -242,7 +243,7 @@ function TaxCenterAcceptancePlanView() {
       taxCenterName = `${taxCenterRegion}-tc${tcNum}`;
     }
 
-    const data = loadData();
+    // Using data from hook
     const plan = data.plans.find(p => p.id === selectedPlan);
 
     if (!plan) {
@@ -251,20 +252,20 @@ function TaxCenterAcceptancePlanView() {
     }
 
     if (plan.taxCenterAcceptance?.[taxCenterRegion]?.[taxCenterName]?.status !== 'ACCEPTED') {
-      alert('❌ Plan must be ACCEPTED before sending to cascade team');
+      alert('❌ Plan must be ACCEPTED before sending to Audit Team Leader');
       return;
     }
 
-    if (!window.confirm(`Send plan "${selectedPlan}" to Cascade Team for ${taxCenterName}?\n\nThe Cascade Team will use this plan to create audit cases.`)) {
+    if (!window.confirm(`Send plan "${selectedPlan}" to Audit Team Leader for ${taxCenterName}?\n\nThe Audit Team Leader will use this plan to create audit cases.`)) {
       return;
     }
 
-    // Mark plan as sent to cascade team
-    if (!plan.sentToCascadeTeam) {
-      plan.sentToCascadeTeam = {};
+    // Mark plan as sent to audit team leader
+    if (!plan.sentToAuditTeamLeader) {
+      plan.sentToAuditTeamLeader = {};
     }
 
-    plan.sentToCascadeTeam[taxCenterRegion] = {
+    plan.sentToAuditTeamLeader[taxCenterRegion] = {
       [taxCenterName]: {
         status: 'SENT',
         sentDate: new Date().toISOString(),
@@ -275,17 +276,17 @@ function TaxCenterAcceptancePlanView() {
 
     if (!plan.approvalHistory) plan.approvalHistory = [];
     plan.approvalHistory.push({
-      action: 'SENT_TO_CASCADE_TEAM',
+      action: 'SENT_TO_AUDIT_TEAM_LEADER',
       by: 'Tax Center Manager',
       taxCenter: taxCenterName,
       region: taxCenterRegion,
       date: new Date().toISOString(),
-      notes: `Plan sent to Cascade Team from ${taxCenterName}. Ready for case creation.`,
+      notes: `Plan sent to Audit Team Leader from ${taxCenterName}. Ready for case creation.`,
       version: plan.version
     });
 
-    saveData(data);
-    alert(`✅ Plan sent to Cascade Team!\n\nThe Cascade Team can now start creating audit cases from this plan.`);
+    updateData(data);
+    alert(`✅ Plan sent to Audit Team Leader!\n\nThe Audit Team Leader can now start creating audit cases from this plan.`);
     setSelectedPlanId(null);
     loadPlans(); // Refresh list
   };
@@ -604,16 +605,16 @@ function TaxCenterAcceptancePlanView() {
                   </button>
                   <button
                     className="btn btn-info"
-                    onClick={handleSendToCascadeTeam}
+                    onClick={handleSendToAuditTeamLeader}
                     disabled={!accepted[selectedPlan]}
                     style={{
                       background: !accepted[selectedPlan] ? '#4f5763' : undefined,
                       opacity: !accepted[selectedPlan] ? 0.6 : 1,
                       cursor: !accepted[selectedPlan] ? 'not-allowed' : 'pointer'
                     }}
-                    title={!accepted[selectedPlan] ? 'Must accept plan first' : 'Send to Cascade Team for case creation'}
+                    title={!accepted[selectedPlan] ? 'Must accept plan first' : 'Send to Audit Team Leader for case creation'}
                   >
-                    <i className="fas fa-share-square"></i> Send to Cascade Team
+                    <i className="fas fa-share-square"></i> Send to Audit Team Leader
                   </button>
                 </div>
               </div>

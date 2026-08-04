@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Card from '../Card';
 import Badge from '../Badge';
 import RegionSelectorCards from '../RegionSelectorCards';
-import { loadData } from '../../utils/data';
+import { useData } from '../../services/dataService';
 import { auditConfig } from '../../config/auditConfig';
 import { useRegional } from '../../context/RegionalContext';
 import { getDisplayRegionName } from '../../utils/regionNormalizer';
@@ -21,7 +21,8 @@ function RiskEngineView({ userRole: propUserRole, selectedRegion: propSelectedRe
     if (setSelectedRegionContext) setSelectedRegionContext(region);
   };
   
-  const [level, setLevel] = useState(1); // 1=National, 2=Regional, 3=TaxCenter, 4=Taxpayer
+  const [level, setLevel] = useState(1);
+  const { data, updateData } = useData(); // 1=National, 2=Regional, 3=TaxCenter, 4=Taxpayer
   const [localSelectedRegion, setLocalSelectedRegion] = useState(selectedRegion || null);
   const [selectedTaxCenter, setSelectedTaxCenter] = useState(null);
   const [selectedTaxpayer, setSelectedTaxpayer] = useState(null);
@@ -48,7 +49,7 @@ function RiskEngineView({ userRole: propUserRole, selectedRegion: propSelectedRe
   }, [userRole]);
 
   const loadRiskData = () => {
-    const data = loadData();
+    // Using data from hook
     // Check if riskEngine exists and has data (must have 'national' key)
     setRiskData((data.riskEngine && data.riskEngine.national) ? data.riskEngine : generateDefaultRiskData());
   };
@@ -1056,9 +1057,9 @@ function RiskEngineView({ userRole: propUserRole, selectedRegion: propSelectedRe
 
     const handleSaveOverrides = () => {
       // Save to localStorage
-      const data = loadData();
+      // Using data from hook
       data.auditTypeAllocations = nationalAuditAllocations;
-      saveData(data);
+      updateData(data);
       alert('Audit type allocations saved successfully!');
     };
 
@@ -1195,12 +1196,12 @@ function RiskEngineView({ userRole: propUserRole, selectedRegion: propSelectedRe
     };
 
     const handleSaveOverrides = () => {
-      const data = loadData();
+      // Using data from hook
       if (!data.regionalAuditAllocations) {
         data.regionalAuditAllocations = {};
       }
       data.regionalAuditAllocations[regionKey] = currentAllocations;
-      saveData(data);
+      updateData(data);
       alert(`Audit type allocations for ${regionKey} saved successfully!`);
     };
 

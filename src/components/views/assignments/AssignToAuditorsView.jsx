@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../../Card';
 import Badge from '../../Badge';
-import { loadData, saveData } from '../../../utils/data';
+import { useData } from '../../../services/dataService';
 import { useAuth } from '../../../context/AuthContext';
 import {
   loadAssignmentsByUser,
@@ -27,6 +27,7 @@ import { acceptAndDistributeCaseToAuditor } from '../../../utils/teamLeaderDistr
 
 function AssignToAuditorsView() {
   const { getUserInfo } = useAuth();
+  const { data, updateData } = useData();
   const userInfo = getUserInfo();
 
   const [myAuditors, setMyAuditors] = useState([]);
@@ -64,7 +65,7 @@ function AssignToAuditorsView() {
       const tlId = userInfo?.userId || userInfo?.id;
 
       // ✅ LOAD DATA FIRST - needed for all filters
-      const data = loadData();
+      // Using data from hook
 
 
       console.log(`🔄 [LoadCases] Starting load for Team Leader:`);
@@ -281,7 +282,7 @@ console.log(`   using planYear: ${planYear}`);
         data.auditCases[caseIdx].status = 'ASSIGNED_TO_AUDITOR';
         data.auditCases[caseIdx].assignedAuditor = auditor.fullName || auditor.full_name;
         data.auditCases[caseIdx].assignedAuditorId = auditor.id;
-        saveData(data);
+        updateData(data);
       }
 
       // Update auditor workload - NON-CRITICAL (silently continues on failure)
@@ -336,7 +337,7 @@ console.log(`   using planYear: ${planYear}`);
       const tlId = userInfo?.userId || userInfo?.id;
 
       // ✅ LOAD DATA FIRST - needed for all filters
-      const data = loadData();
+      // Using data from hook
 
 
       console.log(`🔄 [AcceptCase] Accepting and assigning case ${caseId}`);
@@ -490,7 +491,7 @@ console.log(`   using planYear: ${planYear}`);
             data.auditCases[caseIdxInStore].status = 'ASSIGNED_TO_AUDITOR';
             data.auditCases[caseIdxInStore].assignedAuditor = bestAuditor.full_name || bestAuditor.fullName;
             data.auditCases[caseIdxInStore].assignedAuditorId = bestAuditor.id;
-            saveData(data); // Save the core case update
+            updateData(data); // Save the core case update
           }
 
           const caseIdx = updatedCases.findIndex(uc => uc.id === c.id);

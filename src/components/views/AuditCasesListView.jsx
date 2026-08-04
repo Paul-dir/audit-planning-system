@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../Card';
 import Badge from '../Badge';
-import { loadData } from '../../utils/data';
+import { useData } from '../../services/dataService';
 import { useRegional } from '../../context/RegionalContext';
 import { useAuth } from '../../context/AuthContext';
 
@@ -16,6 +16,7 @@ import { useAuth } from '../../context/AuthContext';
 function AuditCasesListView() {
   const { assignedTaxCenter, assignedTaxCenterRegion } = useRegional();
   const { getUserInfo } = useAuth();
+  const { data, updateData } = useData();
   const userInfo = getUserInfo();
   
   // Use user's assigned region and tax center from auth context
@@ -58,7 +59,7 @@ function AuditCasesListView() {
   }, [allCases, filterAuditType, filterStatus, searchTerm]);
 
   const loadCases = () => {
-    const data = loadData();
+    // Using data from hook
     const cases = data.auditCases || [];
     const assignments = (data.assignments || []).filter(a => Boolean(a.caseId));
     

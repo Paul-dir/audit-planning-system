@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import ProtectedRoute from '../ProtectedRoute';
 import RoleLayout from '../layouts/RoleLayout';
 import RegionalDirectorDashboard from '../dashboards/RegionalDirectorDashboard';
-import RegionalFeedbackView from '../views/RegionalFeedbackView';
-import ApprovedPlansDeploymentView from '../views/ApprovedPlansDeploymentView';
-import RegionalPlanSubmissionView from '../views/RegionalPlanSubmissionView';
+import RegionalDirectorReceivePlansView from '../views/RegionalDirectorReceivePlansView';
+import RegionalDirectorAllocateView from '../views/RegionalDirectorAllocateView';
+import RegionalDirectorCollectFeedbackView from '../views/RegionalDirectorCollectFeedbackView';
 import ConfigurationView from '../views/ConfigurationView';
 
 function RegionalDirectorView() {
@@ -14,17 +14,12 @@ function RegionalDirectorView() {
     switch (currentView) {
       case 'dashboard':
         return <RegionalDirectorDashboard />;
-      case 'review-plan':
-      case 'allocation-dashboard':
-      case 'tax-center-feedback':
-      case 'submit-regional-feedback':
-      case 'feedback-history':
-      case 'reports':
-        return <RegionalFeedbackView currentView={currentView} />;
-      case 'deployment':
-        return <ApprovedPlansDeploymentView userRole="regional" />;
-      case 'submit-plan-to-tax-centers':
-        return <RegionalPlanSubmissionView />;
+      case 'receive-plans':
+        return <RegionalDirectorReceivePlansView />;
+      case 'allocate-to-tax-centers':
+        return <RegionalDirectorAllocateView />;
+      case 'collect-feedback':
+        return <RegionalDirectorCollectFeedbackView />;
       case 'configuration':
         return <ConfigurationView />;
       default:

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../Card';
 import Badge from '../Badge';
-import { loadData } from '../../utils/data';
+import { useData } from '../../services/dataService';
 import { useRegional } from '../../context/RegionalContext';
 import { getDisplayRegionName } from '../../utils/regionNormalizer';
 
@@ -15,6 +15,7 @@ import { getDisplayRegionName } from '../../utils/regionNormalizer';
  */
 function RegionalPlanReviewView({ currentView }) {
   const { assignedRegion, selectedRegion: contextSelectedRegion } = useRegional();
+  const { data, updateData } = useData();
   
   // Use selected region if available, otherwise assigned region
   const selectedRegion = contextSelectedRegion || assignedRegion;
@@ -28,7 +29,7 @@ function RegionalPlanReviewView({ currentView }) {
   }, [selectedRegion]);
 
   const loadPlans = () => {
-    const data = loadData();
+    // Using data from hook
     
     if (!data?.plans || data.plans.length === 0) {
       setPlans([]);
@@ -124,7 +125,7 @@ function RegionalPlanReviewView({ currentView }) {
                     <button 
                       className="btn btn-sm btn-primary"
                       onClick={() => {
-                        const data = loadData();
+                        // Using data from hook
                         selectPlan(data, p);
                       }}
                     >

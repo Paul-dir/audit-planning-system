@@ -67,13 +67,13 @@ const REGIONS = [
   'Somali'
 ];
 
-// Tax Centers per Region
+// Tax Centers per Region - Use lowercase_underscore format to match allocation data
 const TAX_CENTERS_PER_REGION = {
-  'Addis Ababa': ['Addis Ababa TC1', 'Addis Ababa TC2', 'Addis Ababa TC3'],
-  'Amhara': ['Amhara TC1', 'Amhara TC2', 'Amhara TC3'],
-  'Oromia': ['Oromia TC1', 'Oromia TC2', 'Oromia TC3'],
-  'SNNPR': ['SNNPR TC1', 'SNNPR TC2', 'SNNPR TC3'],
-  'Somali': ['Somali TC1', 'Somali TC2', 'Somali TC3']
+  'Addis Ababa': ['addis_ababa-tc1', 'addis_ababa-tc2', 'addis_ababa-tc3'],
+  'Amhara': ['amhara-tc1', 'amhara-tc2', 'amhara-tc3'],
+  'Oromia': ['oromia-tc1', 'oromia-tc2', 'oromia-tc3'],
+  'SNNPR': ['snnpr-tc1', 'snnpr-tc2', 'snnpr-tc3'],
+  'Somali': ['somali-tc1', 'somali-tc2', 'somali-tc3']
 };
 
 // Audit Types (Must match auditConfig)
@@ -108,6 +108,15 @@ function generateUserId(role) {
   const id = `USR-${String(userIdCounter).padStart(4, '0')}-${role.substring(0, 3).toUpperCase()}`;
   userIdCounter++;
   return id;
+}
+
+// Convert tax center ID (lowercase_underscore) to display name (titlecase)
+function getTaxCenterDisplayName(taxCenterId) {
+  // e.g., 'addis_ababa-tc1' -> 'Addis Ababa TC1'
+  return taxCenterId
+    .split('-')
+    .map(part => part.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '))
+    .join(' ');
 }
 
 // Initialize org structure
@@ -236,7 +245,7 @@ function generateOrganizationalUsers() {
           assignedRegion: region,
           assignedRegionName: region,
           assignedTaxCenter: taxCenter,
-          assignedTaxCenterName: taxCenter,
+          assignedTaxCenterName: getTaxCenterDisplayName(taxCenter),
           teamId: null,
           teamName: null,
           auditType: null,
@@ -251,7 +260,7 @@ function generateOrganizationalUsers() {
         const numTLs = 2; // Generate 2 Team Leaders for every audit type across all tax centers
         
         for (let tlIndex = 1; tlIndex <= numTLs; tlIndex++) {
-          const teamId = `TEAM-${region.substring(0, 3)}-${taxCenter.split(' ')[taxCenter.split(' ').length - 1]}-${auditType.split(' ')[0].substring(0, 3)}-${tlIndex}`;
+          const teamId = `TEAM-${region.substring(0, 3)}-${taxCenter.split('-')[1]}-${auditType.split(' ')[0].substring(0, 3)}-${tlIndex}`;
           const tlName = `${generateName()} ${generateName()}`;
           users.push({
             id: generateUserId('team_leader'),
@@ -265,9 +274,9 @@ function generateOrganizationalUsers() {
               assignedRegion: region,
               assignedRegionName: region,
               assignedTaxCenter: taxCenter,
-              assignedTaxCenterName: taxCenter,
+              assignedTaxCenterName: getTaxCenterDisplayName(taxCenter),
               teamId: teamId,
-              teamName: `${taxCenter} - ${auditType} Team ${tlIndex}`,
+              teamName: `${getTaxCenterDisplayName(taxCenter)} - ${auditType} Team ${tlIndex}`,
               auditType: auditType, // TEAM LEADER FOR SPECIFIC AUDIT TYPE
               level: 'team'
             }
@@ -288,7 +297,7 @@ function generateOrganizationalUsers() {
                 assignedRegion: region,
                 assignedRegionName: region,
                 assignedTaxCenter: taxCenter,
-                assignedTaxCenterName: taxCenter,
+                assignedTaxCenterName: getTaxCenterDisplayName(taxCenter),
                 teamId: teamId,
                 teamName: `${taxCenter} - ${auditType} Team ${tlIndex}`,
                 auditType: auditType,

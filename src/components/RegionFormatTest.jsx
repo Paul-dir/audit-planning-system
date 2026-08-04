@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { denormalizeRegionName, getDisplayRegionName, normalizeRegionName } from '../utils/regionNormalizer';
 import { parseUserIdEmail, toOrgContext } from '../utils/userIdParser';
-import { loadData } from '../utils/data';
+import { useData } from '../services/dataService';
 import planService from '../services/planService';
 
 /**
@@ -16,12 +16,15 @@ import planService from '../services/planService';
  */
 
 function RegionFormatTest() {
+  const { data } = useData();
   const [testResults, setTestResults] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    runAllTests();
-  }, []);
+    if (data) {
+      runAllTests();
+    }
+  }, [data]);
 
   const runAllTests = () => {
     setLoading(true);
@@ -184,9 +187,7 @@ function RegionFormatTest() {
     const checks = [];
     const errors = [];
 
-    const data = loadData();
-
-    if (!data.plans || data.plans.length === 0) {
+    if (!data || !data.plans || data.plans.length === 0) {
       errors.push('No plans found in test data');
       return { checks, total: 1, passed: false, errors };
     }
@@ -249,7 +250,7 @@ function RegionFormatTest() {
     const checks = [];
     const errors = [];
 
-    const data = loadData();
+    // Use data from hook instead of loadData()
     const testRegion = 'addis_ababa'; // Use normalized region
 
     // Filter plans like RegionalFeedbackView does
@@ -350,7 +351,7 @@ function RegionFormatTest() {
     });
 
     // Step 5: Filter plans with normalized region
-    const data = loadData();
+    // Use data from hook instead of loadData()
     const plansForRegion = data.plans.filter(p => {
       const hasAllocation = p.regionalAllocation && p.regionalAllocation[normalizedRegion];
       const wasSentHere = p.sentToRegions && p.sentToRegions.includes(normalizedRegion);

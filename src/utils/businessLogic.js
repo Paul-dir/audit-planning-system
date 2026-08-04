@@ -1,4 +1,4 @@
-import { loadData, saveData } from './data';
+import { loadDataDirect as loadData, saveDataDirect as saveData } from '../services/dataService';
 
 export function addActivity(event, ref, status) {
   const data = loadData();
@@ -19,6 +19,7 @@ export function createAuditPlan(planData) {
     strategy: planData.strategy || '',
     name: planData.name || `Annual Audit Plan ${planData.fiscalYear}`,
     status: planData.submitImmediate ? 'SUBMITTED_TO_DIRECTOR' : (planData.status || 'DRAFT'),
+    workflowStatus: planData.submitImmediate ? 'DIRECTOR_FINAL_REVIEW' : 'DRAFT', // ✅ Initialize workflow status
     createdDate: new Date().toISOString(),
     lastModified: new Date().toISOString(),
     auditTypeAllocation: planData.auditTypeAllocation || {},
@@ -51,6 +52,55 @@ export function createAuditPlan(planData) {
   );
   saveData(data);
   return plan;
+}
+
+// Wrapper function for CreatePlanModal compatibility
+export function createNationalPlan(year, allocations, effort, startDate, endDate) {
+  // Convert allocations array to regional allocation object
+  const regionalAllocation = {};
+  const auditTypeAllocation = {
+    desk_audit: 0,
+    field_audit: 0,
+    joint_audit: 0,
+    transfer_pricing: 0,
+    comprehensive: 0,
+    issue_audit: 0
+  };
+  
+  let totalCases = 0;
+  
+  allocations.forEach(alloc => {
+    const regionKey = alloc.region.toLowerCase().replace(/ /g, '_');
+    regionalAllocation[regionKey] = {
+      desk_audit: alloc.desk || 0,
+      field_audit: alloc.field || 0,
+      joint_audit: 0, // Not in modal, default to 0
+      transfer_pricing: alloc.tp || 0,
+      comprehensive: 0, // Not in modal, default to 0
+      issue_audit: alloc.issue || 0
+    };
+    
+    // Aggregate by audit type
+    auditTypeAllocation.desk_audit += alloc.desk || 0;
+    auditTypeAllocation.field_audit += alloc.field || 0;
+    auditTypeAllocation.transfer_pricing += alloc.tp || 0;
+    auditTypeAllocation.issue_audit += alloc.issue || 0;
+    
+    totalCases += alloc.total || 0;
+  });
+  
+  return createAuditPlan({
+    fiscalYear: parseInt(year),
+    startDate,
+    endDate,
+    name: `Annual Audit Plan ${year}`,
+    status: 'DRAFT',
+    submitImmediate: false,
+    regionalAllocation,
+    auditTypeAllocation,
+    totalCases,
+    totalEffort: effort
+  });
 }
 
 export function updateAuditPlan(planId, planData) {
@@ -266,7 +316,7 @@ export function taxCenterReceiveAllocation(planId, region, taxCenterName) {
   };
 }
 
-export function submitRegionalFeedback(planId, region, feedback) {
+export function submitRegionalFeedback(planId, region, feedback, taxCenterFeedbackArray) {
   const data = loadData();
   const plan = data.plans.find(p => p.id === planId);
   if (!plan) return false;
@@ -276,17 +326,18 @@ export function submitRegionalFeedback(planId, region, feedback) {
     plan.regionFeedbackStatus = {};
   }
 
-  if (!plan.regionFeedbackStatus[region]) {
-    plan.regionFeedbackStatus[region] = { taxCenterFeedback: [] };
+  if (plan.regionFeedbackStatus[region]?.status === 'received') {
+    return false; // Already submitted
   }
 
   plan.regionFeedbackStatus[region] = {
     status: 'received',
     regionalFeedback: feedback,
     receivedDate: new Date().toISOString(),
-    taxCenterFeedback: plan.regionFeedbackStatus[region].taxCenterFeedback || []
+    taxCenterFeedback: taxCenterFeedbackArray || []
   };
 
+  plan.approvalHistory = plan.approvalHistory || [];
   plan.approvalHistory.push({
     action: 'REGIONAL_FEEDBACK_RECEIVED',
     by: `${region} Regional Director`,
@@ -295,48 +346,80 @@ export function submitRegionalFeedback(planId, region, feedback) {
     version: plan.version
   });
 
-  // Check if all regions have submitted feedback
-  const allRegionsFeedbackReceived = Object.values(plan.regionFeedbackStatus).every(status => status.status === 'received');
+  // ✅ Get all regions that the plan was distributed to (from regionalAllocation)
+  const planRegions = plan.regionalAllocation ? Object.keys(plan.regionalAllocation) : [];
+  
+  // ✅ Check if all regions that received the plan have submitted feedback
+  const allRegionsFeedbackReceived = planRegions.length > 0 && 
+    planRegions.every(r => plan.regionFeedbackStatus[r]?.status === 'received');
+  
+  console.log('🔍 FEEDBACK STATUS CHECK:', {
+    planId: plan.id,
+    planRegions: planRegions,
+    feedbackReceived: Object.keys(plan.regionFeedbackStatus),
+    allRegionsFeedbackReceived: allRegionsFeedbackReceived,
+    currentStatus: plan.status
+  });
   
   if (allRegionsFeedbackReceived && plan.status === 'AWAITING_REGIONAL_FEEDBACK') {
     plan.status = 'FEEDBACK_COLLECTED';
+    plan.feedbackCollectedDate = new Date().toISOString();
     plan.approvalHistory.push({
       action: 'FEEDBACK_COLLECTED',
       by: 'System',
       date: new Date().toISOString(),
-      notes: 'All regional feedback has been collected',
+      notes: 'All regional feedback has been collected from ' + planRegions.length + ' regions',
       version: plan.version
     });
+    console.log('✅ ALL REGIONS SUBMITTED - Status changed to FEEDBACK_COLLECTED');
     addActivity('All Regional Feedback Collected', plan.id, 'FEEDBACK_COLLECTED');
   } else {
+    console.log(`⏳ Feedback Received from ${region} - Awaiting feedback from other regions`);
     addActivity(`Feedback Received from ${region}`, plan.id, 'FEEDBACK_RECEIVED');
   }
 
+  plan.lastModified = new Date().toISOString();
   saveData(data);
   return true;
 }
 
-export function submitTaxCenterFeedback(planId, region, taxCenter, feedback) {
+export function submitTaxCenterFeedback(planId, region, taxCenter, feedbackPayload, fullName) {
   const data = loadData();
   const plan = data.plans.find(p => p.id === planId);
-  if (!plan) return false;
+  if (!plan) return { success: false, message: 'Plan not found' };
 
-  if (!plan.regionFeedbackStatus) {
-    plan.regionFeedbackStatus = {};
-  }
-  if (!plan.regionFeedbackStatus[region]) {
-    plan.regionFeedbackStatus[region] = { taxCenterFeedback: [] };
+  // Check for duplicate submission
+  if (plan.taxCenterFeedback?.[region]?.[taxCenter]?.feedbackDate) {
+    return { 
+      success: false, 
+      message: 'Feedback already submitted', 
+      submittedDate: plan.taxCenterFeedback[region][taxCenter].feedbackDate 
+    };
   }
 
-  plan.regionFeedbackStatus[region].taxCenterFeedback.push({
+  // Initialize structure
+  if (!plan.taxCenterFeedback) plan.taxCenterFeedback = {};
+  if (!plan.taxCenterFeedback[region]) plan.taxCenterFeedback[region] = {};
+
+  // Save the structured feedback
+  plan.taxCenterFeedback[region][taxCenter] = {
+    feedbackByType: feedbackPayload,
+    feedbackDate: new Date().toISOString(),
+    feedbackBy: fullName || 'Tax Center Manager',
     taxCenter: taxCenter,
-    feedback: feedback,
-    submittedDate: new Date().toISOString()
-  });
+    planId: planId
+  };
+
+  // Also mark for regional director to collect
+  if (!plan.regionFeedbackTaxCenters) plan.regionFeedbackTaxCenters = {};
+  if (!plan.regionFeedbackTaxCenters[region]) plan.regionFeedbackTaxCenters[region] = [];
+  if (!plan.regionFeedbackTaxCenters[region].includes(taxCenter)) {
+    plan.regionFeedbackTaxCenters[region].push(taxCenter);
+  }
 
   addActivity(`Feedback from ${taxCenter}`, plan.id, 'TAX_CENTER_FEEDBACK');
   saveData(data);
-  return true;
+  return { success: true };
 }
 
 export function planReadyForAmendment(planId) {
@@ -678,4 +761,49 @@ export function getBadgeClass(status) {
     'REJECTED': 'rejected'
   };
   return map[status] || 'draft';
+}
+
+/**
+ * Delete a single plan by ID
+ * @param {string} planId - The ID of the plan to delete
+ * @returns {boolean} - True if deletion was successful
+ */
+export function deletePlan(planId) {
+  const data = loadData();
+  const planIndex = data.plans.findIndex(p => p.id === planId);
+  
+  if (planIndex === -1) {
+    console.warn(`Plan ${planId} not found`);
+    return false;
+  }
+  
+  // Remove the plan
+  const deletedPlan = data.plans.splice(planIndex, 1)[0];
+  
+  // Add activity log
+  addActivity('Plan Deleted', planId, `${deletedPlan.name || 'Unnamed Plan'} (${deletedPlan.status})`);
+  
+  saveData(data);
+  return true;
+}
+
+/**
+ * Delete all plans
+ * @returns {number} - Number of plans deleted
+ */
+export function deleteAllPlans() {
+  const data = loadData();
+  const count = data.plans.length;
+  
+  // Clear all plans
+  data.plans = [];
+  
+  // Reset plan counter
+  data.planCounter = 1;
+  
+  // Add activity log
+  addActivity('All Plans Deleted', 'SYSTEM', `${count} plan(s) removed`);
+  
+  saveData(data);
+  return count;
 }

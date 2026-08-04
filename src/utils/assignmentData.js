@@ -7,7 +7,7 @@
  * Uses localStorage ONLY for assignments and team leader storage
  */
 
-import { loadData, saveData } from './data';
+import { loadDataDirect as loadData, saveDataDirect as saveData } from '../services/dataService';
 import { createTeamLeader, createAuditor, createAssignment, validateTeamLeader, validateAuditor } from './assignmentDataModels';
 import { getUserById, getTeamMembers, getAllUsers } from '../data/orgStructure';
 

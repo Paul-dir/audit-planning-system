@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import ProtectedRoute from '../ProtectedRoute';
 import RoleLayout from '../layouts/RoleLayout';
 import AuditDirectorDashboard from '../dashboards/AuditDirectorDashboard';
-import DirectorView from '../views/DirectorView';
-import DirectorBulkFeedbackView from '../views/DirectorBulkFeedbackView';
+import DirectorInitialApprovalView from '../views/DirectorInitialApprovalView';
+import DirectorPlanReview from '../views/DirectorPlanReview';
+import PlanJourneyView from '../views/PlanJourneyView';
 import ApprovedPlansDeploymentView from '../views/ApprovedPlansDeploymentView';
+import PlanSubmissionToRegionsView from '../views/PlanSubmissionToRegionsView';
 import ConfigurationView from '../views/ConfigurationView';
 
 function AuditDirectorView() {
@@ -14,16 +16,18 @@ function AuditDirectorView() {
     switch (currentView) {
       case 'dashboard':
         return <AuditDirectorDashboard />;
+      case 'initial-approval':
+        // ✅ NEW: Initial plan approval & feedback review
+        return <DirectorInitialApprovalView />;
       case 'review-queue':
-      case 'amended-plans':
-      case 'approved-plans':
-      case 'feedback-review':
-      case 'finalized':
-        return <DirectorView currentView={currentView} />;
-      case 'send-feedback':
-        return <DirectorBulkFeedbackView />;
+        // ✅ Unified plan review page
+        return <DirectorPlanReview />;
+      case 'plan-journey':
+        return <PlanJourneyView />;
       case 'deployment':
         return <ApprovedPlansDeploymentView userRole="director" />;
+      case 'submit-plan-to-regions':
+        return <PlanSubmissionToRegionsView />;
       case 'configuration':
         return <ConfigurationView />;
       default:

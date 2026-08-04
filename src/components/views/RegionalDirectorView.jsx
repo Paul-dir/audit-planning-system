@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../Card';
 import Badge from '../Badge';
-import { loadData, saveData } from '../../utils/data';
+import { useData } from '../../services/dataService';
 import { submitRegionalFeedback, getStatusDisplay, getBadgeClass } from '../../utils/businessLogic';
 import { useAuth } from '../../context/AuthContext';
 
 function RegionalDirectorView() {
   const { getUserInfo } = useAuth();
+  const { data, updateData } = useData();
   const userInfo = getUserInfo();
   const [plan, setPlan] = useState(null);
   const [allocation, setAllocation] = useState(null);
@@ -20,7 +21,7 @@ function RegionalDirectorView() {
 
   // Load ALL awaiting plans dynamically
   const loadAllAwaitingPlans = () => {
-    const data = loadData();
+    // Using data from hook
     const awaitingPlans = data.plans.filter(p => p.status === 'AWAITING_REGIONAL_FEEDBACK');
     setAllPlans(awaitingPlans);
     console.log('📋 Loaded awaiting plans:', awaitingPlans.length);
@@ -34,7 +35,7 @@ function RegionalDirectorView() {
       return;
     }
 
-    const data = loadData();
+    // Using data from hook
     const selectedPlan = data.plans.find(p => p.id === planId);
     
     if (selectedPlan) {
@@ -79,6 +80,15 @@ function RegionalDirectorView() {
       alert('No active plan.');
       return;
     }
+    
+    // ✅ DUPLICATE PREVENTION: Check if feedback already submitted for this region
+    if (plan.regionalFeedbackStatus?.[region]?.sentToDirector) {
+      alert('❌ Feedback already submitted for this region!\n\n' +
+            `Submitted by: ${plan.regionalFeedbackStatus[region].submittedBy || 'Regional Director'}\n` +
+            `Date: ${new Date(plan.regionalFeedbackStatus[region].submittedDate).toLocaleString()}\n\n` +
+            'Cannot submit feedback again.');
+      return;
+    }
 
     const message = prompt('Enter your feedback message:', 'Current allocation acceptable.');
     if (message === null) return;
@@ -108,7 +118,7 @@ function RegionalDirectorView() {
       return;
     }
 
-    const data = loadData();
+    // Using data from hook
     const currentPlan = data.plans.find(p => p.id === plan.id);
     
     if (currentPlan) {
@@ -140,7 +150,7 @@ function RegionalDirectorView() {
         version: currentPlan.version
       });
 
-      saveData(data);
+      updateData(data);
       alert(`✅ Plan sent to all tax centers in ${region}!\n\nTax centers can now review and accept the plan.`);
       setSelectedPlanId(null);
       loadAllAwaitingPlans(); // Refresh list
@@ -339,7 +349,7 @@ function RegionalDirectorView() {
                 alert('❌ No plan selected');
                 return;
               }
-              const data = loadData();
+              // Using data from hook
               const currentPlan = data.plans.find(p => p.id === plan.id);
               if (currentPlan) {
                 const alloc = currentPlan.allocations?.find(a => a.region === region);
@@ -352,7 +362,7 @@ function RegionalDirectorView() {
                     adjustments: adjustments,
                     comments: comments
                   };
-                  saveData(data);
+                  updateData(data);
                   alert('✅ Plan allocation ACCEPTED for your region!');
                   setSelectedPlanId(null);
                   loadAllAwaitingPlans(); // Refresh list

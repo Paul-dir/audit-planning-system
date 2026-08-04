@@ -3,13 +3,14 @@ import Card from '../Card';
 import Badge from '../Badge';
 import PlanDetailsView from './PlanDetailsView';
 import RiskEngineView from './RiskEngineView';
-import { loadData } from '../../utils/data';
+import { useData } from '../../services/dataService';
 import { seniorManagementApprove, seniorManagementReject, getStatusDisplay, getBadgeClass, directorResubmitRejectedPlan } from '../../utils/businessLogic';
 
 function SeniorManagementView({ currentView }) {
   const [plans, setPlans] = useState([]);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [viewMode, setViewMode] = useState('plans'); // 'plans' or 'risk-engine'
+  const { data } = useData();
 
   useEffect(() => {
     if (currentView === 'risk-engine') {
@@ -20,9 +21,8 @@ function SeniorManagementView({ currentView }) {
   }, [currentView]);
 
   const loadPlans = () => {
-    const data = loadData();
     // Show plans submitted to senior management or already approved/rejected
-    const seniorPlans = data.plans.filter(p => 
+    const seniorPlans = (data?.plans || []).filter(p => 
       p.status === 'SUBMITTED_TO_SENIOR_MANAGEMENT' || 
       p.status === 'SENIOR_MANAGEMENT_APPROVED' ||
       p.status === 'SENIOR_MANAGEMENT_REJECTED'
@@ -33,7 +33,7 @@ function SeniorManagementView({ currentView }) {
 
   useEffect(() => {
     loadPlans();
-  }, []);
+  }, [data]);
 
   const handleApprove = (planId) => {
     const notes = prompt('Enter approval notes (optional):');

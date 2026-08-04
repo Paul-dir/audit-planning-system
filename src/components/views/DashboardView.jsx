@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../Card';
 import Badge from '../Badge';
-import { loadData } from '../../utils/data';
+import { useData } from '../../services/dataService';
 import { useRegional } from '../../context/RegionalContext';
 
 /**
@@ -10,6 +10,7 @@ import { useRegional } from '../../context/RegionalContext';
  */
 function DashboardView({ currentRole }) {
   const { assignedRegion, assignedTaxCenter, setSelectedRegion, selectedRegion } = useRegional();
+  const { data, updateData } = useData();
   const [currentRegion, setCurrentRegion] = useState(assignedRegion || selectedRegion || null);
   const [stats, setStats] = useState({
     myOpenTasks: 0,
@@ -35,7 +36,7 @@ function DashboardView({ currentRole }) {
   };
 
   const loadDashboardData = () => {
-    const data = loadData();
+    // Using data from hook
 
     // Calculate stats based on role
     let statsData = {

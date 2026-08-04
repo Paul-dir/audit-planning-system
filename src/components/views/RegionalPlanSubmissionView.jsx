@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getDisplayRegionName } from '../../utils/regionNormalizer';
 import Card from '../Card';
 import Badge from '../Badge';
-import { loadData, saveData } from '../../utils/data';
+import { useData } from '../../services/dataService';
 import { useRegional } from '../../context/RegionalContext';
 import { useAuth } from '../../context/AuthContext';
 import { auditConfig } from '../../config/auditConfig';
@@ -18,6 +18,7 @@ import { auditConfig } from '../../config/auditConfig';
 function RegionalPlanSubmissionView() {
   const { assignedRegion } = useRegional();
   const { getUserInfo } = useAuth();
+  const { data, updateData } = useData();
   const userInfo = getUserInfo();
   
   // Use authenticated user's assigned region - no selection dropdown
@@ -34,7 +35,7 @@ function RegionalPlanSubmissionView() {
 
   useEffect(() => {
     // Load all regions
-    const data = loadData();
+    // Using data from hook
     const regions = [...new Set(data.plans.flatMap(p => Object.keys(p.regionalAllocation || {})))];
     setAllRegions(regions.length > 0 ? regions : ['Oromia', 'SNNPR', 'Addis Ababa', 'Amhara', 'Tigray']);
     
@@ -49,7 +50,7 @@ function RegionalPlanSubmissionView() {
   }, [selectedRegion]);
 
   const loadPlans = () => {
-    const data = loadData();
+    // Using data from hook
     
     console.log('🔍 REGIONAL SUBMISSION VIEW - Starting load (DYNAMIC - RUNTIME ONLY)...');
     console.log('📍 Selected Region:', selectedRegion);
@@ -97,7 +98,7 @@ function RegionalPlanSubmissionView() {
   };
 
   const handleSelectPlan = (planId) => {
-    const data = loadData();
+    // Using data from hook
     const plan = data.plans.find(p => p.id === planId);
     setSelectedPlan(planId);
     setPlanDetails(plan);
@@ -118,7 +119,7 @@ function RegionalPlanSubmissionView() {
       return;
     }
 
-    const data = loadData();
+    // Using data from hook
     const planIndex = data.plans.findIndex(p => p.id === selectedPlan);
 
     if (planIndex >= 0) {
@@ -210,12 +211,11 @@ function RegionalPlanSubmissionView() {
 
       // CRITICAL: Save data immediately
       console.log('💾 SAVING DATA TO LOCALSTORAGE...');
-      saveData(data);
+      await updateData(data);
       console.log('✅ DATA SAVED SUCCESSFULLY');
 
-      // Verify saved data
-      const verifyData = loadData();
-      const verifyPlan = verifyData.plans.find(p => p.id === selectedPlan);
+      // Verify saved data - check the data we just set
+      const verifyPlan = data.plans.find(p => p.id === selectedPlan);
       console.log('✔️ VERIFICATION - Data persisted:', {
         planId: selectedPlan,
         submittedToTaxCenters: verifyPlan?.submittedToTaxCenters?.[selectedRegion],

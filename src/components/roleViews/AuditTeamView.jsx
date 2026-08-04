@@ -3,6 +3,8 @@ import ProtectedRoute from '../ProtectedRoute';
 import RoleLayout from '../layouts/RoleLayout';
 import AuditTeamDashboard from '../dashboards/AuditTeamDashboard';
 import AuditPlanningView from '../views/AuditPlanningView';
+import AuditPlanningTeamAmendView from '../views/AuditPlanningTeamAmendView';
+import PlanJourneyView from '../views/PlanJourneyView';
 import ConfigurationView from '../views/ConfigurationView';
 import CascadePlanToCasesView from '../views/CascadePlanToCasesView';
 
@@ -17,6 +19,10 @@ function AuditTeamView() {
     switch (currentView) {
       case 'dashboard':
         return <AuditTeamDashboard />;
+      case 'amend-plans':
+        return <AuditPlanningTeamAmendView />;
+      case 'plan-journey':
+        return <PlanJourneyView />;
       case 'risk-engine':
       case 'create-plan':
       case 'my-plans':
@@ -34,7 +40,7 @@ function AuditTeamView() {
   };
 
   return (
-    <ProtectedRoute requiredRoles={['audit_team', 'cascade_audit_team']}>
+    <ProtectedRoute requiredRoles={['audit_team', 'audit_team_leader']}>
       <RoleLayout currentView={currentView} onNavigate={setCurrentView}>
         {renderContent()}
       </RoleLayout>

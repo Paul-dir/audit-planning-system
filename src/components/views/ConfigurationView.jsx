@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Card from '../Card';
 import Badge from '../Badge';
 import { auditConfig } from '../../config/auditConfig';
-import { clearAllPlans, resetAllData, loadData, saveData } from '../../utils/data';
+import { useData, clearAllPlans, resetAllData } from '../../services/dataService';
 import { useAuth } from '../../context/AuthContext';
 import { getDisplayRegionName } from '../../utils/regionNormalizer';
 
@@ -21,6 +21,7 @@ function ConfigurationView() {
   const [updateTrigger, setUpdateTrigger] = useState(0);
   const [editingRows, setEditingRows] = useState({});
   const { getUserInfo, hasPermission } = useAuth();
+  const { data, updateData } = useData();
   
   const forceUpdate = () => setUpdateTrigger(prev => prev + 1);
   const toggleEditRow = (id) => setEditingRows(prev => ({...prev, [id]: !prev[id]}));
@@ -656,7 +657,7 @@ function ConfigurationView() {
   };
 
   const renderDataManagement = () => {
-    const data = loadData();
+    // Using data from hook
     const planCount = data.plans?.length || 0;
 
     const handleClearPlans = () => {

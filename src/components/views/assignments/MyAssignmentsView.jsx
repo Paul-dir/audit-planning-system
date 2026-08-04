@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../../Card';
 import Badge from '../../Badge';
-import { loadData, saveData } from '../../../utils/data';
+import { useData } from '../../../services/dataService';
 import { useAuth } from '../../../context/AuthContext';
 import {
   loadAssignmentsByUser,
@@ -21,6 +21,7 @@ import { executeTransition } from '../../../utils/assignmentStateMachine';
 
 function MyAssignmentsView() {
   const { getUserInfo } = useAuth();
+  const { data, updateData } = useData();
   const userInfo = getUserInfo();
 
   const [assignedCases, setAssignedCases] = useState([]);
@@ -47,7 +48,7 @@ function MyAssignmentsView() {
 
       // Load my assignments (ASSIGNED_TO_AUDITOR state)
       const myAssignments = loadAssignmentsByUser(auditorId, 'AUDITOR');
-      const data = loadData();
+      // Using data from hook
 
       // Separate pending and accepted
       const pending = [];

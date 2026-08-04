@@ -15,10 +15,10 @@ const ROLE_PERMISSIONS = {
     'create_plans',
     'view_audit_metrics',
   ],
-  cascade_audit_team: [
+  audit_team_leader: [
     'create_plans',
     'view_audit_metrics',
-    'cascade_plan_to_cases', // Cascade Audit Team specific
+    'cascade_plan_to_cases', // Audit Team Leader specific
   ],
   audit_director: [
     'approve_plans',

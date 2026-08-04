@@ -93,10 +93,7 @@ function MORLoginPage() {
         padding: '60px 40px',
         color: '#f0f6fc',
         position: 'relative',
-        zIndex: 1,
-        '@media (max-width: 768px)': {
-          display: 'none'
-        }
+        zIndex: 1
       }}>
         {/* Logo & Branding */}
         <div style={{ marginBottom: '60px' }}>
@@ -204,10 +201,7 @@ function MORLoginPage() {
         alignItems: 'center',
         padding: '40px 20px',
         position: 'relative',
-        zIndex: 2,
-        '@media (max-width: 768px)': {
-          flex: 'unset'
-        }
+        zIndex: 2
       }}>
         <div style={{
           width: '100%',

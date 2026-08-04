@@ -4,10 +4,9 @@ import Badge from '../Badge';
 import Button from '../Button';
 import CreateAnnualPlanModal from '../modals/CreateAnnualPlanModal';
 import ConfigurationManagementView from './ConfigurationManagementView';
-import FeedbackReviewView from './FeedbackReviewView';
 import ConfigurationView from './ConfigurationView';
 import RiskEngineView from './RiskEngineView';
-import { loadData } from '../../utils/data';
+import { useData } from '../../services/dataService';
 import { submitPlanToDirector, getStatusDisplay, getBadgeClass } from '../../utils/businessLogic';
 import { auditConfig } from '../../config/auditConfig';
 
@@ -26,13 +25,14 @@ import { auditConfig } from '../../config/auditConfig';
 
 function AuditPlanningView({ currentView }) {
   const [plans, setPlans] = useState([]);
+  const { data, updateData, refreshData } = useData();
   const [showModal, setShowModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [detailView, setDetailView] = useState(null);
-  const taxpayerPool = loadData().taxpayerPool;
+  const taxpayerPool = data?.config?.taxpayerCategories || [];
 
   const loadPlans = () => {
-    const data = loadData();
+    // Using data from hook
     setPlans(data.plans || []);
   };
 
@@ -56,16 +56,13 @@ function AuditPlanningView({ currentView }) {
 
   useEffect(() => {
     loadPlans();
-  }, []);
+  }, [data.plans]);
 
   // Handle sidebar navigation
   useEffect(() => {
     if (currentView === 'create-plan') {
       setSelectedPlan(null);
       setShowModal(true);
-    } else if (currentView === 'feedback-review') {
-      setDetailView(null);
-      setSelectedPlan(null);
     } else if (currentView === 'my-plans' || currentView === 'plans') {
       setDetailView(null);
       setSelectedPlan(null);
@@ -85,7 +82,7 @@ function AuditPlanningView({ currentView }) {
     if (window.confirm('Submit this plan to Director for review?')) {
       if (submitPlanToDirector(planId)) {
         alert('Plan submitted successfully!');
-        loadPlans();
+        refreshData();
       } else {
         alert('Cannot submit. Plan must be in DRAFT or REVISION_REQUESTED status.');
       }
@@ -673,10 +670,6 @@ function AuditPlanningView({ currentView }) {
 
   if (detailView === 'regional-breakdown') {
     return renderRegionalBreakdown();
-  }
-
-  if (currentView === 'feedback-review') {
-    return <FeedbackReviewView currentView={currentView} />;
   }
 
   if (currentView === 'configuration') {

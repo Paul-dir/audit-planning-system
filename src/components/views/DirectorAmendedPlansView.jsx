@@ -1,17 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import Card from '../Card';
+import { useData } from '../../services/dataService';
 import Badge from '../Badge';
-import { loadData, saveData } from '../../utils/data';
-import { getDisplayRegionName } from '../../utils/regionNormalizer';
 
 /**
- * DirectorAmendedPlansView - Director reviews amended plans from Planning Team
- * Shows regional capacity adjustments made by Planning Team
+ * DirectorAmendedPlansView - REBUILT FOR NEW METHOD
+ * Director reviews amended plans from Planning Team
+ * 
+ * NEW WORKFLOW:
+ * 1. Director sees plans with status: 'RESUBMITTED_TO_DIRECTOR'
+ * 2. Reviews the amendments Planning Team made
+ * 3. Accepts or sends back for more amendments
+ * 4. If accepted → status: 'DIRECTOR_APPROVED'
  */
-function DirectorAmendedPlansView({ currentView }) {
+
+function DirectorAmendedPlansView() {
   const [plans, setPlans] = useState([]);
+  const { data, updateData } = useData();
   const [selectedPlan, setSelectedPlan] = useState(null);
-  const [selectedRegion, setSelectedRegion] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [showAcceptForm, setShowAcceptForm] = useState(false);
+  const [acceptNotes, setAcceptNotes] = useState('');
 
   const auditTypes = ['desk_audit', 'field_audit', 'joint_audit', 'transfer_pricing', 'comprehensive', 'issue_audit'];
   const auditTypeLabels = {
@@ -23,388 +31,310 @@ function DirectorAmendedPlansView({ currentView }) {
     issue_audit: 'Issue Audit'
   };
 
-  const loadPlans = () => {
-    const data = loadData();
-    console.log('===== DirectorAmendedPlansView loadPlans =====');
-    console.log('All plans:', data.plans);
-    
-    // Get plans that have been resubmitted by Planning Team after amendment
-    const amendedPlans = data.plans.filter(p => {
-      console.log(`Plan ${p.id}: status=${p.status}, has regionalFeedback=${!!p.regionalFeedback}`);
-      return p.status === 'SUBMITTED_TO_DIRECTOR' &&
-        p.regionalFeedback &&
-        p.regionalFeedback.length > 0;
-    });
-    
-    console.log('Filtered amended plans:', amendedPlans);
-    console.log('Amended plans count:', amendedPlans.length);
-    
-    setPlans(amendedPlans);
-  };
-
   useEffect(() => {
     loadPlans();
   }, []);
 
-  const handleApprovePlan = (planId) => {
-    if (!window.confirm('Approve this amended plan and send to Senior Management?')) {
-      return;
-    }
+  const loadPlans = () => {
+    setLoading(true);
+    // Using data from hook
 
-    const data = loadData();
-    const plan = data.plans.find(p => p.id === planId);
-    
-    if (plan) {
-      plan.status = 'SUBMITTED_TO_SENIOR_MANAGEMENT';
-      plan.lastModified = new Date().toISOString();
-      
-      if (!plan.approvalHistory) plan.approvalHistory = [];
-      plan.approvalHistory.push({
-        action: 'APPROVED_BY_DIRECTOR',
-        by: 'Director',
-        date: new Date().toISOString(),
-        notes: 'Amended plan approved and sent to Senior Management for final approval.',
-        version: plan.version
-      });
-      
-      saveData(data);
-      
-      alert('✅ Plan approved and sent to Senior Management!');
-      setSelectedPlan(null);
-      setSelectedRegion(null);
-      loadPlans();
-    }
+    // ✅ NEW METHOD: Filter by status field
+    // Show plans that have been amended and resubmitted by Planning Team
+    const amendedPlans = (data.plans || []).filter(plan => {
+      return plan.status === 'RESUBMITTED_TO_DIRECTOR';
+    });
+
+    console.log(`✅ Director Amended Plans: Found ${amendedPlans.length} amended plans awaiting acceptance`);
+    setPlans(amendedPlans);
+    setLoading(false);
   };
 
-  const handleRejectAndSendBack = (planId) => {
-    const notes = window.prompt('Enter feedback for Planning Team (why you are sending this back):');
-    if (!notes) return;
-
-    const data = loadData();
-    const plan = data.plans.find(p => p.id === planId);
-    
-    if (plan) {
-      plan.status = 'FEEDBACK_COLLECTED';
-      plan.lastModified = new Date().toISOString();
-      
-      if (!plan.approvalHistory) plan.approvalHistory = [];
-      plan.approvalHistory.push({
-        action: 'SENT_BACK_TO_PLANNING_TEAM',
-        by: 'Director',
-        date: new Date().toISOString(),
-        notes: `Amendment review: ${notes}`,
-        version: plan.version
-      });
-      
-      saveData(data);
-      
-      alert('Plan sent back to Planning Team for further amendments.');
-      setSelectedPlan(null);
-      setSelectedRegion(null);
-      loadPlans();
-    }
+  const handleSelectPlan = (planId) => {
+    setSelectedPlan(planId);
+    setShowAcceptForm(false);
+    setAcceptNotes('');
   };
 
-  // Region Detail View
-  if (selectedPlan && selectedRegion) {
-    const feedback = selectedPlan.regionalFeedback.find(f => f.region === selectedRegion);
-    
-    if (!feedback) {
-      return (
-        <div>
-          <div className="action-bar">
-            <button className="btn btn-outline" onClick={() => setSelectedRegion(null)}>
-              <i className="fas fa-arrow-left"></i> Back to Plan Regions
-            </button>
-          </div>
-          <p>Region feedback not found.</p>
-        </div>
+  const handleAcceptAmendments = () => {
+    // Using data from hook
+    const plan = data.plans.find(p => p.id === selectedPlan);
+    if (!plan) return;
+
+    // ✅ OPTIONAL NOTES: Like regional feedback pattern
+    if (!acceptNotes.trim()) {
+      const confirmWithoutNotes = window.confirm(
+        'No notes provided for acceptance. Continue anyway?\n\n(Notes are optional)'
       );
+      if (!confirmWithoutNotes) return;
     }
 
-    return (
-      <div>
-        <div className="action-bar">
-          <button className="btn btn-outline" onClick={() => setSelectedRegion(null)}>
-            <i className="fas fa-arrow-left"></i> Back to Plan Regions
-          </button>
-        </div>
+    // ✅ Update status to DIRECTOR_APPROVED - plan is now approved
+    plan.status = 'DIRECTOR_APPROVED';
+    plan.lastModified = new Date().toISOString();
 
-        <div className="detail-header">
-          <h2>{getDisplayRegionName(selectedRegion)} - Regional Capacity Review</h2>
-          <Badge status="Amended" className="pending" />
-        </div>
+    // ✅ Track in approval history (like regional feedback pattern)
+    plan.approvalHistory = plan.approvalHistory || [];
+    plan.approvalHistory.push({
+      action: 'APPROVED_BY_DIRECTOR',
+      by: 'Director',
+      date: new Date().toISOString(),
+      notes: acceptNotes || 'Amendments accepted and approved',
+      version: plan.version
+    });
 
-        <div className="cards">
-          <Card title="Plan ID" number={selectedPlan.id} icon="fas fa-file-alt" />
-          <Card title="Region" number={getDisplayRegionName(selectedRegion)} icon="fas fa-map-pin" />
-          <Card title="Version" number={`v${selectedPlan.version}`} icon="fas fa-code-branch" />
-          <Card title="Tax Centers" number={feedback.totalTaxCenters} icon="fas fa-building" />
-        </div>
+    console.log('✅ DIRECTOR ACCEPTED AMENDMENTS:', {
+      planId: plan.id,
+      status: 'DIRECTOR_APPROVED',
+      hasNotes: !!acceptNotes
+    });
 
-        <div className="section-title">
-          <i className="fas fa-info-circle"></i> Regional Feedback Summary
-        </div>
-        <div className="bg-green-100 dark:bg-green-900 text-green-900 dark:text-green-200 p-4 rounded mb-5 border-2 border-green-500 dark:border-green-600">
-          <p className="text-slate-700 dark:text-slate-300 m-0 text-green-900 dark:text-green-200">
-            <strong>Submitted by:</strong> {feedback.submittedBy}
-            <br />
-            <strong>Tax Centers:</strong> {feedback.taxCenterCount} of {feedback.totalTaxCenters} provided feedback
-            <br />
-            <strong>Submitted:</strong> {new Date(feedback.submittedAt).toLocaleString()}
-          </p>
-        </div>
+    updateData(data);
 
-        {/* Amended Regional Capacity Table */}
-        <div className="section-title">
-          <i className="fas fa-chart-bar"></i> Planning Team's Amended Regional Capacity
-        </div>
-        <div className="table-container mb-5">
-          <table>
-            <thead>
-              <tr className="bg-slate-800 dark:bg-slate-700 border-b-2 border-slate-600 dark:border-slate-500">
-                <th className="text-blue-500 dark:text-blue-400 text-left">AUDIT TYPE</th>
-                <th className="text-blue-500 dark:text-blue-400 text-center">ORIGINAL ALLOCATED</th>
-                <th className="text-blue-500 dark:text-blue-400 text-center">REGIONAL DIRECTOR SAID</th>
-                <th className="text-blue-500 dark:text-blue-400 text-center">PLANNING TEAM AMENDED TO</th>
-                <th className="text-blue-500 dark:text-blue-400 text-center">VARIANCE FROM ALLOCATED</th>
-              </tr>
-            </thead>
-            <tbody>
-              {auditTypes.map(type => {
-                const agg = feedback.aggregated?.[type];
-                
-                // Debug log
-                if (!agg) {
-                  console.warn(`⚠️ No aggregated data for ${type}. Full feedback:`, feedback);
-                }
-                console.log(`${type}:`, agg);
-                
-                const allocated = agg?.allocated || 0;
-                const regionalDirectorSaid = agg?.canDeliver || 0;
-                const plannintTeamAmended = agg?.canDeliver || 0;
-                const variance = plannintTeamAmended - allocated;
-                
-                return (
-                  <tr key={type} className={variance < 0 ? 'bg-red-950 dark:bg-red-900' : 'bg-green-950 dark:bg-green-900'}>
-                    <td><strong>{auditTypeLabels[type]}</strong></td>
-                    <td className="text-center font-bold text-blue-500 dark:text-blue-400">{allocated}</td>
-                    <td className="text-center bg-blue-50 dark:bg-blue-950 text-slate-900 dark:text-slate-100">{regionalDirectorSaid}</td>
-                    <td className="text-center font-bold text-blue-600 dark:text-blue-500">{plannintTeamAmended}</td>
-                    <td className={`text-center font-bold ${
-                      variance < 0 ? 'text-red-400 dark:text-red-300' : variance > 0 ? 'text-green-400 dark:text-green-300' : 'text-gray-500 dark:text-gray-400'
-                    }`}>
-                      {variance > 0 ? '+' : ''}{variance}
-                    </td>
-                  </tr>
-                );
-              })}
-              <tr className="bg-slate-900 dark:bg-slate-800 font-bold">
-                <td>TOTAL</td>
-                <td className="text-center">
-                  {auditTypes.reduce((sum, type) => sum + (feedback.aggregated?.[type]?.allocated || 0), 0)}
-                </td>
-                <td className="text-center bg-blue-50 dark:bg-blue-950 text-slate-900 dark:text-slate-100">
-                  {auditTypes.reduce((sum, type) => sum + (feedback.aggregated?.[type]?.canDeliver || 0), 0)}
-                </td>
-                <td className="text-center text-blue-600 dark:text-blue-500">
-                  {auditTypes.reduce((sum, type) => sum + (feedback.aggregated?.[type]?.canDeliver || 0), 0)}
-                </td>
-                <td className={`text-center ${
-                  (auditTypes.reduce((sum, type) => sum + (feedback.aggregated?.[type]?.canDeliver || 0), 0) - auditTypes.reduce((sum, type) => sum + (feedback.aggregated?.[type]?.allocated || 0), 0)) < 0 ? 'text-red-400 dark:text-red-300' : 'text-green-400 dark:text-green-300'
-                }`}>
-                  {(auditTypes.reduce((sum, type) => sum + (feedback.aggregated?.[type]?.canDeliver || 0), 0) - auditTypes.reduce((sum, type) => sum + (feedback.aggregated?.[type]?.allocated || 0), 0)) > 0 ? '+' : ''}
-                  {auditTypes.reduce((sum, type) => sum + (feedback.aggregated?.[type]?.canDeliver || 0), 0) - auditTypes.reduce((sum, type) => sum + (feedback.aggregated?.[type]?.allocated || 0), 0)}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+    alert('✅ Amendments accepted! Plan is now DIRECTOR_APPROVED.');
+    setSelectedPlan(null);
+    setShowAcceptForm(false);
+    loadPlans();
+  };
 
-        <div className="bg-blue-50 dark:bg-blue-900 text-slate-900 dark:text-slate-100 p-4 rounded mb-5 border border-blue-400 dark:border-blue-600">
-          <strong><i className="fas fa-lightbulb"></i> Review Notes:</strong>
-          <p className="text-slate-700 dark:text-slate-300 m-2 text-xs">
-            The Planning Team has reviewed regional feedback and adjusted regional capacity based on organizational priorities and constraints. 
-            These amendments are now ready for your approval to send to Senior Management for final authorization.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const handleSendBackForMoreAmendments = () => {
+    const feedback = window.prompt('Enter feedback for Planning Team (what needs to be changed):');
+    if (!feedback) return;
 
-  // Plan Detail View
-  if (selectedPlan) {
-    return (
-      <div>
-        <div className="action-bar">
-          <button className="btn btn-outline" onClick={() => setSelectedPlan(null)}>
-            <i className="fas fa-arrow-left"></i> Back to Plans
-          </button>
-        </div>
+    // Using data from hook
+    const plan = data.plans.find(p => p.id === selectedPlan);
+    if (!plan) return;
 
-        <div className="detail-header">
-          <h2>Review Amended Plan - {selectedPlan.id}</h2>
-          <Badge status={`v${selectedPlan.version}`} className="pending" />
-        </div>
+    // ✅ Send back to Planning Team for more amendments
+    plan.status = 'REVISION_REQUESTED';
+    plan.lastModified = new Date().toISOString();
 
-        <div className="cards">
-          <Card title="Plan ID" number={selectedPlan.id} icon="fas fa-file-alt" />
-          <Card title="Fiscal Year" number={selectedPlan.fiscalYear} icon="fas fa-calendar-alt" />
-          <Card title="Version" number={`v${selectedPlan.version}`} icon="fas fa-code-branch" />
-          <Card title="Regions" number={selectedPlan.regionalFeedback.length} icon="fas fa-map-marked-alt" />
-        </div>
+    // ✅ Track in approval history
+    plan.approvalHistory = plan.approvalHistory || [];
+    plan.approvalHistory.push({
+      action: 'SENT_BACK_TO_PLANNING_TEAM',
+      by: 'Director',
+      date: new Date().toISOString(),
+      notes: feedback,
+      version: plan.version
+    });
 
-        <div className="section-title">
-          <i className="fas fa-map"></i> Regional Amendments
-        </div>
-        <div className="table-container mb-5">
-          <table>
-            <thead>
-              <tr className="bg-slate-800 dark:bg-slate-700 border-b-2 border-slate-600 dark:border-slate-500">
-                <th className="text-blue-500 dark:text-blue-400">REGION</th>
-                <th className="text-blue-500 dark:text-blue-400 text-center">TAX CENTERS</th>
-                <th className="text-blue-500 dark:text-blue-400 text-center">FEEDBACK STATUS</th>
-                <th className="text-blue-500 dark:text-blue-400 text-center">SUBMITTED</th>
-                <th className="text-blue-500 dark:text-blue-400">ACTION</th>
-              </tr>
-            </thead>
-            <tbody>
-              {selectedPlan.regionalFeedback.map((feedback, idx) => (
-                <tr key={idx}>
-                  <td><strong>{feedback.region}</strong></td>
-                  <td className="text-center">{feedback.totalTaxCenters}</td>
-                  <td className="text-center">
-                    <Badge 
-                      status={feedback.status === 'SUBMITTED' ? 'Submitted' : 'Pending'} 
-                      className={feedback.status === 'SUBMITTED' ? 'director-approved' : 'pending'} 
-                    />
-                  </td>
-                  <td className="text-center text-xs text-gray-500 dark:text-gray-400">
-                    {new Date(feedback.submittedAt).toLocaleDateString()}
-                  </td>
-                  <td>
-                    {feedback.status === 'SUBMITTED' && (
-                      <button 
-                        className="btn btn-sm btn-info"
-                        onClick={() => setSelectedRegion(feedback.region)}
-                      >
-                        <i className="fas fa-eye"></i> Review
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+    updateData(data);
 
-        <div className="bg-slate-900 dark:bg-slate-800 text-yellow-500 dark:text-yellow-400 p-4 rounded mb-5 border-2 border-yellow-500 dark:border-yellow-600">
-          <strong className="text-yellow-600 dark:text-yellow-400"><i className="fas fa-info-circle"></i> Decision Required:</strong>
-          <p className="text-yellow-600 dark:text-yellow-400 m-2 text-xs">
-            Review the amended regional capacities for all regions. You can approve and send to Senior Management, or send back for further amendments.
-          </p>
-        </div>
+    alert('Plan sent back to Planning Team for further amendments.');
+    setSelectedPlan(null);
+    setShowAcceptForm(false);
+    loadPlans();
+  };
 
-        <div className="action-bar">
-          <button 
-            className="btn btn-warning"
-            onClick={() => handleRejectAndSendBack(selectedPlan.id)}
-          >
-            <i className="fas fa-redo"></i> Send Back for Further Amendments
-          </button>
-          <div></div>
-          <button 
-            className="btn btn-success"
-            onClick={() => handleApprovePlan(selectedPlan.id)}
-          >
-            <i className="fas fa-check-circle"></i> Approve & Send to Senior Management
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const getPlanDetails = () => {
+    if (!selectedPlan) return null;
+    return plans.find(p => p.id === selectedPlan);
+  };
 
-  // List View
+  const planDetails = getPlanDetails();
+
   return (
-    <div>
-      {/* Plan Selector Dropdown */}
-      {plans && plans.length > 1 && (
-        <div className="bg-slate-950 dark:bg-slate-900 text-gray-100 dark:text-gray-200 p-4 rounded mb-6 border-4 border-blue-500 dark:border-blue-600 flex gap-4 items-center flex-wrap shadow-lg shadow-yellow-500/40">
-          <label className="text-sm font-bold text-blue-500 dark:text-blue-400 whitespace-nowrap">
-            <i className="fas fa-file-alt"></i> QUICK SELECT:
-          </label>
-          <select
-            value={selectedPlan ? selectedPlan.id : ''}
-            onChange={(e) => {
-              const plan = plans.find(p => p.id === e.target.value);
-              if (plan) setSelectedPlan(plan);
-            }}
-            className="px-4 py-3 rounded border-2 border-blue-500 dark:border-blue-400 text-sm font-bold cursor-pointer bg-slate-950 dark:bg-slate-900 min-w-60 text-slate-400 dark:text-slate-300"
-          >
-            <option value="">-- Select a plan to review --</option>
-            {plans.map(plan => (
-              <option key={plan.id} value={plan.id}>
-                {plan.id} (v{plan.version}) - {plan.regionalFeedback.length} region(s)
-              </option>
-            ))}
-          </select>
-          <span className="text-xs text-red-500 dark:text-red-400 font-semibold">
-            {plans.length} amended plan(s) waiting
-          </span>
-        </div>
-      )}
-
-      <div className="section-title">
-        <i className="fas fa-edit"></i> Amended Plans from Planning Team
+    <div className="px-6 py-8">
+      {/* Header */}
+      <div className="detail-header mb-6">
+        <h2 className="text-2xl font-bold text-text-hi dark:text-text-hi flex items-center gap-2">
+          <i className="fas fa-check-circle"></i> Accept Amended Plans
+        </h2>
+        <p className="text-text-mid dark:text-text-mid mt-2">
+          Review amendments from Planning Team and accept or request changes
+        </p>
       </div>
 
-      {plans.length === 0 ? (
-        <div className="text-center py-16 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg">
-          <i className="fas fa-inbox text-gray-400 dark:text-gray-600 text-4xl block mb-5"></i>
-          <h3>No Amended Plans</h3>
-          <p className="text-gray-500 dark:text-gray-400">There are no amended plans from the Planning Team awaiting your review.</p>
+      {/* Main Content */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left: Plans List */}
+        <div className="lg:col-span-1">
+          <div className="bg-panel dark:bg-panel border border-border dark:border-border rounded-lg">
+            <div className="px-4 py-3 border-b border-border dark:border-border">
+              <h3 className="text-text-hi dark:text-text-hi font-bold m-0">
+                Amended Plans ({plans.length})
+              </h3>
+            </div>
+
+            {loading ? (
+              <div className="px-4 py-6 text-text-mid dark:text-text-mid text-center">Loading...</div>
+            ) : plans.length === 0 ? (
+              <div className="px-4 py-6 text-text-mid dark:text-text-mid text-center">
+                No amended plans awaiting approval
+              </div>
+            ) : (
+              <div className="divide-y divide-border dark:divide-border max-h-96 overflow-y-auto">
+                {plans.map(plan => (
+                  <div
+                    key={plan.id}
+                    onClick={() => handleSelectPlan(plan.id)}
+                    className={`p-4 cursor-pointer transition-all ${
+                      selectedPlan === plan.id
+                        ? 'bg-teal/20 dark:bg-teal/20 border-l-4 border-teal dark:border-teal'
+                        : 'hover:bg-ink dark:hover:bg-ink'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        <p className="font-bold text-text-hi dark:text-text-hi m-0">{plan.id}</p>
+                        <p className="text-xs text-text-mid dark:text-text-mid m-0 mt-1">{plan.name}</p>
+                        <Badge 
+                          status="submitted" 
+                          text="Amended by Planning Team"
+                          className="mt-2"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-      ) : (
-        <div className="table-container">
-          <table>
-            <thead>
-              <tr className="bg-slate-800 dark:bg-slate-700 border-b-2 border-slate-600 dark:border-slate-500">
-                <th className="text-blue-500 dark:text-blue-400">PLAN ID</th>
-                <th className="text-blue-500 dark:text-blue-400 text-center">VERSION</th>
-                <th className="text-blue-500 dark:text-blue-400 text-center">FISCAL YEAR</th>
-                <th className="text-blue-500 dark:text-blue-400 text-center">REGIONS</th>
-                <th className="text-blue-500 dark:text-blue-400 text-center">STATUS</th>
-                <th className="text-blue-500 dark:text-blue-400 text-center">SUBMITTED</th>
-                <th className="text-blue-500 dark:text-blue-400">ACTION</th>
-              </tr>
-            </thead>
-            <tbody>
-              {plans.map(plan => (
-                <tr key={plan.id} className="bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100">
-                  <td><strong>{plan.id}</strong></td>
-                  <td className="text-center">v{plan.version}</td>
-                  <td className="text-center">{plan.fiscalYear}</td>
-                  <td className="text-center">{plan.regionalFeedback.length}</td>
-                  <td className="text-center">
-                    <Badge status={plan.status.replace(/_/g, ' ')} className="pending" />
-                  </td>
-                  <td className="text-center text-xs text-gray-500 dark:text-gray-400">
-                    {new Date(plan.lastModified).toLocaleDateString()}
-                  </td>
-                  <td>
-                    <button 
-                      className="btn btn-sm btn-info"
-                      onClick={() => setSelectedPlan(plan)}
+
+        {/* Right: Amendment Review */}
+        <div className="lg:col-span-2">
+          {planDetails ? (
+            <div>
+              {/* Plan Info */}
+              <div className="bg-panel dark:bg-panel border border-border dark:border-border rounded-lg p-4 mb-6">
+                <h3 className="text-text-hi dark:text-text-hi font-bold mb-3">Plan Details</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <p className="text-xs text-text-mid dark:text-text-mid m-0">Plan ID</p>
+                    <p className="text-sm text-text-hi dark:text-text-hi font-bold m-0 mt-1">{planDetails.id}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-text-mid dark:text-text-mid m-0">Fiscal Year</p>
+                    <p className="text-sm text-text-hi dark:text-text-hi font-bold m-0 mt-1">{planDetails.fiscalYear}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-text-mid dark:text-text-mid m-0">Total Cases</p>
+                    <p className="text-sm text-text-hi dark:text-text-hi font-bold m-0 mt-1">{planDetails.totalCases}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Amended Allocations */}
+              <div className="bg-panel dark:bg-panel border border-border dark:border-border rounded-lg p-4 mb-6">
+                <h3 className="text-text-hi dark:text-text-hi font-bold mb-3">Amended Audit Type Allocations</h3>
+                <p className="text-xs text-text-mid dark:text-text-mid mb-3">
+                  These are the allocations Planning Team amended
+                </p>
+                
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-ink dark:bg-ink">
+                      <tr>
+                        <th className="text-left p-2 text-text-hi dark:text-text-hi font-bold">Audit Type</th>
+                        <th className="text-center p-2 text-text-hi dark:text-text-hi font-bold">Count</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border dark:divide-border">
+                      {auditTypes.map(type => (
+                        <tr key={type}>
+                          <td className="p-2 text-text-hi dark:text-text-hi font-bold">
+                            {auditTypeLabels[type]}
+                          </td>
+                          <td className="p-2 text-center text-teal dark:text-teal font-bold">
+                            {planDetails.auditTypeAllocation?.[type] || 0}
+                          </td>
+                        </tr>
+                      ))}
+                      <tr className="bg-ink dark:bg-ink font-bold">
+                        <td className="p-2 text-text-hi dark:text-text-hi">TOTAL</td>
+                        <td className="p-2 text-center text-text-hi dark:text-text-hi">
+                          {Object.values(planDetails.auditTypeAllocation || {}).reduce((a, b) => a + b, 0)}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Approval History */}
+              {planDetails.approvalHistory && planDetails.approvalHistory.length > 0 && (
+                <div className="bg-panel dark:bg-panel border border-border dark:border-border rounded-lg p-4 mb-6">
+                  <h3 className="text-text-hi dark:text-text-hi font-bold mb-3">Amendment History</h3>
+                  <div className="space-y-3">
+                    {planDetails.approvalHistory.map((record, idx) => (
+                      <div key={idx} className="bg-ink dark:bg-ink p-3 rounded border border-border dark:border-border text-sm">
+                        <div className="flex justify-between items-start mb-1">
+                          <p className="font-bold text-text-hi dark:text-text-hi m-0">{record.action}</p>
+                          <p className="text-xs text-text-mid dark:text-text-mid m-0">
+                            {new Date(record.date).toLocaleString()}
+                          </p>
+                        </div>
+                        <p className="text-xs text-text-mid dark:text-text-mid m-0">By: {record.by}</p>
+                        {record.notes && (
+                          <p className="text-xs text-text-hi dark:text-text-hi mt-1 m-0">{record.notes}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Decision Form */}
+              {showAcceptForm ? (
+                <div className="bg-teal/10 dark:bg-teal/10 border border-teal dark:border-teal rounded-lg p-4 mb-6">
+                  <h3 className="text-teal dark:text-teal font-bold mb-4">Accept Amendments</h3>
+                  
+                  <div className="mb-4">
+                    <label className="block text-text-hi dark:text-text-hi font-bold text-sm mb-2">
+                      Notes (optional)
+                    </label>
+                    <textarea
+                      value={acceptNotes}
+                      onChange={(e) => setAcceptNotes(e.target.value)}
+                      placeholder="Add any notes about accepting these amendments..."
+                      className="w-full px-3 py-2 rounded border border-border dark:border-border bg-ink dark:bg-ink text-text-primary dark:text-text-primary text-sm"
+                      rows="3"
+                    />
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleAcceptAmendments}
+                      className="flex-1 px-3 py-2 rounded font-bold bg-teal dark:bg-teal text-white hover:bg-teal/80 dark:hover:bg-teal/80 text-sm"
                     >
-                      <i className="fas fa-eye"></i> Review
+                      ✅ Accept Amendments
                     </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    <button
+                      onClick={() => setShowAcceptForm(false)}
+                      className="px-3 py-2 rounded font-bold bg-gray-600 dark:bg-gray-600 text-white hover:bg-gray-500 dark:hover:bg-gray-500 text-sm"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowAcceptForm(true)}
+                    className="flex-1 py-3 px-4 rounded font-bold bg-teal dark:bg-teal text-white hover:bg-teal/80 dark:hover:bg-teal/80 transition-all"
+                  >
+                    ✅ Accept Amendments
+                  </button>
+                  <button
+                    onClick={handleSendBackForMoreAmendments}
+                    className="flex-1 py-3 px-4 rounded font-bold bg-orange dark:bg-orange text-white hover:bg-orange/80 dark:hover:bg-orange/80 transition-all"
+                  >
+                    ↩️ Send Back for Changes
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="bg-panel dark:bg-panel border border-border dark:border-border rounded-lg p-8 text-center">
+              <p className="text-text-mid dark:text-text-mid m-0">
+                Select an amended plan to review and accept
+              </p>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../Card';
 import Badge from '../Badge';
-import { loadData, saveData } from '../../utils/data';
+import { useData } from '../../services/dataService';
 import { useAuth } from '../../context/AuthContext';
 
 /**
@@ -11,6 +11,7 @@ import { useAuth } from '../../context/AuthContext';
 
 function RequestForAuditView() {
   const { getUserInfo } = useAuth();
+  const { data, updateData } = useData();
   const userInfo = getUserInfo();
 
   const [allRequests, setAllRequests] = useState([]);
@@ -43,7 +44,7 @@ function RequestForAuditView() {
   }, []);
 
   const loadRequests = () => {
-    const data = loadData();
+    // Using data from hook
     const requests = data.auditRequests || [];
     console.log('📋 RequestForAuditView - Requests loaded:', {
       total: requests.length,
@@ -111,7 +112,7 @@ function RequestForAuditView() {
       return;
     }
 
-    const data = loadData();
+    // Using data from hook
     if (!data.auditRequests) {
       data.auditRequests = [];
     }
@@ -126,7 +127,7 @@ function RequestForAuditView() {
     };
 
     data.auditRequests.push(newRequest);
-    saveData(data);
+    updateData(data);
 
     console.log('✓ Audit request submitted:', newRequest.id);
     alert(`✓ Audit request submitted successfully\nRequest ID: ${newRequest.id}`);
@@ -149,7 +150,7 @@ function RequestForAuditView() {
 
   // Approve request and add to cases
   const handleApproveRequest = (request) => {
-    const data = loadData();
+    // Using data from hook
     const reqIndex = data.auditRequests.findIndex(r => r.id === request.id);
 
     if (reqIndex >= 0) {
@@ -181,7 +182,7 @@ function RequestForAuditView() {
       }
       data.auditCases.push(auditCase);
 
-      saveData(data);
+      updateData(data);
 
       console.log('✓ Request approved and case created:', auditCase.id);
       alert(`✓ Request approved\nAudit case created: ${auditCase.id}`);
@@ -195,7 +196,7 @@ function RequestForAuditView() {
     const reason = prompt('Enter rejection reason:');
     if (!reason) return;
 
-    const data = loadData();
+    // Using data from hook
     const reqIndex = data.auditRequests.findIndex(r => r.id === request.id);
 
     if (reqIndex >= 0) {
@@ -204,7 +205,7 @@ function RequestForAuditView() {
       data.auditRequests[reqIndex].rejectionReason = reason;
       data.auditRequests[reqIndex].rejectedBy = userInfo?.fullName || 'Process Owner';
 
-      saveData(data);
+      updateData(data);
       alert('✓ Request rejected');
       loadRequests();
     }

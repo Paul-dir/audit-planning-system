@@ -37,8 +37,8 @@ function AppContent() {
 
     switch (currentRole) {
       case 'audit_team':
-      case 'cascade_audit_team':
-        // Both audit_team and cascade_audit_team use AuditTeamView
+      case 'audit_team_leader':
+        // Both audit_team and audit_team_leader use AuditTeamView
         return <AuditTeamView />;
       case 'audit_director':
         return <AuditDirectorView />;

@@ -1,5 +1,4 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { loadData } from '../utils/data';
 import { denormalizeRegionName, getApiRegionName } from '../utils/regionNormalizer';
 
 // Create the context
@@ -36,30 +35,22 @@ export function RegionalProvider({ children, userRole }) {
       assignedRegion = denormalizeRegionName(assignedRegion);
     }
     
-    // If not found, check for plan-based regional assignments
+    // If not found, check localStorage for stored assignments
     if (!assignedRegion) {
-      const data = loadData();
-      if (data.regionalDirectorAssignments) {
-        // Get the first active assignment (in production, would be for logged-in user)
-        const assignments = Object.entries(data.regionalDirectorAssignments)
-          .filter(([_, a]) => a.status === 'active');
-        
-        if (assignments.length > 0) {
-          assignedRegion = denormalizeRegionName(assignments[0][0]); // Get first assigned region
-          // Store it in localStorage for quick access
-          localStorage.setItem('user_assigned_region', assignedRegion);
-        }
+      const storedAssignment = localStorage.getItem('regional_director_assignment');
+      if (storedAssignment) {
+        assignedRegion = denormalizeRegionName(storedAssignment);
       }
     }
   }
   
-  // Assigned tax center for tax center managers or cascade audit team
+  // Assigned tax center for tax center managers or audit team leader
   // DYNAMIC from localStorage - can be set from multiple sources
   const [testTaxCenter, setTestTaxCenter] = useState(null);
   let assignedTaxCenter = null;
   let assignedTaxCenterRegion = null;
   
-  if (userRole === 'tax_center' || userRole === 'cascade_audit_team') {
+  if (userRole === 'tax_center' || userRole === 'audit_team_leader') {
     // PRIORITY ORDER (most current first):
     // 1. Test tax center (for testing specific tax centers)
     // 2. Currently selected tax center (from cascade or other views) - PRIMARY

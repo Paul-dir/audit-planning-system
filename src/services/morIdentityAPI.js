@@ -531,7 +531,7 @@ class MORIdentityAPI {
    */
   async validatePermission(userId, permission) {
     const token = localStorage.getItem('authToken');
-    const response = await fetch(`${API_BASE_URL}/permissions/validate`, {
+    const response = await fetch(`${API_BASE_URL}/validate-permission`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -550,12 +550,12 @@ class MORIdentityAPI {
   }
   
   /**
-   * Get role information
+   * Get role information (fetches all roles and filters)
    */
   async getRoleInfo(role) {
     const token = localStorage.getItem('authToken');
     const response = await fetch(
-      `${API_BASE_URL}/permissions/roles/${role}`,
+      `${API_BASE_URL}/roles`,
       { headers: { 'Authorization': `Bearer ${token}` } }
     );
     
@@ -565,7 +565,15 @@ class MORIdentityAPI {
       throw new Error(result.error.message);
     }
     
-    return result.data; // { code, name, description, permissions }
+    // Find the specific role from the array of roles
+    const rolesArray = result.data.roles || [];
+    const roleInfo = rolesArray.find(r => r.code === role);
+    
+    if (!roleInfo) {
+      throw new Error(`Role ${role} not found`);
+    }
+    
+    return roleInfo;
   }
   
   // ============================================

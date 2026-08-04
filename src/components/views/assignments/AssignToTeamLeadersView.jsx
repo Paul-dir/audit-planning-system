@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../../Card';
 import Badge from '../../Badge';
-import { loadData, saveData } from '../../../utils/data';
+import { useData } from '../../../services/dataService';
 import { useAuth } from '../../../context/AuthContext';
 import { loadTeamLeaders, loadAssignment, saveAssignment, updateTeamLeaderWorkload } from '../../../utils/assignmentData';
 import { createAssignment, ASSIGNMENT_STATES } from '../../../utils/assignmentDataModels';
@@ -20,6 +20,7 @@ import {
 
 function AssignToTeamLeadersView() {
   const { getUserInfo } = useAuth();
+  const { data, updateData } = useData();
   const userInfo = getUserInfo();
 
   const [storedCases, setStoredCases] = useState([]);
@@ -40,7 +41,7 @@ function AssignToTeamLeadersView() {
   const loadCasesAndTeamLeaders = () => {
     try {
       setLoading(true);
-      const data = loadData();
+      // Using data from hook
       const userRegion = userInfo?.orgContext?.assignedRegion;
       const userTaxCenter = userInfo?.orgContext?.assignedTaxCenter;
 
@@ -135,7 +136,7 @@ function AssignToTeamLeadersView() {
       updateTeamLeaderWorkload(teamLeaderId, 1);
 
       // Also update data.auditCases directly
-      const data = loadData();
+      // Using data from hook
       const caseIdx = (data.auditCases || []).findIndex(c => c.id === caseId);
       if (caseIdx !== -1) {
         // ✅ FIX: Store MULTIPLE ID formats for reliable Team Leader lookup
@@ -150,11 +151,10 @@ function AssignToTeamLeadersView() {
           data.auditCases[caseIdx].planYear = 2027;
         }
         
-        saveData(data);
+        updateData(data);
         
         // ✅ VERIFICATION: Confirm data was saved
-        const verifyData = loadData();
-        const verifiedCase = verifyData.auditCases.find(c => c.id === caseId);
+        const verifiedCase = data.auditCases.find(c => c.id === caseId);
         console.log('🔍 [ASSIGNMENT DEBUG]', {
           caseId,
           savedTeamLeaderId: verifiedCase?.assignedTeamLeaderId,
@@ -197,7 +197,7 @@ function AssignToTeamLeadersView() {
       }
 
       // Update data.auditCases - reset assignment fields
-      const data = loadData();
+      // Using data from hook
       const caseIdx = (data.auditCases || []).findIndex(c => c.id === caseId);
       if (caseIdx !== -1) {
         data.auditCases[caseIdx].status = 'STORED_FOR_ASSIGNMENT';
@@ -205,7 +205,7 @@ function AssignToTeamLeadersView() {
         data.auditCases[caseIdx].assignedTeamLeaderId = null;
         data.auditCases[caseIdx].assignedTeamLeaderUserId = null;
         data.auditCases[caseIdx].assignedTeamLeaderEmail = null;
-        saveData(data);
+        updateData(data);
       }
 
       // Remove assignment
@@ -290,7 +290,7 @@ function AssignToTeamLeadersView() {
       }
 
       // ✅ VERIFY DATA WAS SAVED
-      const data = loadData();
+      // Using data from hook
       const savedCases = (data.auditCases || []).filter(c => 
         c.status === 'ASSIGNED_TO_TEAM_LEADER' && c.auditType === auditType
       );
@@ -316,7 +316,7 @@ function AssignToTeamLeadersView() {
 
   const handleAutoAssignSelected = () => {
     try {
-      const data = loadData();
+      // Using data from hook
       
       // Initialize if needed
       if (!data.teamLeaders) data.teamLeaders = [];
@@ -339,7 +339,7 @@ function AssignToTeamLeadersView() {
       dynamicRerouteIfNeeded(data);
 
       // Save to localStorage
-      saveData(data);
+      updateData(data);
       console.log('=== INTELLIGENT ASSIGNMENT END ===');
 
       // Reload view

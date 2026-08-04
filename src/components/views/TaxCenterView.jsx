@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../Card';
 import Badge from '../Badge';
-import { loadData, saveData } from '../../utils/data';
+import { useData } from '../../services/dataService';
 import { useRegional } from '../../context/RegionalContext';
 
 /**
@@ -10,24 +10,22 @@ import { useRegional } from '../../context/RegionalContext';
  */
 function TaxCenterView({ currentView }) {
   const { assignedTaxCenter, assignedTaxCenterRegion } = useRegional();
+  const { data, updateData } = useData();
+  
   const [plan, setPlan] = useState(null);
   const [allPlans, setAllPlans] = useState([]);
   const [selectedPlanId, setSelectedPlanId] = useState(null);
   const [allocation, setAllocation] = useState(null);
   const [feedback, setFeedback] = useState({});
-  const [loading, setLoading] = useState(true);
+  const [componentLoading, setComponentLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [viewMode, setViewMode] = useState('allocations');
 
-  useEffect(() => {
-    loadAllocationData();
-  }, [assignedTaxCenter, assignedTaxCenterRegion, selectedPlanId]);
-
   const loadAllocationData = () => {
-    const data = loadData();
+    if (!data) return;
     
     if (!data?.plans || data.plans.length === 0) {
-      setLoading(false);
+      setComponentLoading(false);
       return;
     }
 
@@ -43,7 +41,7 @@ function TaxCenterView({ currentView }) {
 
     if (!taxCenterName || !taxCenterRegion) {
       console.warn('Missing tax center assignment:', { taxCenterName, taxCenterRegion });
-      setLoading(false);
+      setComponentLoading(false);
       return;
     }
 
@@ -103,8 +101,14 @@ function TaxCenterView({ currentView }) {
       }
     }
 
-    setLoading(false);
+    setComponentLoading(false);
   };
+
+  useEffect(() => {
+    if (data) {
+      loadAllocationData();
+    }
+  }, [data, assignedTaxCenter, assignedTaxCenterRegion, selectedPlanId]);
 
   const handleFeedbackChange = (auditType, field, value) => {
     setFeedback(prev => ({
@@ -117,6 +121,7 @@ function TaxCenterView({ currentView }) {
   };
 
   const handleSubmitFeedback = () => {
+    // Check if user confirmed submission
     if (!window.confirm('Submit feedback to regional director?\n\nThis action cannot be undone.')) {
       return;
     }
@@ -125,7 +130,7 @@ function TaxCenterView({ currentView }) {
     let taxCenterRegion = assignedTaxCenterRegion;
 
     if (!taxCenterName || !taxCenterRegion) {
-      alert('Error: Tax center assignment not set properly.');
+      alert('❌ Error: Tax center assignment not set properly.');
       return;
     }
 
@@ -135,27 +140,57 @@ function TaxCenterView({ currentView }) {
       taxCenterName = `${taxCenterRegion}-tc${tcNum}`;
     }
 
-    const data = loadData();
-    const planIndex = data.plans.findIndex(p => p.id === plan.id);
+    const updatedData = { ...data };
+    const planIndex = updatedData.plans.findIndex(p => p.id === plan.id);
 
-    if (planIndex >= 0) {
-      if (!data.plans[planIndex].taxCenterFeedback) {
-        data.plans[planIndex].taxCenterFeedback = {};
-      }
-      if (!data.plans[planIndex].taxCenterFeedback[taxCenterRegion]) {
-        data.plans[planIndex].taxCenterFeedback[taxCenterRegion] = {};
-      }
-
-      data.plans[planIndex].taxCenterFeedback[taxCenterRegion][taxCenterName] = {
-        ...feedback,
-        submittedAt: new Date().toISOString(),
-        status: 'submitted'
-      };
-
-      saveData(data);
-      setSubmitted(true);
-      alert('✅ Feedback submitted to ' + taxCenterRegion + ' Regional Director!');
+    if (planIndex < 0) {
+      alert('❌ Error: Plan not found.');
+      return;
     }
+
+    // Check if feedback already submitted for this tax center and region
+    const existingFeedback = updatedData.plans[planIndex].taxCenterFeedback?.[taxCenterRegion]?.[taxCenterName];
+    
+    if (existingFeedback && existingFeedback.status === 'submitted') {
+      alert('⚠️ Feedback already submitted!\n\n' +
+        `This tax center has already submitted feedback for this plan.\n\n` +
+        `Submitted on: ${new Date(existingFeedback.submittedAt).toLocaleString()}`);
+      setSubmitted(true);
+      return;
+    }
+
+    // Initialize structures if needed
+    if (!updatedData.plans[planIndex].taxCenterFeedback) {
+      updatedData.plans[planIndex].taxCenterFeedback = {};
+    }
+    if (!updatedData.plans[planIndex].taxCenterFeedback[taxCenterRegion]) {
+      updatedData.plans[planIndex].taxCenterFeedback[taxCenterRegion] = {};
+    }
+
+    // Create feedback record with audit trail
+    const feedbackRecord = {
+      ...feedback,
+      submittedAt: new Date().toISOString(),
+      submittedBy: taxCenterName,
+      status: 'submitted'
+    };
+
+    // Save feedback to plan
+    updatedData.plans[planIndex].taxCenterFeedback[taxCenterRegion][taxCenterName] = feedbackRecord;
+
+    // Update state
+    updateData(updatedData);
+    setSubmitted(true);
+    
+    console.log('✅ Tax Center Feedback Submitted:', {
+      planId: plan.id,
+      taxCenter: taxCenterName,
+      region: taxCenterRegion,
+      submittedAt: feedbackRecord.submittedAt,
+      feedback: feedback
+    });
+    
+    alert('✅ Feedback submitted to ' + taxCenterRegion + ' Regional Director!');
   };
 
   const handleAcknowledgeFinalized = () => {
@@ -172,18 +207,18 @@ function TaxCenterView({ currentView }) {
       taxCenterName = `${taxCenterRegion}-tc${tcNum}`;
     }
 
-    const data = loadData();
-    const planIndex = data.plans.findIndex(p => p.id === plan.id);
+    const updatedData = { ...data };
+    const planIndex = updatedData.plans.findIndex(p => p.id === plan.id);
 
     if (planIndex >= 0) {
-      if (!data.plans[planIndex].taxCenterAcknowledgment) {
-        data.plans[planIndex].taxCenterAcknowledgment = {};
+      if (!updatedData.plans[planIndex].taxCenterAcknowledgment) {
+        updatedData.plans[planIndex].taxCenterAcknowledgment = {};
       }
-      if (!data.plans[planIndex].taxCenterAcknowledgment[taxCenterRegion]) {
-        data.plans[planIndex].taxCenterAcknowledgment[taxCenterRegion] = {};
+      if (!updatedData.plans[planIndex].taxCenterAcknowledgment[taxCenterRegion]) {
+        updatedData.plans[planIndex].taxCenterAcknowledgment[taxCenterRegion] = {};
       }
 
-      data.plans[planIndex].taxCenterAcknowledgment[taxCenterRegion][taxCenterName] = {
+      updatedData.plans[planIndex].taxCenterAcknowledgment[taxCenterRegion][taxCenterName] = {
         status: 'ACKNOWLEDGED',
         taxCenter: taxCenterName,
         region: taxCenterRegion,
@@ -192,14 +227,13 @@ function TaxCenterView({ currentView }) {
         readyForExecution: true
       };
 
-      saveData(data);
+      updateData(updatedData);
       alert(`✅ ${taxCenterName} acknowledged receipt of finalized plan. Ready for implementation!`);
       setSelectedPlanId(null);
-      loadAllocationData();
     }
   };
 
-  if (loading) {
+  if (componentLoading) {
     return <div className="p-5">Loading allocation data...</div>;
   }
 

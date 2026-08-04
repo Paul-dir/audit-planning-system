@@ -2,12 +2,10 @@ import React, { useState, useEffect } from 'react';
 import Card from '../Card';
 import Badge from '../Badge';
 import PlanDetailsView from './PlanDetailsView';
-import DirectorFeedbackReviewView from './DirectorFeedbackReviewView';
 import DirectorAmendedPlansView from './DirectorAmendedPlansView';
 import RiskEngineView from './RiskEngineView';
-import SelectRegionsModal from '../modals/SelectRegionsModal';
-import { loadData, saveData } from '../../utils/data';
-import { directorApprove, directorRequestRevision, getStatusDisplay, getBadgeClass, directorSendToRegions, submitToSeniorManagement, directorResubmitRejectedPlan } from '../../utils/businessLogic';
+import { useData } from '../../services/dataService';
+import { directorApprove, directorRequestRevision, getStatusDisplay, getBadgeClass, submitToSeniorManagement, directorResubmitRejectedPlan } from '../../utils/businessLogic';
 import { auditConfig } from '../../config/auditConfig';
 
 /**
@@ -16,17 +14,15 @@ import { auditConfig } from '../../config/auditConfig';
  */
 function DirectorView({ currentView }) {
   const [plans, setPlans] = useState([]);
+  const { data, updateData } = useData();
   const [selectedPlan, setSelectedPlan] = useState(null);
-  const [showSelectRegionsModal, setShowSelectRegionsModal] = useState(false);
-  const [viewMode, setViewMode] = useState('plans'); // 'plans', 'feedback', 'risk-engine', 'send-feedback', 'approved-plans', 'finalized', 'amended-plans'
+  const [viewMode, setViewMode] = useState('plans'); // 'plans', 'feedback', 'risk-engine', 'approved-plans', 'finalized', 'amended-plans'
 
   useEffect(() => {
     if (currentView === 'risk-engine') {
       setViewMode('risk-engine');
     } else if (currentView === 'feedback-review') {
       setViewMode('feedback');
-    } else if (currentView === 'send-feedback') {
-      setViewMode('send-feedback');
     } else if (currentView === 'approved-plans') {
       setViewMode('approved-plans');
     } else if (currentView === 'finalized') {
@@ -41,7 +37,7 @@ function DirectorView({ currentView }) {
   }, [currentView]);
 
   const loadPlans = () => {
-    const data = loadData();
+    // Using data from hook
     setPlans(data.plans || []);
   };
 
@@ -52,8 +48,14 @@ function DirectorView({ currentView }) {
   const handleApprove = (planId) => {
     const notes = prompt('Enter approval notes (optional):');
     if (directorApprove(planId, notes || '')) {
-      alert('Plan approved! Status: DIRECTOR_APPROVED. Ready to send to regions.');
+      alert('Plan approved! Status: DIRECTOR_APPROVED.\n\nNext: Use "Submit Plan to Regions" to send to regional directors.');
       loadPlans();
+      // ✅ Reload the selected plan to show updated status
+      // Using data from hook
+      const updatedPlan = data.plans.find(p => p.id === planId);
+      if (updatedPlan) {
+        setSelectedPlan(updatedPlan);
+      }
     } else {
       alert('Cannot approve. Plan must be SUBMITTED_TO_DIRECTOR.');
     }
@@ -66,15 +68,6 @@ function DirectorView({ currentView }) {
       loadPlans();
     } else if (!feedback) {
       alert('Feedback is required.');
-    }
-  };
-
-  const handleSendToRegions = (planId, selectedRegions) => {
-    if (directorSendToRegions(planId, selectedRegions)) {
-      alert(`Plan sent to ${(selectedRegions || auditConfig.regions.map(r => r.name)).length} regions for feedback. Status: AWAITING_REGIONAL_FEEDBACK`);
-      loadPlans();
-    } else {
-      alert('Cannot send to regions. Plan must be DIRECTOR_APPROVED.');
     }
   };
 
@@ -167,33 +160,6 @@ function DirectorView({ currentView }) {
               </>
             )}
 
-            {canSendToRegions && !isAwaitingRegionalFeedback && (
-              <button 
-                className="group flex flex-col items-center justify-center gap-2 rounded-xl border border-blue-500/30 bg-blue-950/20 p-5 hover:bg-blue-900/40 hover:border-blue-500/60 transition-all duration-200 shadow-lg"
-                onClick={() => { setShowSelectRegionsModal(true); }}
-              >
-                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 group-hover:scale-110 transition-transform">
-                  <i className="fas fa-paper-plane text-xl"></i>
-                </div>
-                <div className="text-center">
-                  <p className="text-xs font-extrabold tracking-wider text-blue-400">DISPATCH TO REGIONS</p>
-                  <p className="text-[11px] text-slate-400 mt-0.5">Distribute allocation to tax centers</p>
-                </div>
-              </button>
-            )}
-
-            {isAwaitingRegionalFeedback && (
-              <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-cyan-500/30 bg-cyan-950/20 p-5 shadow-lg">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-400">
-                  <i className="fas fa-spinner animate-spin text-2xl"></i>
-                </div>
-                <div className="text-center">
-                  <p className="text-xs font-extrabold tracking-wider text-cyan-300">AWAITING REGIONAL FEEDBACK</p>
-                  <p className="text-[11px] text-slate-400 mt-0.5">Regional directors are reviewing plan</p>
-                </div>
-              </div>
-            )}
-
             {canSendToSeniorManagement && (
               <button 
                 className="group flex flex-col items-center justify-center gap-2 rounded-xl border border-indigo-500/30 bg-indigo-950/20 p-5 hover:bg-indigo-900/40 hover:border-indigo-500/60 transition-all duration-200 shadow-lg"
@@ -233,7 +199,7 @@ function DirectorView({ currentView }) {
               <button 
                 className="group flex flex-col items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-5 hover:bg-emerald-900/40 hover:border-emerald-500/60 transition-all duration-200 shadow-lg"
                 onClick={() => { 
-                  const data = loadData();
+                  // Using data from hook
                   const plan = data.plans.find(p => p.id === selectedPlan.id);
                   if (plan) {
                     const allRegions = auditConfig.regions.map(r => r.name);
@@ -252,7 +218,7 @@ function DirectorView({ currentView }) {
                       version: plan.version
                     });
                     
-                    saveData(data);
+                    updateData(data);
                     alert(`✅ Plan finalized and sent to ${allRegions.length} regions!\n\nRegions: ${allRegions.join(', ')}`);
                     setSelectedPlan(null);
                     loadPlans();
@@ -301,23 +267,6 @@ function DirectorView({ currentView }) {
             </div>
           )}
         </div>
-
-        {showSelectRegionsModal && (
-          <SelectRegionsModal 
-            plan={selectedPlan}
-            onClose={() => {
-              setShowSelectRegionsModal(false);
-              loadPlans();
-              setSelectedPlan(null);
-            }}
-            onSend={(selectedRegions) => {
-              handleSendToRegions(selectedPlan.id, selectedRegions);
-              setShowSelectRegionsModal(false);
-              loadPlans();
-              setSelectedPlan(null);
-            }}
-          />
-        )}
       </>
     );
   }
@@ -336,7 +285,7 @@ function DirectorView({ currentView }) {
     );
   }
 
-  // If viewing feedback mode, show the feedback review view
+  // If viewing feedback mode, show message
   if (viewMode === 'feedback') {
     return (
       <div className="space-y-6">
@@ -345,7 +294,10 @@ function DirectorView({ currentView }) {
             <i className="fas fa-arrow-left"></i> Back to Plans
           </button>
         </div>
-        <DirectorFeedbackReviewView />
+        <div className="rounded-xl border border-slate-800/80 bg-slate-900/50 p-6">
+          <h3 className="text-lg font-bold text-slate-100 mb-2">📊 Feedback Collection</h3>
+          <p className="text-slate-400">Feedback from regional directors will appear here after plans are sent for allocation and feedback is collected.</p>
+        </div>
       </div>
     );
   }
@@ -365,131 +317,6 @@ function DirectorView({ currentView }) {
   }
 
   // Send Feedback to Regions view
-  if (viewMode === 'send-feedback') {
-    const approvedPlans = plans.filter(p => p.status === 'DIRECTOR_APPROVED');
-    const sendingPlans = plans.filter(p => p.status === 'AWAITING_REGIONAL_FEEDBACK' || p.status === 'FEEDBACK_COLLECTED');
-
-    return (
-      <div className="space-y-6">
-        <div className="mb-6">
-          <button className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800 transition-colors" onClick={() => setViewMode('plans')}>
-            <i className="fas fa-arrow-left"></i> Back to Plans
-          </button>
-        </div>
-
-        <div className="space-y-2">
-          <h2 className="text-2xl font-bold text-slate-100"><i className="fas fa-envelope"></i> Send Plans to Regions for Feedback</h2>
-          <p className="text-sm text-slate-400">Director Level</p>
-        </div>
-
-        <div>
-          <div className="mb-3 flex items-center gap-2">
-            <i className="fas fa-check-circle text-emerald-500"></i>
-            <h3 className="text-lg font-semibold text-slate-100">Approved Plans Ready to Send</h3>
-          </div>
-          <div className="overflow-x-auto rounded-xl border border-slate-800/80 bg-[#161f28]">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="border-b border-slate-800/80 bg-slate-900/50">
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Plan ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Fiscal Year</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Total Cases</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {approvedPlans.length === 0 ? (
-                  <tr>
-                    <td colSpan="5" className="px-6 py-12 text-center">
-                      <i className="fas fa-inbox mb-4 block text-4xl text-slate-600"></i>
-                      <span className="text-slate-400">No approved plans ready to send</span>
-                    </td>
-                  </tr>
-                ) : (
-                  approvedPlans.map(plan => (
-                    <tr key={plan.id} className="border-b border-slate-800/50 hover:bg-slate-900/30 transition-colors">
-                      <td className="px-6 py-4"><strong className="text-slate-100">{plan.id}</strong></td>
-                      <td className="px-6 py-4 text-slate-300">{plan.fiscalYear}</td>
-                      <td className="px-6 py-4 text-slate-300">{plan.totalVolume}</td>
-                      <td className="px-6 py-4"><Badge status={getStatusDisplay(plan.status)} className={getBadgeClass(plan.status)} /></td>
-                      <td className="px-6 py-4">
-                        <button 
-                          className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-3 py-2 text-xs font-medium text-white hover:bg-primary-700 transition-colors" 
-                          onClick={() => { setSelectedPlan(plan); setShowSelectRegionsModal(true); }}
-                        >
-                          <i className="fas fa-paper-plane"></i> Send to Regions
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div>
-          <div className="mb-3 flex items-center gap-2">
-            <i className="fas fa-clock text-amber-500"></i>
-            <h3 className="text-lg font-semibold text-slate-100">Plans with Regional Feedback</h3>
-          </div>
-          <div className="overflow-x-auto rounded-xl border border-slate-800/80 bg-[#161f28]">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="border-b border-slate-800/80 bg-slate-900/50">
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Plan ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Fiscal Year</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Regions Sent To</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sendingPlans.length === 0 ? (
-                  <tr>
-                    <td colSpan="5" className="px-6 py-12 text-center">
-                      <i className="fas fa-inbox mb-4 block text-4xl text-slate-600"></i>
-                      <span className="text-slate-400">No plans waiting for feedback</span>
-                    </td>
-                  </tr>
-                ) : (
-                  sendingPlans.map(plan => (
-                    <tr key={plan.id} className="border-b border-slate-800/50 hover:bg-slate-900/30 transition-colors">
-                      <td className="px-6 py-4"><strong className="text-slate-100">{plan.id}</strong></td>
-                      <td className="px-6 py-4 text-slate-300">{plan.fiscalYear}</td>
-                      <td className="px-6 py-4"><Badge status={getStatusDisplay(plan.status)} className={getBadgeClass(plan.status)} /></td>
-                      <td className="px-6 py-4 text-slate-300">{plan.regionsSentTo?.join(', ') || 'All Regions'}</td>
-                      <td className="px-6 py-4">
-                        <button 
-                          className="inline-flex items-center gap-2 rounded-lg bg-slate-700 px-3 py-2 text-xs font-medium text-slate-100 hover:bg-slate-600 transition-colors"
-                          onClick={() => setSelectedPlan(plan)}
-                        >
-                          <i className="fas fa-eye"></i> View
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {showSelectRegionsModal && selectedPlan && (
-          <SelectRegionsModal 
-            plan={selectedPlan}
-            onClose={() => {
-              setShowSelectRegionsModal(false);
-              loadPlans();
-              setSelectedPlan(null);
-            }}
-          />
-        )}
-      </div>
-    );
-  }
-
   // Approved Plans view
   if (viewMode === 'approved-plans') {
     const approvedPlans = plans.filter(p => p.status === 'DIRECTOR_APPROVED');
@@ -713,16 +540,6 @@ function DirectorView({ currentView }) {
           </table>
         </div>
       </div>
-
-      {showSelectRegionsModal && selectedPlan && (
-        <SelectRegionsModal 
-          plan={selectedPlan}
-          onClose={() => {
-            setShowSelectRegionsModal(false);
-            loadPlans();
-          }}
-        />
-      )}
     </div>
   );
 }
