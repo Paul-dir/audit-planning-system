@@ -32,7 +32,24 @@ export default function RegionalDashboard({ view }) {
   const openFeedback = (plan) => {
     setFeedbackModal(plan);
     setFeedbackText('');
-    setTcAllocations({});
+    
+    // Auto-distribute cases evenly across tax centers
+    const regionDist = plan.distribution?.[region] || {};
+    const taxCenters = getTaxCentersForRegion(region);
+    const autoAllocations = {};
+    
+    taxCenters.forEach((tc, index) => {
+      autoAllocations[tc.id] = {};
+      AUDIT_TYPES.forEach(auditType => {
+        const totalForType = regionDist[auditType.id] || 0;
+        const perTC = Math.floor(totalForType / taxCenters.length);
+        const remainder = totalForType % taxCenters.length;
+        // Distribute evenly, give remainder to first tax centers
+        autoAllocations[tc.id][auditType.id] = perTC + (index < remainder ? 1 : 0);
+      });
+    });
+    
+    setTcAllocations(autoAllocations);
     setStep(1);
   };
 
