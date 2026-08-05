@@ -5,44 +5,44 @@ import { REGIONS, AUDIT_TYPES, TAX_CENTERS, SECTORS, getRiskLevel } from './cons
 // ============================================================
 export const SEED_USERS = [
   // Planning Team
-  { id: 'u-pt-01', name: 'Planning Auditor',  email: 'planning.auditor1@mor.gov.et',  role: 'planning_team',     region: null,          taxCenter: null,          password: '1234' },
-  { id: 'u-pt-02', name: 'Abebe Tadesse',     email: 'abebe.tadesse@mor.gov.et',      role: 'planning_team',     region: null,          taxCenter: null,          password: '1234' },
-  { id: 'u-pt-03', name: 'Hanna Girma',       email: 'hanna.girma@mor.gov.et',        role: 'planning_team',     region: null,          taxCenter: null,          password: '1234' },
+  { id: 'u-pt-01', name: 'Planning Auditor',  email: 'planning.auditor1@mor.gov.et',  role: 'planning_team',     region: null,          taxCenter: null,          password: 'password123' },
+  { id: 'u-pt-02', name: 'Abebe Tadesse',     email: 'abebe.tadesse@mor.gov.et',      role: 'planning_team',     region: null,          taxCenter: null,          password: 'password123' },
+  { id: 'u-pt-03', name: 'Hanna Girma',       email: 'hanna.girma@mor.gov.et',        role: 'planning_team',     region: null,          taxCenter: null,          password: 'password123' },
   // Audit Director
-  { id: 'u-ad-01', name: 'Tesfaye Bekele',    email: 'tesfaye.bekele@mor.gov.et',     role: 'audit_director',    region: null,          taxCenter: null,          password: '1234' },
+  { id: 'u-ad-01', name: 'Tesfaye Bekele',    email: 'tesfaye.bekele@mor.gov.et',     role: 'audit_director',    region: null,          taxCenter: null,          password: 'password123' },
   // Senior Management
-  { id: 'u-sm-01', name: 'Rahel Hailu',       email: 'rahel.hailu@mor.gov.et',        role: 'senior_management', region: null,          taxCenter: null,          password: '1234' },
-  { id: 'u-sm-02', name: 'Biruk Assefa',      email: 'biruk.assefa@mor.gov.et',       role: 'senior_management', region: null,          taxCenter: null,          password: '1234' },
+  { id: 'u-sm-01', name: 'Rahel Hailu',       email: 'rahel.hailu@mor.gov.et',        role: 'senior_management', region: null,          taxCenter: null,          password: 'password123' },
+  { id: 'u-sm-02', name: 'Biruk Assefa',      email: 'biruk.assefa@mor.gov.et',       role: 'senior_management', region: null,          taxCenter: null,          password: 'password123' },
   // Regional Directors
-  { id: 'u-rd-aa', name: 'Getnet Alemu',      email: 'getnet.alemu@mor.gov.et',       role: 'regional_director', region: 'addis_ababa', taxCenter: null,          password: '1234' },
-  { id: 'u-rd-am', name: 'Tadesse Kebede',    email: 'tadesse.kebede@mor.gov.et',     role: 'regional_director', region: 'amhara',      taxCenter: null,          password: '1234' },
-  { id: 'u-rd-or', name: 'Gemechu Negash',    email: 'gemechu.negash@mor.gov.et',     role: 'regional_director', region: 'oromia',      taxCenter: null,          password: '1234' },
-  { id: 'u-rd-sn', name: 'Yonas Mengistu',    email: 'yonas.mengistu@mor.gov.et',     role: 'regional_director', region: 'snnpr',       taxCenter: null,          password: '1234' },
-  { id: 'u-rd-so', name: 'Ibrahim Hassan',    email: 'ibrahim.hassan@mor.gov.et',     role: 'regional_director', region: 'somali',      taxCenter: null,          password: '1234' },
+  { id: 'u-rd-aa', name: 'Getnet Alemu',      email: 'getnet.alemu@mor.gov.et',       role: 'regional_director', region: 'addis_ababa', taxCenter: null,          password: 'password123' },
+  { id: 'u-rd-am', name: 'Tadesse Kebede',    email: 'tadesse.kebede@mor.gov.et',     role: 'regional_director', region: 'amhara',      taxCenter: null,          password: 'password123' },
+  { id: 'u-rd-or', name: 'Gemechu Negash',    email: 'gemechu.negash@mor.gov.et',     role: 'regional_director', region: 'oromia',      taxCenter: null,          password: 'password123' },
+  { id: 'u-rd-sn', name: 'Yonas Mengistu',    email: 'yonas.mengistu@mor.gov.et',     role: 'regional_director', region: 'snnpr',       taxCenter: null,          password: 'password123' },
+  { id: 'u-rd-so', name: 'Ibrahim Hassan',    email: 'ibrahim.hassan@mor.gov.et',     role: 'regional_director', region: 'somali',      taxCenter: null,          password: 'password123' },
   // Tax Center Managers — Addis Ababa
-  { id: 'u-tc-aa1', name: 'Mekdes Solomon',  email: 'mekdes.solomon@mor.gov.et',     role: 'tax_center_manager',region: 'addis_ababa', taxCenter: 'addis_ababa-tc1', password: '1234' },
-  { id: 'u-tc-aa2', name: 'Dereje Worku',    email: 'dereje.worku@mor.gov.et',       role: 'tax_center_manager',region: 'addis_ababa', taxCenter: 'addis_ababa-tc2', password: '1234' },
-  { id: 'u-tc-aa3', name: 'Selam Tekle',     email: 'selam.tekle@mor.gov.et',        role: 'tax_center_manager',region: 'addis_ababa', taxCenter: 'addis_ababa-tc3', password: '1234' },
+  { id: 'u-tc-aa1', name: 'Mekdes Solomon',  email: 'mekdes.solomon@mor.gov.et',     role: 'tax_center_manager',region: 'addis_ababa', taxCenter: 'addis_ababa-tc1', password: 'password123' },
+  { id: 'u-tc-aa2', name: 'Dereje Worku',    email: 'dereje.worku@mor.gov.et',       role: 'tax_center_manager',region: 'addis_ababa', taxCenter: 'addis_ababa-tc2', password: 'password123' },
+  { id: 'u-tc-aa3', name: 'Selam Tekle',     email: 'selam.tekle@mor.gov.et',        role: 'tax_center_manager',region: 'addis_ababa', taxCenter: 'addis_ababa-tc3', password: 'password123' },
   // Tax Center Managers — Oromia
-  { id: 'u-tc-or1', name: 'Chaltu Girma',    email: 'chaltu.girma@mor.gov.et',       role: 'tax_center_manager',region: 'oromia',      taxCenter: 'oromia-tc1',      password: '1234' },
-  { id: 'u-tc-or2', name: 'Diriba Lema',     email: 'diriba.lema@mor.gov.et',        role: 'tax_center_manager',region: 'oromia',      taxCenter: 'oromia-tc2',      password: '1234' },
-  { id: 'u-tc-or3', name: 'Fatuma Umer',     email: 'fatuma.umer@mor.gov.et',        role: 'tax_center_manager',region: 'oromia',      taxCenter: 'oromia-tc3',      password: '1234' },
+  { id: 'u-tc-or1', name: 'Chaltu Girma',    email: 'chaltu.girma@mor.gov.et',       role: 'tax_center_manager',region: 'oromia',      taxCenter: 'oromia-tc1',      password: 'password123' },
+  { id: 'u-tc-or2', name: 'Diriba Lema',     email: 'diriba.lema@mor.gov.et',        role: 'tax_center_manager',region: 'oromia',      taxCenter: 'oromia-tc2',      password: 'password123' },
+  { id: 'u-tc-or3', name: 'Fatuma Umer',     email: 'fatuma.umer@mor.gov.et',        role: 'tax_center_manager',region: 'oromia',      taxCenter: 'oromia-tc3',      password: 'password123' },
   // Team Leaders — AA-TC1
-  { id: 'u-tl-aa1a', name: 'Henok Belay',   email: 'henok.belay@mor.gov.et',        role: 'team_leader',       region: 'addis_ababa', taxCenter: 'addis_ababa-tc1', auditType: 'desk_audit',   password: '1234' },
-  { id: 'u-tl-aa1b', name: 'Tigist Alemu',  email: 'tigist.alemu@mor.gov.et',       role: 'team_leader',       region: 'addis_ababa', taxCenter: 'addis_ababa-tc1', auditType: 'field_audit',  password: '1234' },
-  { id: 'u-tl-aa1c', name: 'Melaku Bekele', email: 'melaku.bekele@mor.gov.et',       role: 'team_leader',       region: 'addis_ababa', taxCenter: 'addis_ababa-tc1', auditType: 'joint_audit',  password: '1234', isJointCommittee: true },
+  { id: 'u-tl-aa1a', name: 'Henok Belay',   email: 'henok.belay@mor.gov.et',        role: 'team_leader',       region: 'addis_ababa', taxCenter: 'addis_ababa-tc1', auditType: 'desk_audit',   password: 'password123' },
+  { id: 'u-tl-aa1b', name: 'Tigist Alemu',  email: 'tigist.alemu@mor.gov.et',       role: 'team_leader',       region: 'addis_ababa', taxCenter: 'addis_ababa-tc1', auditType: 'field_audit',  password: 'password123' },
+  { id: 'u-tl-aa1c', name: 'Melaku Bekele', email: 'melaku.bekele@mor.gov.et',       role: 'team_leader',       region: 'addis_ababa', taxCenter: 'addis_ababa-tc1', auditType: 'joint_audit',  password: 'password123', isJointCommittee: true },
   // Team Leaders — AA-TC2
-  { id: 'u-tl-aa2a', name: 'Fikadu Desta',  email: 'fikadu.desta@mor.gov.et',       role: 'team_leader',       region: 'addis_ababa', taxCenter: 'addis_ababa-tc2', auditType: 'desk_audit',   password: '1234' },
+  { id: 'u-tl-aa2a', name: 'Fikadu Desta',  email: 'fikadu.desta@mor.gov.et',       role: 'team_leader',       region: 'addis_ababa', taxCenter: 'addis_ababa-tc2', auditType: 'desk_audit',   password: 'password123' },
   // Team Leaders — OR-TC1
-  { id: 'u-tl-or1a', name: 'Lalisa Wakjira',email: 'lalisa.wakjira@mor.gov.et',     role: 'team_leader',       region: 'oromia',      taxCenter: 'oromia-tc1',      auditType: 'desk_audit',   password: '1234' },
+  { id: 'u-tl-or1a', name: 'Lalisa Wakjira',email: 'lalisa.wakjira@mor.gov.et',     role: 'team_leader',       region: 'oromia',      taxCenter: 'oromia-tc1',      auditType: 'desk_audit',   password: 'password123' },
   // Auditors — AA-TC1
-  { id: 'u-aud-aa1a', name: 'Kidist Mehari', email: 'kidist.mehari@mor.gov.et',     role: 'auditor',           region: 'addis_ababa', taxCenter: 'addis_ababa-tc1', teamLeader: 'u-tl-aa1a', password: '1234' },
-  { id: 'u-aud-aa1b', name: 'Robel Tadesse', email: 'robel.tadesse@mor.gov.et',     role: 'auditor',           region: 'addis_ababa', taxCenter: 'addis_ababa-tc1', teamLeader: 'u-tl-aa1a', password: '1234' },
-  { id: 'u-aud-aa1c', name: 'Natnael Kifle', email: 'natnael.kifle@mor.gov.et',     role: 'auditor',           region: 'addis_ababa', taxCenter: 'addis_ababa-tc1', teamLeader: 'u-tl-aa1b', password: '1234' },
+  { id: 'u-aud-aa1a', name: 'Kidist Mehari', email: 'kidist.mehari@mor.gov.et',     role: 'auditor',           region: 'addis_ababa', taxCenter: 'addis_ababa-tc1', teamLeader: 'u-tl-aa1a', password: 'password123' },
+  { id: 'u-aud-aa1b', name: 'Robel Tadesse', email: 'robel.tadesse@mor.gov.et',     role: 'auditor',           region: 'addis_ababa', taxCenter: 'addis_ababa-tc1', teamLeader: 'u-tl-aa1a', password: 'password123' },
+  { id: 'u-aud-aa1c', name: 'Natnael Kifle', email: 'natnael.kifle@mor.gov.et',     role: 'auditor',           region: 'addis_ababa', taxCenter: 'addis_ababa-tc1', teamLeader: 'u-tl-aa1b', password: 'password123' },
   // Auditors — AA-TC2
-  { id: 'u-aud-aa2a', name: 'Meseret Hailu', email: 'meseret.hailu@mor.gov.et',     role: 'auditor',           region: 'addis_ababa', taxCenter: 'addis_ababa-tc2', teamLeader: 'u-tl-aa2a', password: '1234' },
+  { id: 'u-aud-aa2a', name: 'Meseret Hailu', email: 'meseret.hailu@mor.gov.et',     role: 'auditor',           region: 'addis_ababa', taxCenter: 'addis_ababa-tc2', teamLeader: 'u-tl-aa2a', password: 'password123' },
   // Auditors — OR-TC1
-  { id: 'u-aud-or1a', name: 'Tolera Banti',  email: 'tolera.banti@mor.gov.et',      role: 'auditor',           region: 'oromia',      taxCenter: 'oromia-tc1',      teamLeader: 'u-tl-or1a', password: '1234' },
+  { id: 'u-aud-or1a', name: 'Tolera Banti',  email: 'tolera.banti@mor.gov.et',      role: 'auditor',           region: 'oromia',      taxCenter: 'oromia-tc1',      teamLeader: 'u-tl-or1a', password: 'password123' },
 ];
 
 // ============================================================

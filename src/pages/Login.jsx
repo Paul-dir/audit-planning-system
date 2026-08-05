@@ -50,7 +50,7 @@ export default function Login() {
 
   const fillDemo = (demoEmail) => {
     setEmail(demoEmail);
-    setPassword('1234');
+    setPassword('password123');
     setError('');
     setShowDemo(false);
   };
@@ -165,7 +165,7 @@ export default function Login() {
               <div className="mt-3">
                 <p className="text-xs text-gray-400 mb-3">
                   All demo accounts use password:{' '}
-                  <code className="bg-gray-100 px-1.5 py-0.5 rounded font-mono text-gray-700">1234</code>
+                  <code className="bg-gray-100 px-1.5 py-0.5 rounded font-mono text-gray-700">password123</code>
                 </p>
                 <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
                   {DEMO_ACCOUNTS.map(u => (
