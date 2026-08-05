@@ -19,15 +19,21 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, []);
 
-  const login = (userId) => {
+  const login = (emailOrId, password) => {
     const users = storage.get(STORE_KEYS.USERS, SEED_USERS);
-    const found = users.find(u => u.id === userId);
+    // Find user by email or ID
+    const found = users.find(u => u.email === emailOrId || u.id === emailOrId);
+    
     if (found) {
+      // Check password if provided
+      if (password && found.password !== password) {
+        throw new Error('Invalid password');
+      }
       setUser(found);
       storage.set('session', { id: found.id });
       return true;
     }
-    return false;
+    throw new Error('User not found');
   };
 
   const logout = () => {
