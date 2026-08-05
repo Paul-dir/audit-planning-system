@@ -27,12 +27,13 @@ export function AppProvider({ children }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    const SEED_VERSION = 'v2-password123'; // Change this to force re-seed
     const seeded = storage.get(STORE_KEYS.SEEDED);
-    if (!seeded) {
+    if (seeded !== SEED_VERSION) {
       storage.set(STORE_KEYS.USERS, SEED_USERS);
       storage.set(STORE_KEYS.PLANS, SEED_PLANS);
       storage.set(STORE_KEYS.CASES, []);
-      storage.set(STORE_KEYS.SEEDED, true);
+      storage.set(STORE_KEYS.SEEDED, SEED_VERSION);
     }
     dispatch({
       type: 'LOAD',
