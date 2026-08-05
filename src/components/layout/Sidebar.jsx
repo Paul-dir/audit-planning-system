@@ -54,6 +54,15 @@ export default function Sidebar({ activeView, onNavigate }) {
 
   const items = NAV[user.role] || [];
 
+  const handleNavClick = (id) => {
+    console.log('Sidebar clicked:', id);
+    if (onNavigate) {
+      onNavigate(id);
+    } else {
+      console.error('onNavigate is not defined!');
+    }
+  };
+
   return (
     <aside className="w-64 bg-slate-900 flex flex-col h-screen fixed left-0 top-0 z-30">
       {/* Logo */}
@@ -99,8 +108,9 @@ export default function Sidebar({ activeView, onNavigate }) {
             return (
               <li key={item.id}>
                 <button
-                  onClick={() => onNavigate(item.id)}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
+                  type="button"
+                  onClick={() => handleNavClick(item.id)}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer ${
                     active
                       ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/30'
                       : 'text-slate-300 hover:bg-slate-800 hover:text-white'
@@ -128,8 +138,12 @@ export default function Sidebar({ activeView, onNavigate }) {
       {/* Logout */}
       <div className="px-3 pb-4">
         <button
-          onClick={logout}
-          className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-all duration-150"
+          type="button"
+          onClick={() => {
+            console.log('Logout clicked');
+            logout();
+          }}
+          className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-all duration-150 cursor-pointer"
         >
           <LogOut size={16} />
           Sign Out
