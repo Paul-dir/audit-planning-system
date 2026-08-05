@@ -22,6 +22,7 @@ export default function RegionalDashboard({ view }) {
 
   const allPlans = state.plans;
   const awaitingFeedback = allPlans.filter(p => p.status === 'AWAITING_REGIONAL_FEEDBACK' && !p.regionalFeedback?.[region]);
+  console.log("Regional Dashboard - Awaiting feedback:", awaitingFeedback.length, awaitingFeedback);
   const submitted = allPlans.filter(p => p.status === 'AWAITING_REGIONAL_FEEDBACK' && p.regionalFeedback?.[region]);
   const finalized = allPlans.filter(p => ['FEEDBACK_COLLECTED','SUBMITTED_TO_SENIOR_MGMT','SENIOR_MGMT_APPROVED','FINALIZED'].includes(p.status));
 
