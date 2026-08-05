@@ -37,7 +37,9 @@ jobs:
           VITE_TOKEN_REFRESH_INTERVAL: 1800000
       
       - name: Setup Pages
-        uses: actions/configure-pages@v4
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
       
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
