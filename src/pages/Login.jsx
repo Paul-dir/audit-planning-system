@@ -48,11 +48,19 @@ export default function Login() {
     }
   };
 
-  const fillDemo = (demoEmail) => {
+  const fillDemo = async (demoEmail) => {
     setEmail(demoEmail);
     setPassword('password123');
     setError('');
     setShowDemo(false);
+    setLoading(true);
+    try {
+      await login(demoEmail, 'password123');
+    } catch (err) {
+      setError(err.message || 'Login failed. Please check your credentials.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
