@@ -1,151 +1,197 @@
 import { useState } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { Eye, EyeOff, LogIn, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
-import { SEED_USERS } from '../data/seed.js';
-import { storage, STORE_KEYS } from '../services/storage.js';
 
-const ROLE_GROUPS = [
-  { label: 'National Level', roles: ['planning_team', 'audit_director', 'senior_management'] },
-  { label: 'Regional Level', roles: ['regional_director'] },
-  { label: 'Tax Center Level', roles: ['tax_center_manager', 'team_leader', 'auditor'] },
+const DEMO_ACCOUNTS = [
+  { label: 'Planning Team',               email: 'planning.auditor1@mor.gov.et',  role: 'Audit Planning Team'   },
+  { label: 'Audit Director',              email: 'tesfaye.bekele@mor.gov.et',     role: 'Audit Director'        },
+  { label: 'Senior Management',           email: 'rahel.hailu@mor.gov.et',        role: 'Senior Management'     },
+  { label: 'Regional Director (Addis)',   email: 'getnet.alemu@mor.gov.et',       role: 'Regional Director'     },
+  { label: 'Regional Director (Oromia)',  email: 'gemechu.negash@mor.gov.et',     role: 'Regional Director'     },
+  { label: 'Tax Center Manager (AA-TC1)', email: 'mekdes.solomon@mor.gov.et',     role: 'Tax Center Manager'    },
+  { label: 'Tax Center Manager (AA-TC2)', email: 'dereje.worku@mor.gov.et',       role: 'Tax Center Manager'    },
+  { label: 'Team Leader',                 email: 'henok.belay@mor.gov.et',        role: 'Team Leader'           },
+  { label: 'Auditor',                     email: 'kidist.mehari@mor.gov.et',      role: 'Auditor'               },
 ];
 
-const ROLE_LABELS = {
-  planning_team: 'Audit Planning Team',
-  audit_director: 'Audit Director',
-  senior_management: 'Senior Management',
-  regional_director: 'Regional Director',
-  tax_center_manager: 'Tax Center Manager',
-  team_leader: 'Team Leader',
-  auditor: 'Auditor',
-};
-
 const ROLE_COLORS = {
-  planning_team: 'bg-blue-50 border-blue-200 text-blue-700',
-  audit_director: 'bg-purple-50 border-purple-200 text-purple-700',
-  senior_management: 'bg-amber-50 border-amber-200 text-amber-700',
-  regional_director: 'bg-green-50 border-green-200 text-green-700',
-  tax_center_manager: 'bg-teal-50 border-teal-200 text-teal-700',
-  team_leader: 'bg-indigo-50 border-indigo-200 text-indigo-700',
-  auditor: 'bg-rose-50 border-rose-200 text-rose-700',
+  'Audit Planning Team':  'bg-blue-50   border-blue-200   text-blue-700',
+  'Audit Director':       'bg-purple-50 border-purple-200 text-purple-700',
+  'Senior Management':    'bg-amber-50  border-amber-200  text-amber-700',
+  'Regional Director':    'bg-green-50  border-green-200  text-green-700',
+  'Tax Center Manager':   'bg-teal-50   border-teal-200   text-teal-700',
+  'Team Leader':          'bg-indigo-50 border-indigo-200 text-indigo-700',
+  'Auditor':              'bg-rose-50   border-rose-200   text-rose-700',
 };
 
 export default function Login() {
   const { login } = useAuth();
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [error, setError] = useState('');
-  const [showReset, setShowReset] = useState(false);
+  const [email, setEmail]         = useState('');
+  const [password, setPassword]   = useState('');
+  const [showPwd, setShowPwd]     = useState(false);
+  const [error, setError]         = useState('');
+  const [loading, setLoading]     = useState(false);
+  const [showDemo, setShowDemo]   = useState(false);
 
-  const users = storage.get(STORE_KEYS.USERS, SEED_USERS);
-  const groupedUsers = ROLE_GROUPS.map(g => ({
-    ...g,
-    users: users.filter(u => g.roles.includes(u.role)),
-  }));
-
-  const handleLogin = () => {
-    if (!selectedUser) { setError('Please select a user account'); return; }
-    const ok = login(selectedUser.id);
-    if (!ok) setError('Login failed');
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!email.trim())    { setError('Email is required');    return; }
+    if (!password.trim()) { setError('Password is required'); return; }
+    setError('');
+    setLoading(true);
+    try {
+      await login(email.trim(), password);
+    } catch (err) {
+      setError(err.message || 'Login failed. Please check your credentials.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleReset = () => {
-    storage.clear();
-    window.location.reload();
+  const fillDemo = (demoEmail) => {
+    setEmail(demoEmail);
+    setPassword('1234');
+    setError('');
+    setShowDemo(false);
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
-      {/* Background pattern */}
-      <div className="absolute inset-0 opacity-5" style={{backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px'}} />
+      {/* subtle dot pattern */}
+      <div
+        className="absolute inset-0 opacity-[0.04] pointer-events-none"
+        style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }}
+      />
 
-      <div className="relative w-full max-w-3xl">
-        {/* Header */}
+      <div className="relative w-full max-w-md">
+        {/* Brand header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl shadow-2xl mb-4 overflow-hidden bg-gradient-to-br from-pink-500 via-purple-500 to-blue-500">
             <img
-              src="/logo.png"
+              src="/mor-logo.jpeg"
               alt="MOR"
               className="w-full h-full object-cover"
               onError={e => { e.target.style.display = 'none'; }}
             />
           </div>
           <h1 className="text-3xl font-bold text-white mb-1">Ministry of Revenues</h1>
-          <p className="text-slate-400 text-sm">Audit Planning & Management System</p>
+          <p className="text-slate-400 text-sm">Audit Planning &amp; Management System</p>
         </div>
 
         {/* Login card */}
-        <div className="bg-white/95 backdrop-blur rounded-2xl shadow-2xl overflow-hidden">
-          <div className="px-8 py-6 border-b border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-900">Select Your Account</h2>
-            <p className="text-sm text-gray-500 mt-0.5">Choose your role to continue to the dashboard</p>
-          </div>
+        <div className="bg-white/95 backdrop-blur rounded-2xl shadow-2xl p-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-1">Sign in</h2>
+          <p className="text-sm text-gray-500 mb-6">Enter your MOR credentials to continue</p>
 
-          <div className="p-6 space-y-5 max-h-[480px] overflow-y-auto">
-            {groupedUsers.map(group => (
-              <div key={group.label}>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">{group.label}</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {group.users.map(user => {
-                    const colorClass = ROLE_COLORS[user.role] || 'bg-gray-50 border-gray-200 text-gray-700';
-                    const isSelected = selectedUser?.id === user.id;
-                    return (
-                      <button
-                        key={user.id}
-                        onClick={() => { setSelectedUser(user); setError(''); }}
-                        className={`flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all duration-150 ${
-                          isSelected
-                            ? 'border-blue-500 bg-blue-50 shadow-sm shadow-blue-100'
-                            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                        }`}
-                      >
-                        <div className={`w-9 h-9 rounded-lg border flex items-center justify-center text-sm font-bold flex-shrink-0 ${colorClass}`}>
-                          {user.name.split(' ').map(n => n[0]).slice(0,2).join('')}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-gray-900 truncate">{user.name}</p>
-                          <p className="text-xs text-gray-500 truncate">{ROLE_LABELS[user.role]}</p>
-                          {user.region && <p className="text-xs text-blue-500 truncate capitalize">{user.region.replace(/_/g,' ')}</p>}
-                        </div>
-                        {isSelected && <ChevronRight size={14} className="text-blue-500 flex-shrink-0 ml-auto" />}
-                      </button>
-                    );
-                  })}
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+            {/* Email */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Email address</label>
+              <input
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="you@mor.gov.et"
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 text-sm
+                           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                           transition-shadow"
+              />
+            </div>
+
+            {/* Password */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+              <div className="relative">
+                <input
+                  type={showPwd ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full px-4 py-2.5 pr-11 rounded-lg border border-gray-300 text-sm
+                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                             transition-shadow"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPwd(v => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  tabIndex={-1}
+                >
+                  {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Error */}
+            {error && (
+              <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-3 whitespace-pre-line">
+                {error}
+              </div>
+            )}
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600
+                         hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-semibold
+                         rounded-lg transition-colors"
+            >
+              {loading ? (
+                <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+              ) : (
+                <LogIn size={16} />
+              )}
+              {loading ? 'Signing in…' : 'Sign in'}
+            </button>
+          </form>
+
+          {/* Demo accounts */}
+          <div className="mt-6 pt-5 border-t border-gray-100">
+            <button
+              onClick={() => setShowDemo(v => !v)}
+              className="flex items-center justify-between w-full text-sm text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              <span className="font-medium">Try a demo account</span>
+              {showDemo ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
+
+            {showDemo && (
+              <div className="mt-3">
+                <p className="text-xs text-gray-400 mb-3">
+                  All demo accounts use password:{' '}
+                  <code className="bg-gray-100 px-1.5 py-0.5 rounded font-mono text-gray-700">1234</code>
+                </p>
+                <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
+                  {DEMO_ACCOUNTS.map(u => (
+                    <button
+                      key={u.email}
+                      onClick={() => fillDemo(u.email)}
+                      className="w-full text-left px-3 py-2 rounded-lg border border-transparent
+                                 hover:bg-gray-50 hover:border-gray-200 transition-all"
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-gray-800">{u.label}</p>
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${ROLE_COLORS[u.role] || 'bg-gray-50 border-gray-200 text-gray-600'}`}>
+                          {u.role}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-400 mt-0.5">{u.email}</p>
+                    </button>
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
-
-          <div className="px-8 py-5 bg-gray-50 border-t border-gray-100 flex items-center justify-between gap-4">
-            <button
-              onClick={() => setShowReset(!showReset)}
-              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              {showReset ? '↑ Hide' : 'Reset Data'}
-            </button>
-            {showReset && (
-              <button
-                onClick={handleReset}
-                className="text-xs text-red-500 hover:text-red-700 underline transition-colors"
-              >
-                Reset all data (restore defaults)
-              </button>
             )}
-            <div className="flex items-center gap-3">
-              {error && <p className="text-xs text-red-600">{error}</p>}
-              <button
-                onClick={handleLogin}
-                disabled={!selectedUser}
-                className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
-              >
-                Sign In
-                <ChevronRight size={14} />
-              </button>
-            </div>
           </div>
         </div>
 
-        <p className="text-center text-slate-600 text-xs mt-4">
-          Ministry of Revenues — Audit Planning System v2.0
+        <p className="text-center text-slate-500 text-xs mt-4">
+          Protected by MOR Identity &amp; Access Management
         </p>
       </div>
     </div>

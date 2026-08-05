@@ -60,7 +60,7 @@ export default function Sidebar({ activeView, onNavigate }) {
       <div className="px-5 py-5 border-b border-slate-700/60">
         <div className="flex items-center gap-3">
           <img
-            src="/logo.png"
+            src="/mor-logo.jpeg"
             alt="MOR"
             className="w-9 h-9 rounded-xl object-cover flex-shrink-0 shadow-lg"
             onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }}
