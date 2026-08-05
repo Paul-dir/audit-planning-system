@@ -8,13 +8,14 @@ import React, { useState, useEffect } from 'react';
 import Card from '../Card';
 import Badge from '../Badge';
 import PlanDetailsView from './PlanDetailsView';
-import { loadData, saveData } from '../../utils/data';
+import { useData } from '../../services/dataService';
 import { getStatusDisplay, getBadgeClass } from '../../utils/businessLogic';
 import { auditConfig } from '../../config/auditConfig';
 import { useRegional } from '../../context/RegionalContext';
 
 function ApprovedPlansDeploymentView({ userRole }) {
   const { selectedRegion, assignedRegion } = useRegional();
+  const { data, updateData } = useData();
   const [plans, setPlans] = useState([]);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [viewMode, setViewMode] = useState('list');
@@ -25,7 +26,7 @@ function ApprovedPlansDeploymentView({ userRole }) {
   }, [userRegion]);
 
   const loadPlans = () => {
-    const data = loadData();
+    // Using data from hook
     
     if (userRole === 'director') {
       const directorPlans = data.plans.filter(p => 
@@ -44,7 +45,7 @@ function ApprovedPlansDeploymentView({ userRole }) {
   };
 
   const handleDirectorDeploy = (planId) => {
-    const data = loadData();
+    // Using data from hook
     const plan = data.plans.find(p => p.id === planId);
     
     if (!plan || (plan.status !== 'SENIOR_MANAGEMENT_APPROVED' && plan.status !== 'AWAITING_SENIOR_MANAGEMENT_APPROVAL')) {
@@ -68,14 +69,14 @@ function ApprovedPlansDeploymentView({ userRole }) {
       version: plan.version
     });
     
-    saveData(data);
+    updateData(data);
     alert(`✅ Plan deployed to ${allRegions.length} regions!\n\nRegions: ${allRegions.join(', ')}`);
     setSelectedPlan(null);
     loadPlans();
   };
 
   const handleRegionalAcknowledge = (planId) => {
-    const data = loadData();
+    // Using data from hook
     const plan = data.plans.find(p => p.id === planId);
     
     if (!plan || plan.status !== 'FINALIZED') {
@@ -108,7 +109,7 @@ function ApprovedPlansDeploymentView({ userRole }) {
       version: plan.version
     });
 
-    saveData(data);
+    updateData(data);
     alert(`✅ ${userRegion} acknowledged the finalized plan`);
     setSelectedPlan(null);
     loadPlans();

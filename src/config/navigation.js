@@ -13,10 +13,13 @@ export const ROLE_NAVIGATION = {
         ],
       },
       {
-        label: 'Management',
+        label: 'Planning',
         items: [
           { id: 'create-plan', label: 'Create annual plan', icon: 'fas fa-bullseye' },
           { id: 'my-plans', label: 'My plans', icon: 'fas fa-folder-open' },
+          { id: 'plan-configuration', label: 'Plan Configuration', icon: 'fas fa-sliders-h' },
+          { id: 'amend-plans', label: 'Amend plans', icon: 'fas fa-edit' },
+          { id: 'cascade-plan-cases', label: 'Cascade to cases', icon: 'fas fa-sitemap' },
         ],
       },
       {
@@ -24,6 +27,38 @@ export const ROLE_NAVIGATION = {
         items: [
           { id: 'risk-engine', label: 'Risk engine analysis', icon: 'fas fa-bolt' },
           { id: 'feedback-review', label: 'Regional feedback', icon: 'fas fa-comments' },
+          { id: 'plan-journey', label: 'Plan Journey', icon: 'fas fa-diagram-project' },
+          { id: 'reports', label: 'Reports & analytics', icon: 'fas fa-chart-bar' },
+        ],
+      },
+    ],
+    footer: { id: 'configuration', label: 'Settings', icon: 'fas fa-cog' },
+  },
+
+  audit_team_leader: {
+    categories: [
+      {
+        label: 'Overview',
+        items: [
+          { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-th-large' },
+        ],
+      },
+      {
+        label: 'Planning',
+        items: [
+          { id: 'create-plan', label: 'Create annual plan', icon: 'fas fa-bullseye' },
+          { id: 'my-plans', label: 'My plans', icon: 'fas fa-folder-open' },
+          { id: 'plan-configuration', label: 'Plan Configuration', icon: 'fas fa-sliders-h' },
+          { id: 'amend-plans', label: 'Amend plans', icon: 'fas fa-edit' },
+          { id: 'cascade-plan-cases', label: 'Cascade to cases', icon: 'fas fa-sitemap' },
+        ],
+      },
+      {
+        label: 'Analysis',
+        items: [
+          { id: 'risk-engine', label: 'Risk engine analysis', icon: 'fas fa-bolt' },
+          { id: 'feedback-review', label: 'Regional feedback', icon: 'fas fa-comments' },
+          { id: 'plan-journey', label: 'Plan Journey', icon: 'fas fa-diagram-project' },
           { id: 'reports', label: 'Reports & analytics', icon: 'fas fa-chart-bar' },
         ],
       },
@@ -40,17 +75,22 @@ export const ROLE_NAVIGATION = {
         ],
       },
       {
+        label: 'Approvals',
+        items: [
+          { id: 'initial-approval', label: 'Initial Approval', icon: 'fas fa-check-circle' },
+          { id: 'review-queue', label: 'Plan Review', icon: 'fas fa-inbox' },
+        ],
+      },
+      {
         label: 'Review',
         items: [
-          { id: 'review-queue', label: 'Plan review', icon: 'fas fa-inbox' },
-          { id: 'amended-plans', label: 'Amended plans', icon: 'fas fa-edit' },
-          { id: 'feedback-review', label: 'Feedback review', icon: 'fas fa-star' },
+          { id: 'plan-journey', label: 'Plan Journey', icon: 'fas fa-diagram-project' },
         ],
       },
       {
         label: 'Actions',
         items: [
-          { id: 'send-feedback', label: 'Bulk feedback', icon: 'fas fa-paper-plane' },
+          { id: 'submit-plan-to-regions', label: 'Submit Plan to Regions', icon: 'fas fa-share-square' },
           { id: 'deployment', label: 'Deployment', icon: 'fas fa-rocket' },
         ],
       },
@@ -69,17 +109,9 @@ export const ROLE_NAVIGATION = {
       {
         label: 'Planning',
         items: [
-          { id: 'review-plan', label: 'Plan review', icon: 'fas fa-check-circle' },
-          { id: 'allocation-dashboard', label: 'Allocation', icon: 'fas fa-map-marker-alt' },
-          { id: 'submit-plan-to-tax-centers', label: 'Submit to tax centers', icon: 'fas fa-share' },
-        ],
-      },
-      {
-        label: 'Feedback',
-        items: [
-          { id: 'tax-center-feedback', label: 'Tax center feedback', icon: 'fas fa-comments' },
-          { id: 'submit-regional-feedback', label: 'Submit feedback', icon: 'fas fa-paper-plane' },
-          { id: 'reports', label: 'Reports', icon: 'fas fa-chart-bar' },
+          { id: 'receive-plans', label: 'Receive Plans', icon: 'fas fa-inbox' },
+          { id: 'allocate-to-tax-centers', label: 'Allocate to Tax Centers', icon: 'fas fa-tasks' },
+          { id: 'collect-feedback', label: 'Collect Feedback', icon: 'fas fa-comments' },
         ],
       },
     ],
@@ -97,6 +129,7 @@ export const ROLE_NAVIGATION = {
       {
         label: 'Operations',
         items: [
+          { id: 'receive-allocations', label: 'Receive Allocations', icon: 'fas fa-inbox' },
           { id: 'accept-approved-plan', label: 'Acceptance plan', icon: 'fas fa-hand-paper' },
           { id: 'tax-center-feedback', label: 'Feedback', icon: 'fas fa-comments' },
           { id: 'cascade-plan-cases', label: 'Cascade to cases', icon: 'fas fa-sitemap' },
@@ -170,9 +203,8 @@ export const ROLE_NAVIGATION = {
       {
         label: 'Approvals',
         items: [
-          { id: 'pending-approval', label: 'Pending approval', icon: 'fas fa-clock' },
-          { id: 'approved-plans', label: 'Approved plans', icon: 'fas fa-check-circle' },
-          { id: 'rejected-plans', label: 'Rejected plans', icon: 'fas fa-times-circle' },
+          { id: 'pending-approval', label: 'Final Approval', icon: 'fas fa-gavel' },
+          { id: 'plan-journey', label: 'Plan Journey', icon: 'fas fa-diagram-project' },
         ],
       },
     ],

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../Card';
 import Badge from '../Badge';
-import { loadData, saveData } from '../../utils/data';
+import { useData } from '../../services/dataService';
 import { useAuth } from '../../context/AuthContext';
 
 /**
@@ -12,6 +12,7 @@ import { useAuth } from '../../context/AuthContext';
 
 function AuditCaseSelectionView() {
   const { getUserInfo } = useAuth();
+  const { data, updateData } = useData();
   const userInfo = getUserInfo();
 
   const [allCases, setAllCases] = useState([]);
@@ -38,7 +39,7 @@ function AuditCaseSelectionView() {
   }, []);
 
   const loadCases = () => {
-    const data = loadData();
+    // Using data from hook
     
     // Load risk engine / cascade plan cases that need prioritization
     const riskEngineCases = (data.auditCases || []).filter(c => 
@@ -202,7 +203,7 @@ function AuditCaseSelectionView() {
     }
 
     console.log('=== AUTO-ASSIGN CASES START ===');
-    const data = loadData();
+    // Using data from hook
     
     // Initialize Team Leaders if empty for this tax center
     if (!data.teamLeaders) data.teamLeaders = [];
@@ -298,7 +299,7 @@ function AuditCaseSelectionView() {
     });
 
     // Save to localStorage
-    saveData(data);
+    updateData(data);
 
     console.log('=== AUTO-ASSIGN CASES END ===');
 

@@ -11,7 +11,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { loadData } from '../utils/data';
+import { useData } from '../services/dataService';
 import { getAllUsers } from '../data/orgStructure';
 
 /**
@@ -19,6 +19,7 @@ import { getAllUsers } from '../data/orgStructure';
  * Returns: { cases, teamLeaders, casesByAuditType, stats, loading, error }
  */
 export function useProcessOwnerAssignments(taxCenter, region) {
+  const { data } = useData();
   const [cases, setCases] = useState([]);
   const [teamLeaders, setTeamLeaders] = useState([]);
   const [casesByAuditType, setCasesByAuditType] = useState({});
@@ -30,7 +31,8 @@ export function useProcessOwnerAssignments(taxCenter, region) {
   const loadAssignments = useCallback(() => {
     try {
       setLoading(true);
-      const data = loadData();
+      if (!data) return;
+      
       const allOrgUsers = getAllUsers();
 
       // Get ALL cases (including newly assigned and historical)
@@ -104,7 +106,7 @@ export function useProcessOwnerAssignments(taxCenter, region) {
     } finally {
       setLoading(false);
     }
-  }, [taxCenter, region]);
+  }, [data, taxCenter, region]);
 
   // Load on mount
   useEffect(() => {
@@ -143,6 +145,7 @@ export function useProcessOwnerAssignments(taxCenter, region) {
  * Returns: { assignedCases, auditors, auditorsStats, loading, error }
  */
 export function useTeamLeaderAssignments(teamLeaderId) {
+  const { data } = useData();
   const [assignedCases, setAssignedCases] = useState([]);
   const [auditors, setAuditors] = useState([]);
   const [auditorStats, setAuditorStats] = useState({});
@@ -165,7 +168,7 @@ export function useTeamLeaderAssignments(teamLeaderId) {
         return;
       }
 
-      const data = loadData();
+      // Using data from useData hook
       const allOrgUsers = getAllUsers();
       
       console.log(`📊 [useTeamLeaderAssignments] Loaded ${allOrgUsers.length} org users`);
@@ -323,12 +326,13 @@ export function useTeamLeaderAssignments(teamLeaderId) {
  * Shows: Which Team Leaders have how many cases
  */
 export function useTeamLeaderWorkload(taxCenter) {
+  const { data } = useData();
   const [tlWorkload, setTLWorkload] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadWorkload = () => {
-      const data = loadData();
+      // Using data from useData hook
       const allOrgUsers = getAllUsers();
 
       const tls = allOrgUsers.filter(u => 
@@ -369,12 +373,13 @@ export function useTeamLeaderWorkload(taxCenter) {
  * Shows: Which auditors have how many cases
  */
 export function useAuditorWorkload(teamLeaderId) {
+  const { data } = useData();
   const [auditorWorkload, setAuditorWorkload] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadWorkload = () => {
-      const data = loadData();
+      // Using data from useData hook
       const allOrgUsers = getAllUsers();
 
       const tl = allOrgUsers.find(u => u.id === teamLeaderId && u.role === 'team_leader');

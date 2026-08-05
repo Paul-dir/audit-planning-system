@@ -5,8 +5,8 @@ import TaxCenterManagerDashboard from '../dashboards/TaxCenterManagerDashboard';
 import TaxCenterView from '../views/TaxCenterView';
 import CascadePlanToCasesView from '../views/CascadePlanToCasesView';
 import AuditCasesListView from '../views/AuditCasesListView';
-import TaxCenterFeedbackView from '../views/TaxCenterFeedbackView';
 import TaxCenterAcceptancePlanView from '../views/TaxCenterAcceptancePlanView';
+import TaxCenterReceiveAllocationsView from '../views/TaxCenterReceiveAllocationsView';
 import ConfigurationView from '../views/ConfigurationView';
 import CasePrioritizationView from '../views/CasePrioritizationView';
 import CaseAssignmentView from '../views/CaseAssignmentView';
@@ -21,8 +21,8 @@ function TaxCenterManagerView() {
     switch (currentView) {
       case 'dashboard':
         return <TaxCenterManagerDashboard />;
-      case 'tax-center-feedback':
-        return <TaxCenterFeedbackView />;
+      case 'receive-allocations':
+        return <TaxCenterReceiveAllocationsView />;
       case 'accept-approved-plan':
         return <TaxCenterAcceptancePlanView />;
       case 'cascade-plan-cases':

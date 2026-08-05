@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import Card from '../Card';
 import Badge from '../Badge';
 import RegionSelectorCards from '../RegionSelectorCards';
-import { loadData } from '../../utils/data';
+import { useData } from '../../services/dataService';
 import { auditConfig } from '../../config/auditConfig';
 import { useRegional } from '../../context/RegionalContext';
+import { getDisplayRegionName } from '../../utils/regionNormalizer';
 
 function RiskEngineView({ userRole: propUserRole, selectedRegion: propSelectedRegion }) {
   const contextData = useRegional();
@@ -20,7 +21,8 @@ function RiskEngineView({ userRole: propUserRole, selectedRegion: propSelectedRe
     if (setSelectedRegionContext) setSelectedRegionContext(region);
   };
   
-  const [level, setLevel] = useState(1); // 1=National, 2=Regional, 3=TaxCenter, 4=Taxpayer
+  const [level, setLevel] = useState(1);
+  const { data, updateData } = useData(); // 1=National, 2=Regional, 3=TaxCenter, 4=Taxpayer
   const [localSelectedRegion, setLocalSelectedRegion] = useState(selectedRegion || null);
   const [selectedTaxCenter, setSelectedTaxCenter] = useState(null);
   const [selectedTaxpayer, setSelectedTaxpayer] = useState(null);
@@ -47,7 +49,7 @@ function RiskEngineView({ userRole: propUserRole, selectedRegion: propSelectedRe
   }, [userRole]);
 
   const loadRiskData = () => {
-    const data = loadData();
+    // Using data from hook
     // Check if riskEngine exists and has data (must have 'national' key)
     setRiskData((data.riskEngine && data.riskEngine.national) ? data.riskEngine : generateDefaultRiskData());
   };
@@ -511,7 +513,7 @@ function RiskEngineView({ userRole: propUserRole, selectedRegion: propSelectedRe
         <div>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-1 h-8 bg-primary-600 rounded-sm"></div>
-            <h1 className="text-3xl font-serif font-bold text-neutral-50">{localSelectedRegion} Region - Risk Analysis</h1>
+            <h1 className="text-3xl font-serif font-bold text-neutral-50">{getDisplayRegionName(localSelectedRegion)} Region - Risk Analysis</h1>
           </div>
           <p className="text-neutral-400 text-sm">
             {isAssignedRegion ? '✓ Your assigned region ' : ''}Regional taxpayer risk assessment and audit candidate distribution
@@ -563,7 +565,7 @@ function RiskEngineView({ userRole: propUserRole, selectedRegion: propSelectedRe
         <div className="pt-4">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-1 h-6 bg-info-600 rounded-sm"></div>
-            <h2 className="text-2xl font-serif font-bold text-neutral-50">Audit Type Candidates in {localSelectedRegion}</h2>
+            <h2 className="text-2xl font-serif font-bold text-neutral-50">Audit Type Candidates in {getDisplayRegionName(localSelectedRegion)}</h2>
           </div>
         </div>
 
@@ -600,7 +602,7 @@ function RiskEngineView({ userRole: propUserRole, selectedRegion: propSelectedRe
         <div className="pt-4">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-1 h-6 bg-warning-600 rounded-sm"></div>
-            <h2 className="text-2xl font-serif font-bold text-neutral-50">Risk by Tax Type in {localSelectedRegion}</h2>
+            <h2 className="text-2xl font-serif font-bold text-neutral-50">Risk by Tax Type in {getDisplayRegionName(localSelectedRegion)}</h2>
           </div>
         </div>
 
@@ -637,7 +639,7 @@ function RiskEngineView({ userRole: propUserRole, selectedRegion: propSelectedRe
         <div className="pt-4">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-1 h-6 bg-success-600 rounded-sm"></div>
-            <h2 className="text-2xl font-serif font-bold text-neutral-50">Tax Centers in {localSelectedRegion}</h2>
+            <h2 className="text-2xl font-serif font-bold text-neutral-50">Tax Centers in {getDisplayRegionName(localSelectedRegion)}</h2>
           </div>
         </div>
 
@@ -705,7 +707,7 @@ function RiskEngineView({ userRole: propUserRole, selectedRegion: propSelectedRe
         <div>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-1 h-8 bg-primary-600 rounded-sm"></div>
-            <h1 className="text-3xl font-serif font-bold text-neutral-50">{localSelectedRegion} Tax Centers</h1>
+            <h1 className="text-3xl font-serif font-bold text-neutral-50">{getDisplayRegionName(localSelectedRegion)} Tax Centers</h1>
           </div>
           <p className="text-neutral-400 text-sm">Tax center-level risk analysis and high-risk taxpayer details</p>
         </div>
@@ -1055,9 +1057,9 @@ function RiskEngineView({ userRole: propUserRole, selectedRegion: propSelectedRe
 
     const handleSaveOverrides = () => {
       // Save to localStorage
-      const data = loadData();
+      // Using data from hook
       data.auditTypeAllocations = nationalAuditAllocations;
-      saveData(data);
+      updateData(data);
       alert('Audit type allocations saved successfully!');
     };
 
@@ -1194,12 +1196,12 @@ function RiskEngineView({ userRole: propUserRole, selectedRegion: propSelectedRe
     };
 
     const handleSaveOverrides = () => {
-      const data = loadData();
+      // Using data from hook
       if (!data.regionalAuditAllocations) {
         data.regionalAuditAllocations = {};
       }
       data.regionalAuditAllocations[regionKey] = currentAllocations;
-      saveData(data);
+      updateData(data);
       alert(`Audit type allocations for ${regionKey} saved successfully!`);
     };
 
@@ -1220,7 +1222,7 @@ function RiskEngineView({ userRole: propUserRole, selectedRegion: propSelectedRe
         </div>
 
         <div className="detail-header">
-          <h2><i className="fas fa-map-pin"></i> Detailed Audit Type Allocation - {localSelectedRegion} Region</h2>
+          <h2><i className="fas fa-map-pin"></i> Detailed Audit Type Allocation - {getDisplayRegionName(localSelectedRegion)} Region</h2>
           <Badge status={`Risk Engine Analysis`} className="director-approved" />
         </div>
 

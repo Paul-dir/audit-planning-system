@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../Card';
 import Badge from '../Badge';
-import { loadData, saveData } from '../../utils/data';
+import { useData } from '../../services/dataService';
 import { useAuth } from '../../context/AuthContext';
 
 /**
@@ -14,6 +14,7 @@ import { useAuth } from '../../context/AuthContext';
 
 function MyRequestsView({ userRole }) {
   const { getUserInfo } = useAuth();
+  const { data, updateData } = useData();
   const userInfo = getUserInfo();
 
   const [allRequests, setAllRequests] = useState([]);
@@ -34,7 +35,7 @@ function MyRequestsView({ userRole }) {
   }, []);
 
   const loadRequests = () => {
-    const data = loadData();
+    // Using data from hook
     const requests = (data.auditRequests || []).filter(r => r.submittedBy === userInfo?.fullName);
 
     console.log('📋 MyRequestsView - Requests loaded:', {
@@ -100,13 +101,13 @@ function MyRequestsView({ userRole }) {
       return;
     }
 
-    const data = loadData();
+    // Using data from hook
     const reqIndex = data.auditRequests.findIndex(r => r.id === request.id);
 
     if (reqIndex >= 0) {
       data.auditRequests[reqIndex].status = 'CLOSED';
       data.auditRequests[reqIndex].lastModified = new Date().toISOString();
-      saveData(data);
+      updateData(data);
 
       console.log('✓ Request withdrawn:', request.id);
       alert('✓ Request has been withdrawn');

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { getDisplayRegionName } from '../../utils/regionNormalizer';
 import Card from '../Card';
 import Badge from '../Badge';
-import { loadData, saveData } from '../../utils/data';
+import { useData } from '../../services/dataService';
 import { useRegional } from '../../context/RegionalContext';
 import { useAuth } from '../../context/AuthContext';
 import { auditConfig } from '../../config/auditConfig';
@@ -17,6 +18,7 @@ import { auditConfig } from '../../config/auditConfig';
 function RegionalPlanSubmissionView() {
   const { assignedRegion } = useRegional();
   const { getUserInfo } = useAuth();
+  const { data, updateData } = useData();
   const userInfo = getUserInfo();
   
   // Use authenticated user's assigned region - no selection dropdown
@@ -33,7 +35,7 @@ function RegionalPlanSubmissionView() {
 
   useEffect(() => {
     // Load all regions
-    const data = loadData();
+    // Using data from hook
     const regions = [...new Set(data.plans.flatMap(p => Object.keys(p.regionalAllocation || {})))];
     setAllRegions(regions.length > 0 ? regions : ['Oromia', 'SNNPR', 'Addis Ababa', 'Amhara', 'Tigray']);
     
@@ -48,7 +50,7 @@ function RegionalPlanSubmissionView() {
   }, [selectedRegion]);
 
   const loadPlans = () => {
-    const data = loadData();
+    // Using data from hook
     
     console.log('🔍 REGIONAL SUBMISSION VIEW - Starting load (DYNAMIC - RUNTIME ONLY)...');
     console.log('📍 Selected Region:', selectedRegion);
@@ -67,6 +69,10 @@ function RegionalPlanSubmissionView() {
         hasRegionalAlloc = p.allocations.some(a => a.region === selectedRegion);
       }
       
+      // ONLY show FINALIZED plans
+      const isFinalized = p.status === 'FINALIZED';
+      const canSubmit = hasRegionalAlloc && isFinalized;
+      
       console.log(`Plan ${p.id}:`, {
         status: p.status,
         hasRegionalAlloc,
@@ -74,7 +80,7 @@ function RegionalPlanSubmissionView() {
         canSubmit: hasRegionalAlloc
       });
       
-      return hasRegionalAlloc;
+      return canSubmit;
     });
 
     console.log('✅ Plans with allocation for this region:', plansByRegion.length);
@@ -92,7 +98,7 @@ function RegionalPlanSubmissionView() {
   };
 
   const handleSelectPlan = (planId) => {
-    const data = loadData();
+    // Using data from hook
     const plan = data.plans.find(p => p.id === planId);
     setSelectedPlan(planId);
     setPlanDetails(plan);
@@ -113,7 +119,7 @@ function RegionalPlanSubmissionView() {
       return;
     }
 
-    const data = loadData();
+    // Using data from hook
     const planIndex = data.plans.findIndex(p => p.id === selectedPlan);
 
     if (planIndex >= 0) {
@@ -205,12 +211,11 @@ function RegionalPlanSubmissionView() {
 
       // CRITICAL: Save data immediately
       console.log('💾 SAVING DATA TO LOCALSTORAGE...');
-      saveData(data);
+      await updateData(data);
       console.log('✅ DATA SAVED SUCCESSFULLY');
 
-      // Verify saved data
-      const verifyData = loadData();
-      const verifyPlan = verifyData.plans.find(p => p.id === selectedPlan);
+      // Verify saved data - check the data we just set
+      const verifyPlan = data.plans.find(p => p.id === selectedPlan);
       console.log('✔️ VERIFICATION - Data persisted:', {
         planId: selectedPlan,
         submittedToTaxCenters: verifyPlan?.submittedToTaxCenters?.[selectedRegion],
@@ -273,7 +278,7 @@ function RegionalPlanSubmissionView() {
       <div className="mb-6 p-3 bg-panel dark:bg-panel border border-border dark:border-border rounded-lg">
         <div className="flex gap-8 text-sm items-center">
           <div>
-            <span className="text-text-mid dark:text-text-mid font-medium">📍 Your Region:</span> <strong className="text-text-hi dark:text-text-hi text-base ml-2">{selectedRegion}</strong>
+            <span className="text-text-mid dark:text-text-mid font-medium">📍 Your Region:</span> <strong className="text-text-hi dark:text-text-hi text-base ml-2">{getDisplayRegionName(selectedRegion)}</strong>
           </div>
           <div className="text-text-mid dark:text-text-mid text-xs">
             (Region assigned from your login)
@@ -283,7 +288,7 @@ function RegionalPlanSubmissionView() {
 
       {/* Approved Plans for this Region */}
       <div className="section-title mb-3">
-        <i className="fas fa-check-circle"></i> Approved Plans for {selectedRegion}
+        <i className="fas fa-check-circle"></i> Approved Plans for {getDisplayRegionName(selectedRegion)}
       </div>
       {approvedPlans.length === 0 ? (
         <div className="bg-ink dark:bg-ink text-text-hi dark:text-text-hi p-4 rounded-lg mb-6 border border-gold dark:border-gold text-center">
@@ -329,7 +334,7 @@ function RegionalPlanSubmissionView() {
       )}
 
       <div className="cards">
-        <Card title="Region" number={selectedRegion} icon="fas fa-map-pin" />
+        <Card title="Region" number={getDisplayRegionName(selectedRegion)} icon="fas fa-map-pin" />
         <Card title="Finalized Plans" number={plans.length} icon="fas fa-flag-checkered" />
         <Card title="Tax Centers" number={getTaxCentersList().length} icon="fas fa-building" />
         <Card title="Status" number={selectedPlan ? 'Selected' : 'Select Plan'} icon="fas fa-check-circle" />
@@ -340,7 +345,7 @@ function RegionalPlanSubmissionView() {
           <i className="fas fa-info-circle text-2xl text-blue dark:text-blue mb-3 block"></i>
           <h3 className="m-2 text-gold dark:text-gold">No Finalized Plans for Your Region</h3>
           <p className="text-gold dark:text-gold m-2 text-xs">
-            Finalized plans for {selectedRegion} will appear here when the Director finalizes them. You can then select which tax centers should receive each plan.
+            Finalized plans for {getDisplayRegionName(selectedRegion)} will appear here when the Director finalizes them. You can then select which tax centers should receive each plan.
           </p>
         </div>
       ) : (

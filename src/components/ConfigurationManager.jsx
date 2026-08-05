@@ -1,16 +1,6 @@
-/**
- * Configuration Manager Component
- * Complete system for managing all audit configurations
- * - Audit types
- * - Skills
- * - Risk levels
- * - Regions & Tax Centers
- * - Allocation rules
- * - All configurable parameters
- */
-
 import React, { useState, useEffect } from 'react';
 import { auditConfig } from '../config/auditConfig';
+import { deletePlan, deleteAllPlans, getStatusDisplay } from '../utils/businessLogic';
 import Card from './Card';
 
 function ConfigurationManager() {
@@ -25,10 +15,27 @@ function ConfigurationManager() {
     workflowApproval: { ...auditConfig.workflowApproval }
   });
 
+  const [plans, setPlans] = useState([]);
   const [editingItem, setEditingItem] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({});
   const [successMessage, setSuccessMessage] = useState('');
+  const [resetConfirmation, setResetConfirmation] = useState('');
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+  // Load plans from localStorage
+  useEffect(() => {
+    const data = localStorage.getItem('audit_planning_system_v2');
+    if (data) {
+      try {
+        const parsed = JSON.parse(data);
+        setPlans(parsed.plans || []);
+      } catch (err) {
+        console.error('Error loading plans:', err);
+        setPlans([]);
+      }
+    }
+  }, []);
 
   // Save to localStorage
   useEffect(() => {
@@ -39,6 +46,38 @@ function ConfigurationManager() {
   const showSuccess = (msg) => {
     setSuccessMessage(msg);
     setTimeout(() => setSuccessMessage(''), 3000);
+  };
+
+  // Handle delete plan
+  const handleDeletePlan = (planId) => {
+    if (!window.confirm('Are you sure you want to delete this plan? This action cannot be undone.')) return;
+
+    if (deletePlan(planId)) {
+      const data = localStorage.getItem('audit_planning_system_v2');
+      if (data) {
+        try {
+          const parsed = JSON.parse(data);
+          setPlans(parsed.plans || []);
+          showSuccess('Plan deleted successfully!');
+        } catch (err) {
+          console.error('Error reloading plans:', err);
+        }
+      }
+    }
+  };
+
+  // Handle delete all plans
+  const handleDeleteAllPlans = () => {
+    if (resetConfirmation !== 'RESET ALL PLANS') {
+      alert('Please type "RESET ALL PLANS" to confirm deletion of all plans');
+      return;
+    }
+
+    const count = deleteAllPlans();
+    setPlans([]);
+    setResetConfirmation('');
+    setShowResetConfirm(false);
+    showSuccess(`${count} plan(s) deleted successfully!`);
   };
 
   // Handle add new
@@ -291,6 +330,170 @@ function ConfigurationManager() {
     </div>
   );
 
+  // Render plans tab
+  const renderPlansTab = () => (
+    <div style={{ display: 'grid', gap: '16px' }}>
+      <div>
+        <h3 style={{ marginTop: 0, marginBottom: '16px', color: '#f0f6fc' }}>
+          <i className="fas fa-file-alt"></i> Plans Management ({plans.length} total)
+        </h3>
+        
+        {plans.length === 0 ? (
+          <div style={{
+            padding: '24px',
+            background: '#0f1419',
+            border: '1px solid #30363d',
+            borderRadius: '6px',
+            textAlign: 'center',
+            color: '#8b949e'
+          }}>
+            No plans found. Create your first plan to get started.
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gap: '12px' }}>
+            {plans.map((plan) => (
+              <div key={plan.id} style={{
+                padding: '16px',
+                background: '#0f1419',
+                border: '1px solid #30363d',
+                borderRadius: '6px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start'
+              }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: '600', color: '#f0f6fc', marginBottom: '4px' }}>
+                    {plan.id} - {plan.name}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#8b949e', display: 'grid', gap: '2px' }}>
+                    <div>FY: {plan.fiscalYear} | Status: {getStatusDisplay(plan.status)}</div>
+                    <div>Created: {new Date(plan.createdDate).toLocaleDateString()} | Version: {plan.version}</div>
+                    <div>Total Cases: {plan.totalCases || 0} | Regions: {Object.keys(plan.regionalAllocation || {}).length}</div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleDeletePlan(plan.id)}
+                  style={{
+                    padding: '8px 16px',
+                    background: '#da3633',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    whiteSpace: 'nowrap',
+                    marginLeft: '12px'
+                  }}
+                >
+                  <i className="fas fa-trash"></i> Delete
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div style={{
+        padding: '20px',
+        background: '#3d1f1f',
+        border: '2px solid #da3633',
+        borderRadius: '6px'
+      }}>
+        <h3 style={{ marginTop: 0, marginBottom: '16px', color: '#f0f6fc' }}>
+          <i className="fas fa-exclamation-triangle" style={{ color: '#da3633' }}></i> Danger Zone
+        </h3>
+        
+        <div style={{ marginBottom: '16px' }}>
+          <p style={{ color: '#8b949e', fontSize: '13px', marginBottom: '12px' }}>
+            Delete all plans at once. This action cannot be undone.
+          </p>
+          
+          {!showResetConfirm ? (
+            <button
+              onClick={() => setShowResetConfirm(true)}
+              style={{
+                padding: '10px 20px',
+                background: '#da3633',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontWeight: '600'
+              }}
+            >
+              <i className="fas fa-trash-alt"></i> Reset All Plans
+            </button>
+          ) : (
+            <div style={{
+              padding: '16px',
+              background: '#1c2128',
+              border: '1px solid #30363d',
+              borderRadius: '6px'
+            }}>
+              <p style={{ color: '#f0f6fc', fontSize: '13px', marginBottom: '12px', fontWeight: '600' }}>
+                ⚠️ This will permanently delete {plans.length} plan(s). Type "RESET ALL PLANS":
+              </p>
+              <input
+                type="text"
+                placeholder='Type "RESET ALL PLANS" to confirm'
+                value={resetConfirmation}
+                onChange={(e) => setResetConfirmation(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #30363d',
+                  borderRadius: '4px',
+                  background: '#0f1419',
+                  color: '#f0f6fc',
+                  boxSizing: 'border-box',
+                  marginBottom: '12px',
+                  fontFamily: 'monospace'
+                }}
+              />
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={handleDeleteAllPlans}
+                  disabled={resetConfirmation !== 'RESET ALL PLANS'}
+                  style={{
+                    padding: '8px 16px',
+                    background: resetConfirmation === 'RESET ALL PLANS' ? '#da3633' : '#30363d',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: resetConfirmation === 'RESET ALL PLANS' ? 'pointer' : 'not-allowed',
+                    fontSize: '12px',
+                    fontWeight: '600'
+                  }}
+                >
+                  Yes, Delete All
+                </button>
+                <button
+                  onClick={() => {
+                    setShowResetConfirm(false);
+                    setResetConfirmation('');
+                  }}
+                  style={{
+                    padding: '8px 16px',
+                    background: '#30363d',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontWeight: '600'
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
   // Render form
   const renderForm = () => {
     if (activeTab === 'auditTypes') {
@@ -378,7 +581,6 @@ function ConfigurationManager() {
           <i className="fas fa-cog"></i> Audit Configuration Manager
         </h1>
 
-        {/* Success Message */}
         {successMessage && (
           <div style={{
             padding: '12px',
@@ -392,7 +594,6 @@ function ConfigurationManager() {
           </div>
         )}
 
-        {/* Tab Navigation */}
         <div style={{
           display: 'flex',
           gap: '8px',
@@ -404,7 +605,8 @@ function ConfigurationManager() {
             { id: 'auditTypes', label: 'Audit Types' },
             { id: 'skills', label: 'Skills' },
             { id: 'regions', label: 'Regions' },
-            { id: 'allocationRules', label: 'Allocation Rules' }
+            { id: 'allocationRules', label: 'Allocation Rules' },
+            { id: 'plans', label: 'Plans' }
           ].map(tab => (
             <button
               key={tab.id}
@@ -425,8 +627,7 @@ function ConfigurationManager() {
           ))}
         </div>
 
-        {/* Add Button */}
-        {activeTab !== 'allocationRules' && !showForm && (
+        {activeTab !== 'allocationRules' && activeTab !== 'plans' && !showForm && (
           <button
             onClick={handleAddNew}
             style={{
@@ -445,13 +646,13 @@ function ConfigurationManager() {
           </button>
         )}
 
-        {/* Content */}
         {!showForm ? (
           <div>
             {activeTab === 'auditTypes' && renderAuditTypesTab()}
             {activeTab === 'skills' && renderSkillsTab()}
             {activeTab === 'regions' && renderRegionsTab()}
             {activeTab === 'allocationRules' && renderAllocationRulesTab()}
+            {activeTab === 'plans' && renderPlansTab()}
           </div>
         ) : (
           <div style={{

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../Card';
 import Badge from '../Badge';
-import { loadData, saveData } from '../../utils/data';
+import { useData } from '../../services/dataService';
 
 /**
  * StoredCasesView
@@ -13,6 +13,7 @@ import { loadData, saveData } from '../../utils/data';
 
 function StoredCasesView() {
   const [storedCases, setStoredCases] = useState([]);
+  const { data, updateData } = useData();
   const [filteredCases, setFilteredCases] = useState([]);
   
   // Filters
@@ -33,7 +34,7 @@ function StoredCasesView() {
   }, []);
 
   const loadStoredCases = () => {
-    const data = loadData();
+    // Using data from hook
     const cases = data.storedAuditCases || [];
     
     console.log('📦 StoredCasesView - Cases loaded:', {
@@ -119,9 +120,9 @@ function StoredCasesView() {
   const handleRemoveCase = (storedId) => {
     if (!window.confirm('Remove this case from storage?')) return;
 
-    const data = loadData();
+    // Using data from hook
     data.storedAuditCases = data.storedAuditCases.filter(c => c.storedId !== storedId);
-    saveData(data);
+    updateData(data);
     
     loadStoredCases();
     alert('✓ Case removed from storage');

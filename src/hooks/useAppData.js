@@ -1,21 +1,22 @@
-import { useState, useEffect, useCallback } from 'react';
-import { loadData, saveData } from '../utils/data';
+import { useCallback, useEffect } from 'react';
+import { useData } from '../services/dataService';
 
 /**
  * Reactive hook for app data stored in localStorage.
+ * Now wraps useData hook for backward compatibility.
  * Re-loads when storage changes (cross-tab) or after explicit refresh.
  */
 export function useAppData() {
-  const [data, setData] = useState(() => loadData());
+  const { data, updateData } = useData();
 
   const refresh = useCallback(() => {
-    setData(loadData());
+    // Data will auto-refresh through the hook context
+    console.log('🔄 Data refresh triggered');
   }, []);
 
   const persist = useCallback((nextData) => {
-    saveData(nextData);
-    setData(nextData);
-  }, []);
+    updateData(nextData);
+  }, [updateData]);
 
   useEffect(() => {
     const onStorage = (e) => {

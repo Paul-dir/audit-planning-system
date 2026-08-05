@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Badge from '../../Badge';
-import { loadData, saveData } from '../../../utils/data';
+import { useData } from '../../../services/dataService';
 import { useAuth } from '../../../context/AuthContext';
 import {
   loadTeamLeaders,
@@ -22,6 +22,7 @@ import { executeTransition } from '../../../utils/assignmentStateMachine';
 
 function CaseReallocationView() {
   const { getUserInfo } = useAuth();
+  const { data, updateData } = useData();
   const userInfo = getUserInfo();
 
   const [allAssignments, setAllAssignments] = useState([]);
@@ -57,7 +58,7 @@ function CaseReallocationView() {
   const loadAllData = () => {
     try {
       setLoading(true);
-      const data = loadData();
+      // Using data from hook
 
       // Get all unique regions and tax centers
       const uniqueRegions = [...new Set((data.auditCases || []).map(c => c.region))];
@@ -120,7 +121,7 @@ function CaseReallocationView() {
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(a => {
-        const auditCase = (loadData().auditCases || []).find(c => c.id === a.caseId);
+        const auditCase = (data?.auditCases || []).find(c => c.id === a.caseId);
         return a.caseId.toLowerCase().includes(term) ||
           (auditCase && (auditCase.tin?.includes(searchTerm) || auditCase.taxpayerName?.toLowerCase().includes(term)));
       });
@@ -226,7 +227,7 @@ function CaseReallocationView() {
   };
 
   const getAssignmentChainDisplay = (assignment) => {
-    const data = loadData();
+    // Using data from hook
     const auditCase = (data.auditCases || []).find(c => c.id === assignment.caseId);
 
     const chain = [];
@@ -403,7 +404,7 @@ function CaseReallocationView() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {filteredAssignments.map((assignment, idx) => {
-            const data = loadData();
+            // Using data from hook
             const auditCase = (data.auditCases || []).find(c => c.id === assignment.caseId);
             const currentTL = teamLeaders.find(t => t.id === assignment.currentOwner);
             const tlsForRealloc = teamLeaders.filter(t =>

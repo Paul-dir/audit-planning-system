@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../Card';
 import Badge from '../Badge';
-import { loadData, saveData } from '../../utils/data';
+import { useData } from '../../services/dataService';
 import { useAuth } from '../../context/AuthContext';
 
 function CascadePlanToCasesView() {
   const { getUserInfo } = useAuth();
+  const { data, updateData } = useData();
   const userInfo = getUserInfo();
   
   // Auto-populate from login context - use org_context which is set during login
@@ -53,7 +54,7 @@ function CascadePlanToCasesView() {
 
   // Load ACCEPTED plans - REAL DATA ONLY
   useEffect(() => {
-    const data = loadData();
+    // Using data from hook
     let acceptedPlans = [];
     
     if (!selectedRegion || !selectedTaxCenter) {
@@ -366,7 +367,7 @@ function CascadePlanToCasesView() {
       return;
     }
 
-    const data = loadData();
+    // Using data from hook
     
     // VALIDATION 1: Check if cases already created for this plan from this cascade
     const existingCasesForPlan = (data.auditCases || []).filter(c => 
@@ -462,7 +463,7 @@ function CascadePlanToCasesView() {
 
     // SAVE: Add to data and persist
     data.auditCases = [...(data.auditCases || []), ...newCases];
-    saveData(data);
+    updateData(data);
     
     // Update state
     setCascadedCases([...cascadedCases, ...newCases]);

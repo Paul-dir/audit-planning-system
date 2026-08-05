@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createAuditPlan } from '../../utils/businessLogic';
 import { auditConfig } from '../../config/auditConfig';
-import { loadData } from '../../utils/data';
+import { useData } from '../../services/dataService';
 import Badge from '../Badge';
 
 /**
@@ -25,6 +25,7 @@ import Badge from '../Badge';
 function CreateAnnualPlanModal({ onClose }) {
   // ===== FORM STATE =====
   const [activeStep, setActiveStep] = useState(1);
+  const { data, updateData, refreshData } = useData();
   const [year, setYear] = useState('');
   const [planName, setPlanName] = useState('');
   const [strategy, setStrategy] = useState('');
@@ -183,6 +184,7 @@ function CreateAnnualPlanModal({ onClose }) {
         totalCases,
         totalEffort
       });
+      refreshData();
       alert('Plan created as DRAFT and ready for review.');
       onClose();
     };
@@ -200,6 +202,7 @@ function CreateAnnualPlanModal({ onClose }) {
         totalEffort,
         submitImmediate: true
       });
+      refreshData();
       alert('Plan submitted to Director for review.');
       onClose();
     };

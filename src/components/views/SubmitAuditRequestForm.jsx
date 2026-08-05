@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Badge from '../Badge';
-import { loadData, saveData } from '../../utils/data';
+import { useData } from '../../services/dataService';
 import { useAuth } from '../../context/AuthContext';
 
 /**
@@ -10,6 +10,7 @@ import { useAuth } from '../../context/AuthContext';
 
 function SubmitAuditRequestForm({ userRole }) {
   const { getUserInfo } = useAuth();
+  const { data, updateData } = useData();
   const userInfo = getUserInfo();
   const isDirectorate = userRole === 'directorate_requester';
 
@@ -84,7 +85,7 @@ function SubmitAuditRequestForm({ userRole }) {
       return;
     }
 
-    const data = loadData();
+    // Using data from hook
     if (!data.auditRequests) {
       data.auditRequests = [];
     }
@@ -115,7 +116,7 @@ function SubmitAuditRequestForm({ userRole }) {
     };
 
     data.auditRequests.push(newRequest);
-    saveData(data);
+    updateData(data);
 
     console.log('✓ Audit request submitted:', {
       requestId: newRequest.id,

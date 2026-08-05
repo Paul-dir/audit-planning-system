@@ -12,7 +12,7 @@
  * 4. Update workload tracking
  */
 
-import { loadData, saveData } from './data';
+import { loadDataDirect as loadData, saveDataDirect as saveData } from '../services/dataService';
 import { getAllUsers } from '../data/orgStructure';
 
 /**

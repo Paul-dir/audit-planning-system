@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { loadData, saveData } from '../../utils/data';
+import { useData } from '../../services/dataService';
 
 /**
  * TreatmentPlanModal Component
@@ -23,6 +23,7 @@ import { loadData, saveData } from '../../utils/data';
  */
 function TreatmentPlanModal({ isOpen, caseId, onClose, onSave }) {
   const [planType, setPlanType] = useState('');
+  const { data, updateData } = useData();
   const [description, setDescription] = useState('');
   const [estimatedHours, setEstimatedHours] = useState('');
   const [estimatedCost, setEstimatedCost] = useState('');
@@ -44,7 +45,7 @@ function TreatmentPlanModal({ isOpen, caseId, onClose, onSave }) {
   // Load existing plan if editing
   useEffect(() => {
     if (isOpen && caseId) {
-      const data = loadData();
+      // Using data from hook
       const auditCase = data.auditCases?.find(c => c.id === caseId);
       if (auditCase?.treatmentPlan) {
         const plan = auditCase.treatmentPlan;
@@ -89,7 +90,7 @@ function TreatmentPlanModal({ isOpen, caseId, onClose, onSave }) {
   const handleSave = () => {
     if (!validateForm()) return;
 
-    const data = loadData();
+    // Using data from hook
     const caseIdx = data.auditCases?.findIndex(c => c.id === caseId);
 
     if (caseIdx >= 0) {
@@ -115,7 +116,7 @@ function TreatmentPlanModal({ isOpen, caseId, onClose, onSave }) {
       };
 
       data.auditCases[caseIdx].treatmentPlan = treatmentPlan;
-      saveData(data);
+      updateData(data);
 
       if (onSave) onSave(treatmentPlan);
       handleClose();
@@ -125,12 +126,12 @@ function TreatmentPlanModal({ isOpen, caseId, onClose, onSave }) {
   const handleDelete = () => {
     if (!window.confirm('Delete this treatment plan? This action cannot be undone.')) return;
 
-    const data = loadData();
+    // Using data from hook
     const caseIdx = data.auditCases?.findIndex(c => c.id === caseId);
 
     if (caseIdx >= 0) {
       data.auditCases[caseIdx].treatmentPlan = null;
-      saveData(data);
+      updateData(data);
       handleClose();
       alert('Treatment plan deleted');
     }

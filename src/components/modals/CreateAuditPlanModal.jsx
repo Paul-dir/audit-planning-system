@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createAuditPlan, updateAuditPlan } from '../../utils/businessLogic';
-import { loadData } from '../../utils/data';
+import { useData } from '../../services/dataService';
 import { auditConfig } from '../../config/auditConfig';
 
 /**
@@ -28,7 +28,8 @@ import { auditConfig } from '../../config/auditConfig';
  */
 function CreateAuditPlanModal({ existingPlan, onClose }) {
   const isEdit = !!existingPlan;
-  const taxpayerPool = loadData().taxpayerPool;
+  const { data, updateData, refreshData } = useData();
+  const taxpayerPool = data?.config?.taxpayerCategories || [];
   
   const [fiscalYear, setFiscalYear] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -183,6 +184,7 @@ function CreateAuditPlanModal({ existingPlan, onClose }) {
       createAuditPlan(planData);
       alert('Plan saved as draft!');
     }
+    refreshData();
     onClose();
   };
 
@@ -221,6 +223,7 @@ function CreateAuditPlanModal({ existingPlan, onClose }) {
       createAuditPlan(planData);
       alert('Plan created and submitted to Director!');
     }
+    refreshData();
     onClose();
   };
 

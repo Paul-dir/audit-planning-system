@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import ProtectedRoute from '../ProtectedRoute';
 import RoleLayout from '../layouts/RoleLayout';
 import SeniorManagementDashboard from '../dashboards/SeniorManagementDashboard';
-import SeniorManagementViewComponent from '../views/SeniorManagementView';
+import SeniorManagementFinalApproval from '../views/SeniorManagementFinalApproval';
+import PlanJourneyView from '../views/PlanJourneyView';
 import ConfigurationView from '../views/ConfigurationView';
 
 function SeniorManagementView() {
@@ -13,9 +14,10 @@ function SeniorManagementView() {
       case 'dashboard':
         return <SeniorManagementDashboard />;
       case 'pending-approval':
-      case 'approved-plans':
-      case 'rejected-plans':
-        return <SeniorManagementViewComponent currentView={currentView} />;
+        // ✅ NEW: Single unified final approval page
+        return <SeniorManagementFinalApproval />;
+      case 'plan-journey':
+        return <PlanJourneyView />;
       case 'configuration':
         return <ConfigurationView />;
       default:

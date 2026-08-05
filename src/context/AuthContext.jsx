@@ -1,191 +1,79 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import userManagementClient from '../api/userManagementClient';
-import { getAllUsers } from '../data/orgStructure';
+import { createContext, useContext, useState, useEffect } from 'react';
+import { storage, STORE_KEYS } from '../services/storage.js';
+import { SEED_USERS } from '../data/seed.js';
 
-const AuthContext = createContext();
-
-// Role-based permissions mapping
-const ROLE_PERMISSIONS = {
-  audit_team: [
-    'create_plans',
-    'view_audit_metrics',
-  ],
-  audit_director: [
-    'approve_plans',
-    'view_all_regions',
-    'create_plans',
-    'view_audit_metrics',
-  ],
-  regional_director: [
-    'allocate_to_tax_centers',
-    'view_audit_metrics',
-  ],
-  tax_center_manager: [
-    'cascade_plan_to_cases',
-    'view_audit_cases',
-    'view_audit_metrics',
-    'manage_case_prioritization',
-    'attach_treatment_plans',
-    'assign_cases_to_team_leaders',
-    'view_assignment_status',
-  ],
-  team_leader: [
-    'assign_cases_to_auditors',
-    'view_team_members',
-    'update_case_execution',
-    'view_audit_metrics',
-  ],
-  auditor: [
-    'update_case_execution',
-    'view_audit_metrics',
-  ],
-  senior_management: [
-    'approve_plans',
-    'view_all_regions',
-    'view_audit_metrics',
-  ],
-  directorate_requester: [
-    'submit_audit_requests',
-    'view_audit_metrics',
-    'view_own_requests'
-  ],
-  external_stakeholder: [
-    'submit_audit_requests',
-    'view_audit_metrics',
-    'view_own_requests'
-  ]
-};
-
-// Generate auth context from user object (no credentials required)
-const generateAuthContext = (user) => {
-  return {
-    userId: user.id || `user-${user.role}`,
-    email: user.email || `${user.role}@mor.gov.et`,
-    fullName: user.full_name || user.role.replace(/_/g, ' '),
-    role: user.role,
-    permissions: ROLE_PERMISSIONS[user.role] || [],
-    accessLevel: user.accessLevel || 'national_only',
-    org_context: user.org_context || {
-      assignedRegion: null,
-      assignedRegionName: 'National Level',
-      assignedTaxCenter: null,
-      assignedTaxCenterName: 'N/A',
-      teamId: null,
-      teamName: null,
-      auditType: null,
-      level: 'national'
-    },
-    expiresIn: 86400
-  };
-};
+const AuthContext = createContext({ user: null, login: () => false, logout: () => {}, loading: true });
 
 export function AuthProvider({ children }) {
-  const [authContext, setAuthContext] = useState(null);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  // Initialize auth from stored context on mount
   useEffect(() => {
-    const stored = localStorage.getItem('auth_context');
-    if (stored) {
-      setAuthContext(JSON.parse(stored));
-      console.log('✓ Auth context restored from storage');
+    // Restore session
+    const saved = storage.get('session');
+    if (saved) {
+      const users = storage.get(STORE_KEYS.USERS, SEED_USERS);
+      const found = users.find(u => u.id === saved.id);
+      if (found) setUser(found);
     }
     setLoading(false);
   }, []);
 
-  // Login with user object (no credentials needed)
-  const login = async (email) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Get user from orgStructure.js (241 users with full org context)
-      const allUsersData = getAllUsers();
-      let user = allUsersData.find(u => u.email === email);
-
-      if (!user) {
-        throw new Error('User not found in organization structure');
-      }
-
-      // Generate auth context from user object
-      const context = generateAuthContext(user);
-      setAuthContext(context);
-      localStorage.setItem('auth_context', JSON.stringify(context));
-
-      console.log('✓ Login successful:', {
-        userId: context.userId,
-        role: context.role,
-        fullName: context.fullName,
-        region: context.org_context.assignedRegion,
-        taxCenter: context.org_context.assignedTaxCenter,
-        auditType: context.org_context.auditType,
-        permissions: context.permissions,
-      });
-
-      return context;
-    } catch (err) {
-      setError(err.message);
-      console.error('✗ Login failed:', err);
-      throw err;
-    } finally {
-      setLoading(false);
+  const login = (userId) => {
+    const users = storage.get(STORE_KEYS.USERS, SEED_USERS);
+    const found = users.find(u => u.id === userId);
+    if (found) {
+      setUser(found);
+      storage.set('session', { id: found.id });
+      return true;
     }
+    return false;
   };
 
-  // Logout
   const logout = () => {
-    setAuthContext(null);
-    localStorage.removeItem('auth_context');
-    console.log('✓ Logged out');
+    setUser(null);
+    storage.remove('session');
   };
 
-  // Check if user has permission
+  // Helper function to get user info
+  const getUserInfo = () => user || null;
+
+  // Helper function to check permissions
   const hasPermission = (permission) => {
-    if (!authContext) return false;
-    return authContext.permissions && authContext.permissions.includes(permission);
+    if (!user) return false;
+    return (user.permissions || []).includes(permission);
   };
 
-  // Get org context
-  const getOrgContext = () => {
-    return authContext?.org_context || {};
-  };
+  // Build authContext object for backward compatibility
+  const authContext = user ? {
+    user,
+    userId: user.id,
+    email: user.email,
+    role: user.role,
+    fullName: user.name,
+    region: user.region,
+    taxCenter: user.taxCenter,
+    permissions: user.permissions || [],
+    org_context: {
+      assignedRegion: user.region,
+      assignedTaxCenter: user.taxCenter,
+      level: user.role
+    }
+  } : null;
 
-  // Get user info
-  const getUserInfo = () => {
-    return authContext
-      ? {
-          userId: authContext.userId,
-          email: authContext.email,
-          fullName: authContext.fullName,
-          role: authContext.role,
-          permissions: authContext.permissions,
-          accessLevel: authContext.accessLevel,
-          orgContext: authContext.org_context,
-          expiresIn: authContext.expiresIn,
-        }
-      : null;
-  };
-
-  const value = {
-    authContext,
-    loading,
-    error,
-    login,
-    logout,
-    isAuthenticated: !!authContext,
-    hasPermission,
-    getOrgContext,
-    getUserInfo,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ 
+      user, 
+      authContext,
+      login, 
+      logout, 
+      loading,
+      getUserInfo,
+      hasPermission
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
-  return context;
-}
+export const useAuth = () => useContext(AuthContext);

@@ -4,7 +4,7 @@ import Badge from '../Badge';
 import CaseDetailsModal from '../modals/CaseDetailsModal';
 import TreatmentPlanModal from '../modals/TreatmentPlanModal';
 import CapacityPanel from '../panels/CapacityPanel';
-import { loadData, saveData } from '../../utils/data';
+import { useData } from '../../services/dataService';
 import { useAuth } from '../../context/AuthContext';
 import { getAllUsers } from '../../data/orgStructure';
 
@@ -17,6 +17,7 @@ import { getAllUsers } from '../../data/orgStructure';
 
 function CasePrioritizationView() {
   const { getUserInfo } = useAuth();
+  const { data, updateData } = useData();
   const userInfo = getUserInfo();
 
   const [allCases, setAllCases] = useState([]);
@@ -47,7 +48,7 @@ function CasePrioritizationView() {
   }, []);
 
   const loadCasesForTaxCenter = () => {
-    const data = loadData();
+    // Using data from hook
     const userRegion = userInfo?.orgContext?.assignedRegion;
     const userTaxCenter = userInfo?.orgContext?.assignedTaxCenter;
     const isProcessOwner = userInfo?.role === 'process_owner';
@@ -76,7 +77,7 @@ function CasePrioritizationView() {
   };
 
   const loadCapacityConfig = () => {
-    const data = loadData();
+    // Using data from hook
     const userRegion = userInfo?.orgContext?.assignedRegion;
     const userTaxCenter = userInfo?.orgContext?.assignedTaxCenter;
 
@@ -203,7 +204,7 @@ function CasePrioritizationView() {
       return;
     }
 
-    const data = loadData();
+    // Using data from hook
     const userRegion = userInfo?.orgContext?.assignedRegion;
     const userTaxCenter = userInfo?.orgContext?.assignedTaxCenter;
     
@@ -243,7 +244,7 @@ function CasePrioritizationView() {
     }
 
     // Save to localStorage
-    saveData(data);
+    updateData(data);
 
     // Reload cases
     loadCasesForTaxCenter();
