@@ -1,181 +1,241 @@
 import { useState } from 'react';
-import { Building2, Users, Clock, CheckCircle, AlertCircle, Eye, UserCheck, Search } from 'lucide-react';
+import { Building2, Users, Clock, CheckCircle, Send, Eye } from 'lucide-react';
 import { useApp } from '../../context/AppContext.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { Card, StatCard, Button, Modal, Select, Badge, Table, Empty, Alert, Tabs, Input } from '../../components/ui/index.jsx';
-import { AUDIT_TYPES, CASE_STATUS, RISK_LEVELS } from '../../data/constants.js';
-import CaseDetailModal from '../shared/CaseDetailModal.jsx';
+import { Card, StatCard, Button, Modal, Badge, Alert, Textarea } from '../../components/ui/index.jsx';
+import { AUDIT_TYPES } from '../../data/constants.js';
+import PlanStatusBadge from '../shared/PlanStatusBadge.jsx';
 
 export default function TaxCenterDashboard({ view }) {
-  const { state, actions, selectors } = useApp();
+  const { state, actions } = useApp();
   const { user } = useAuth();
-  const [assignModal, setAssignModal] = useState(null);
-  const [selectedTeamLeader, setSelectedTeamLeader] = useState('');
-  const [selectedCase, setSelectedCase] = useState(null);
-  const [search, setSearch] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
-  const [filterAuditType, setFilterAuditType] = useState('');
-  const [tab, setTab] = useState('all');
+  const [feedbackModal, setFeedbackModal] = useState(null);
+  const [feedbackText, setFeedbackText] = useState('');
+  const [adjustedAllocation, setAdjustedAllocation] = useState({});
+  const [loading, setLoading] = useState(false);
 
   const taxCenter = user.taxCenter;
-  const allCases = selectors.getCasesForTaxCenter(taxCenter);
-  const teamLeaders = selectors.getUsersByTaxCenterAndRole(taxCenter, 'team_leader');
-
-  const filtered = allCases.filter(c => {
-    // Tab filter (quick-status tabs take priority over the status dropdown)
-    if (tab === 'pending'     && c.status !== 'PENDING')     return false;
-    if (tab === 'in_progress' && c.status !== 'IN_PROGRESS') return false;
-    if (tab === 'completed'   && c.status !== 'COMPLETED')   return false;
-    // Dropdown / search filters (only active when tab === 'all')
-    if (tab === 'all' && filterStatus && c.status !== filterStatus) return false;
-    if (filterAuditType && c.auditType !== filterAuditType) return false;
-    if (search && !c.taxpayerName.toLowerCase().includes(search.toLowerCase()) && !c.tin.includes(search)) return false;
-    return true;
+  const region = user.region;
+  
+  // Get plans where this tax center has been allocated cases
+  const plansForTC = state.plans.filter(p => {
+    const regionalFeedback = p.regionalFeedback?.[region];
+    if (!regionalFeedback) return false;
+    const tcAllocation = regionalFeedback.taxCenterAllocations?.[taxCenter];
+    if (!tcAllocation) return false;
+    const total = Object.values(tcAllocation).reduce((s, v) => s + v, 0);
+    return total > 0;
   });
 
-  const pending = allCases.filter(c => c.status === 'PENDING');
-  const inProgress = allCases.filter(c => c.status === 'IN_PROGRESS');
-  const completed = allCases.filter(c => c.status === 'COMPLETED');
+  // Check if feedback submitted
+  const awaitingFeedback = plansForTC.filter(p => !p.taxCenterFeedback?.[region]?.[taxCenter]);
+  const submittedFeedback = plansForTC.filter(p => p.taxCenterFeedback?.[region]?.[taxCenter]);
 
-  const handleAssign = () => {
-    if (!assignModal || !selectedTeamLeader) return;
-    actions.assignCaseToTeamLeader(assignModal.id, selectedTeamLeader);
-    setAssignModal(null);
-    setSelectedTeamLeader('');
+  const openFeedback = (plan) => {
+    const regionalFeedback = plan.regionalFeedback[region];
+    const tcAllocation = regionalFeedback.taxCenterAllocations[taxCenter];
+    
+    setFeedbackModal(plan);
+    setFeedbackText('');
+    setAdjustedAllocation(tcAllocation); // Default to what was allocated
   };
 
-  const riskColor = { CRITICAL: 'red', HIGH: 'orange', MEDIUM: 'yellow', LOW: 'blue' };
+  const handleSubmit = () => {
+    if (!feedbackText.trim()) {
+      alert('Please provide feedback');
+      return;
+    }
+    
+    setLoading(true);
+    setTimeout(() => {
+      actions.submitTaxCenterFeedback(
+        feedbackModal.id,
+        region,
+        taxCenter,
+        feedbackText,
+        adjustedAllocation,
+        user.id
+      );
+      setLoading(false);
+      setFeedbackModal(null);
+    }, 300);
+  };
 
-  const cols = [
-    { key: 'tin', label: 'TIN', render: v => <span className="font-mono text-xs">{v}</span> },
-    { key: 'taxpayerName', label: 'Taxpayer', render: (v, row) => (
-      <div><p className="text-sm font-medium text-gray-800">{v}</p><p className="text-xs text-gray-400">{row.sector}</p></div>
-    )},
-    { key: 'auditType', label: 'Audit Type', render: v => {
-      const at = AUDIT_TYPES.find(a => a.id === v);
-      return <Badge color={at?.color || 'gray'}>{at?.shortName || v}</Badge>;
-    }},
-    { key: 'riskLevel', label: 'Risk', render: v => <Badge color={riskColor[v] || 'gray'} dot>{v}</Badge> },
-    { key: 'riskScore', label: 'Score', render: v => <span className="font-mono text-sm font-semibold">{v}</span> },
-    { key: 'status', label: 'Status', render: v => {
-      const s = CASE_STATUS[v];
-      return s ? <Badge color={s.color} dot>{s.label}</Badge> : <Badge>{v}</Badge>;
-    }},
-    { key: '_act', label: '', render: (_, row) => (
-      <div className="flex gap-1 justify-end" onClick={e => e.stopPropagation()}>
-        <Button size="xs" variant="ghost" icon={Eye} onClick={() => setSelectedCase(row)}>View</Button>
-        {row.status === 'PENDING' && teamLeaders.length > 0 && (
-          <Button size="xs" variant="primary" icon={UserCheck} onClick={() => { setAssignModal(row); setSelectedTeamLeader(''); }}>
-            Assign
-          </Button>
-        )}
-      </div>
-    )},
-  ];
-
-  const tabCounts = { all: allCases.length, pending: pending.length, in_progress: inProgress.length, completed: completed.length };
+  const handleAllocationChange = (auditTypeId, value) => {
+    setAdjustedAllocation(prev => ({
+      ...prev,
+      [auditTypeId]: Math.max(0, parseInt(value) || 0)
+    }));
+  };
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Cases" value={allCases.length} icon={Building2} color="blue" sub={taxCenter?.replace(/-/g, ' ')} />
-        <StatCard label="Pending Assignment" value={pending.length} icon={Clock} color="yellow" />
-        <StatCard label="In Progress" value={inProgress.length} icon={AlertCircle} color="purple" />
-        <StatCard label="Completed" value={completed.length} icon={CheckCircle} color="green" />
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-4">
+        <StatCard 
+          label="Plans Assigned" 
+          value={plansForTC.length} 
+          icon={Building2} 
+          color="blue"
+          sub={taxCenter?.replace(/-/g, ' ').toUpperCase()}
+        />
+        <StatCard 
+          label="Awaiting Your Feedback" 
+          value={awaitingFeedback.length} 
+          icon={Clock} 
+          color="yellow"
+          sub={awaitingFeedback.length > 0 ? 'Action required' : 'All done'}
+        />
+        <StatCard 
+          label="Feedback Submitted" 
+          value={submittedFeedback.length} 
+          icon={CheckCircle} 
+          color="green"
+          sub="This cycle"
+        />
       </div>
 
-      {pending.length > 0 && teamLeaders.length === 0 && (
-        <Alert type="warning" title="No team leaders found">
-          No team leaders are registered for your tax center. Cases cannot be assigned until team leaders are added.
+      {awaitingFeedback.length > 0 && (
+        <Alert type="warning" title="Plans require your feedback">
+          Review your allocated cases and provide feedback to your regional director.
         </Alert>
       )}
 
-      {allCases.length === 0 && (
-        <Alert type="info" title="No cases yet">
-          Cases will appear here once an audit plan is finalized and deployed to your tax center.
-        </Alert>
+      {/* Plans awaiting feedback */}
+      {awaitingFeedback.length > 0 && (
+        <Card padding={false}>
+          <div className="px-6 py-4 border-b border-gray-100">
+            <h3 className="text-base font-semibold text-gray-900">Pending Feedback</h3>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {awaitingFeedback.map(plan => {
+              const tcAlloc = plan.regionalFeedback[region].taxCenterAllocations[taxCenter];
+              const total = Object.values(tcAlloc).reduce((s, v) => s + v, 0);
+              
+              return (
+                <div key={plan.id} className="flex items-center justify-between px-6 py-4">
+                  <div>
+                    <p className="font-semibold text-gray-900">{plan.name}</p>
+                    <p className="text-sm text-gray-500 mt-0.5">
+                      {total} cases allocated to your tax center
+                    </p>
+                  </div>
+                  <Button 
+                    size="sm" 
+                    variant="primary" 
+                    icon={Send}
+                    onClick={() => openFeedback(plan)}
+                  >
+                    Provide Feedback
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
       )}
 
-      <Card padding={false}>
-        <div className="px-6 py-4 border-b border-gray-100">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <h3 className="text-base font-semibold text-gray-900">Case Management</h3>
-              <p className="text-xs text-gray-500 mt-0.5">Assign and track audit cases for your tax center</p>
-            </div>
+      {/* Submitted feedback */}
+      {submittedFeedback.length > 0 && (
+        <Card padding={false}>
+          <div className="px-6 py-4 border-b border-gray-100">
+            <h3 className="text-base font-semibold text-gray-900">Feedback Submitted</h3>
           </div>
-          {/* Filters */}
-          <div className="flex gap-3 flex-wrap">
-            <div className="flex-1 min-w-[200px]">
-              <Input icon={Search} placeholder="Search by name or TIN..." value={search} onChange={e => setSearch(e.target.value)} />
-            </div>
-            <Select
-              value={filterStatus}
-              onChange={e => setFilterStatus(e.target.value)}
-              placeholder="All Statuses"
-              options={Object.values(CASE_STATUS).map(s => ({ value: s.id, label: s.label }))}
-              className="min-w-[160px]"
-            />
-            <Select
-              value={filterAuditType}
-              onChange={e => setFilterAuditType(e.target.value)}
-              placeholder="All Audit Types"
-              options={AUDIT_TYPES.map(a => ({ value: a.id, label: a.name }))}
-              className="min-w-[160px]"
-            />
+          <div className="divide-y divide-gray-100">
+            {submittedFeedback.map(plan => {
+              const fb = plan.taxCenterFeedback[region][taxCenter];
+              
+              return (
+                <div key={plan.id} className="flex items-center justify-between px-6 py-4">
+                  <div>
+                    <p className="font-semibold text-gray-900">{plan.name}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      Submitted {new Date(fb.submittedAt).toLocaleDateString()}
+                    </p>
+                    {fb.feedback && (
+                      <p className="text-sm text-gray-600 mt-1 italic">"{fb.feedback}"</p>
+                    )}
+                  </div>
+                  <Badge color="green" dot>Submitted</Badge>
+                </div>
+              );
+            })}
           </div>
-        </div>
+        </Card>
+      )}
 
-        <div className="px-6 pt-3 pb-0">
-          <Tabs
-            tabs={[
-              { id: 'all', label: 'All', count: tabCounts.all },
-              { id: 'pending', label: 'Pending', count: tabCounts.pending },
-              { id: 'in_progress', label: 'In Progress', count: tabCounts.in_progress },
-              { id: 'completed', label: 'Completed', count: tabCounts.completed },
-            ]}
-            active={tab} onChange={setTab}
-          />
-        </div>
+      {plansForTC.length === 0 && (
+        <Card>
+          <Alert type="info" title="No plans assigned yet">
+            Plans will appear here once your regional director allocates cases to your tax center.
+          </Alert>
+        </Card>
+      )}
 
-        <div className="p-4">
-          {filtered.length === 0
-            ? <Empty icon={Building2} title="No cases found" description="Try adjusting your filters." />
-            : <Table columns={cols} rows={filtered} onRowClick={row => setSelectedCase(row)} />
+      {/* Feedback Modal */}
+      {feedbackModal && (
+        <Modal
+          open={!!feedbackModal}
+          onClose={() => setFeedbackModal(null)}
+          title="Provide Tax Center Feedback"
+          size="xl"
+          footer={
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => setFeedbackModal(null)}>
+                Cancel
+              </Button>
+              <Button 
+                variant="success" 
+                icon={Send} 
+                loading={loading}
+                onClick={handleSubmit}
+              >
+                Submit Feedback
+              </Button>
+            </div>
           }
-        </div>
-      </Card>
-
-      {/* Assign modal */}
-      <Modal open={!!assignModal} onClose={() => setAssignModal(null)} title="Assign Case to Team Leader" size="sm"
-        footer={<>
-          <Button variant="secondary" onClick={() => setAssignModal(null)}>Cancel</Button>
-          <Button variant="primary" icon={UserCheck} onClick={handleAssign} disabled={!selectedTeamLeader}>Assign</Button>
-        </>}
-      >
-        {assignModal && (
+        >
           <div className="space-y-4">
-            <div className="bg-gray-50 rounded-xl p-3 text-sm">
-              <p className="font-medium text-gray-800">{assignModal.taxpayerName}</p>
-              <p className="text-gray-500 text-xs mt-0.5">{assignModal.tin} · {AUDIT_TYPES.find(a => a.id === assignModal.auditType)?.name}</p>
-            </div>
-            <Select
-              label="Select Team Leader"
-              value={selectedTeamLeader}
-              onChange={e => setSelectedTeamLeader(e.target.value)}
-              placeholder="Choose team leader..."
-              options={teamLeaders.map(tl => ({ value: tl.id, label: tl.name }))}
-            />
-          </div>
-        )}
-      </Modal>
+            <Alert type="info" title="Review and adjust your allocation">
+              Review the cases allocated to your tax center. You can adjust the numbers if needed and provide feedback.
+            </Alert>
 
-      {selectedCase && (
-        <CaseDetailModal
-          caseData={state.cases.find(c => c.id === selectedCase.id) || selectedCase}
-          onClose={() => setSelectedCase(null)}
-          users={state.users}
-        />
+            {/* Allocation Table */}
+            <div className="bg-gray-50 rounded-xl p-4">
+              <p className="text-sm font-semibold text-gray-700 mb-3">Allocated Cases by Audit Type</p>
+              <div className="space-y-3">
+                {AUDIT_TYPES.map(auditType => (
+                  <div key={auditType.id} className="flex items-center gap-3 bg-white rounded-lg border border-gray-200 p-3">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-700">{auditType.name}</p>
+                      <p className="text-xs text-gray-400">Adjust if capacity constraints exist</p>
+                    </div>
+                    <input
+                      type="number"
+                      min="0"
+                      value={adjustedAllocation[auditType.id] || 0}
+                      onChange={(e) => handleAllocationChange(auditType.id, e.target.value)}
+                      className="w-24 text-center border border-gray-200 rounded-lg py-2 text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Feedback Text */}
+            <Textarea
+              label="Feedback / Comments *"
+              placeholder="Describe capacity constraints, resource availability, or special considerations..."
+              value={feedbackText}
+              onChange={(e) => setFeedbackText(e.target.value)}
+              rows={4}
+            />
+
+            <div className="bg-blue-50 rounded-xl p-3 text-sm text-blue-800">
+              <strong>Note:</strong> Your adjusted numbers and feedback will be sent to your regional director for review.
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );

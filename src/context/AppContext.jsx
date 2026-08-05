@@ -174,6 +174,36 @@ export function AppProvider({ children }) {
       dispatch({ type: 'UPDATE_PLAN', payload: timeline({ ...plan, regionalFeedback: newFeedback }, newStatus, actorId, msg) });
     },
 
+
+    submitTaxCenterFeedback: (planId, regionId, taxCenterId, feedbackText, adjustedAllocation, actorId) => {
+      const plan = getPlan(planId);
+      if (!plan) return;
+      
+      // Store tax center feedback
+      const tcFeedback = plan.taxCenterFeedback || {};
+      const regionTCFeedback = tcFeedback[regionId] || {};
+      
+      const newTCFeedback = {
+        ...tcFeedback,
+        [regionId]: {
+          ...regionTCFeedback,
+          [taxCenterId]: {
+            feedback: feedbackText,
+            adjustedAllocation,
+            submittedAt: new Date().toISOString(),
+            submittedBy: actorId,
+          },
+        },
+      };
+      
+      dispatch({ 
+        type: 'UPDATE_PLAN', 
+        payload: timeline({ 
+          ...plan, 
+          taxCenterFeedback: newTCFeedback 
+        }, plan.status, actorId, `${taxCenterId} submitted feedback`)
+      });
+    },
     // ── Senior Management ──────────────────────────────────────────────────
     approveBySenior: (planId, actorId, comment) => {
       const plan = getPlan(planId);
