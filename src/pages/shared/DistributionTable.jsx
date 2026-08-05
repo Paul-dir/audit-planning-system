@@ -106,7 +106,7 @@ export function EditableDistributionTable({ distribution, onChange, regions = RE
                       value={dist[a.id] || ''}
                       onChange={e => handleChange(region.id, a.id, e.target.value)}
                       placeholder="0"
-                      className="w-16 text-center border border-gray-200 rounded-lg py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                      className="w-16 text-center border border-gray-200 rounded-lg py-1.5 text-xs bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
                     />
                   </td>
                 ))}
@@ -200,7 +200,7 @@ export function TaxCenterDistributionTable({ regionId, regionDist, tcAllocations
                         value={alloc[a.id] || ''}
                         onChange={e => handleChange(tc.id, a.id, e.target.value)}
                         placeholder="0"
-                        className="w-16 text-center border border-gray-200 rounded-lg py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                        className="w-16 text-center border border-gray-200 rounded-lg py-1.5 text-xs bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
                       />
                     </td>
                   ))}
