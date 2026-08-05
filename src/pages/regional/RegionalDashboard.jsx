@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { Card, Button, Alert, Badge, StatCard, Modal, Textarea, Tabs, Empty } from '../../components/ui/index.jsx';
 import PlanStatusBadge from '../shared/PlanStatusBadge.jsx';
 import { DistributionTable, TaxCenterDistributionTable } from '../shared/DistributionTable.jsx';
-import { AUDIT_TYPES, getTaxCentersForRegion } from '../../data/constants.js';
+import { AUDIT_TYPES, REGIONS, getTaxCentersForRegion } from '../../data/constants.js';
 import PlanTimeline from '../shared/PlanTimeline.jsx';
 
 export default function RegionalDashboard({ view }) {
@@ -109,17 +109,13 @@ export default function RegionalDashboard({ view }) {
                     )}
                   </div>
                   <div className="flex gap-2">
+                  </div>
+                  <div className="flex gap-2">
                     <Button size="sm" variant="secondary" icon={Eye} onClick={() => { setViewPlan(plan); setViewTab('distribution'); }}>View</Button>
-                    {tcAreReady ? (
-                      <Button size="sm" variant="primary" icon={Send} onClick={() => openFeedback(plan)}>
-                        Collect & Submit
-                      </Button>
-                    ) : (
-                      <Button size="sm" variant="secondary" disabled title="Waiting for tax centers">
-                        <Clock size={16} />
-                        Waiting...
-                      </Button>
-                    )}
+                    <Button size="sm" variant="primary" icon={Send} onClick={() => openFeedback(plan)}>
+                      Allocate & Submit
+                    </Button>
+                  </div>
                   </div>
                 </div>
               );
@@ -294,7 +290,8 @@ export default function RegionalDashboard({ view }) {
                   Showing allocation for <strong>{region.replace(/_/g, ' ').toUpperCase()}</strong> region only
                 </Alert>
                 <DistributionTable 
-                  distribution={{ [region]: viewPlan.distribution?.[region] || {} }} 
+                  distribution={{ [region]: viewPlan.distribution?.[region] || {} }}
+                  regions={[REGIONS.find(r => r.id === region)].filter(Boolean)} 
                 />
               </div>
             )}
