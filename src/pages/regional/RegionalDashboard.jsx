@@ -78,6 +78,12 @@ export default function RegionalDashboard({ view }) {
             {awaitingFeedback.map(plan => {
               const dist = plan.distribution?.[region] || {};
               const total = Object.values(dist).reduce((s, v) => s + v, 0);
+              
+              // ✅ Check if tax centers have provided feedback for this region
+              const tcFeedback = plan.taxCenterFeedback?.[region] || {};
+              const tcFeedbackCount = Object.keys(tcFeedback).length;
+              const tcAreReady = tcFeedbackCount > 0;
+              
               return (
                 <div key={plan.id} className="flex items-center justify-between px-6 py-4">
                   <div>
@@ -85,15 +91,34 @@ export default function RegionalDashboard({ view }) {
                     <p className="text-sm text-gray-500 mt-0.5">
                       {total.toLocaleString()} cases allocated to your region
                     </p>
+                    {!tcAreReady && (
+                      <div className="mt-2 flex items-center gap-2 text-sm text-amber-600">
+                        <Clock size={16} />
+                        <span>⏳ Waiting for {getTaxCentersForRegion(region).length} tax centers to provide feedback...</span>
+                      </div>
+                    )}
+                    {tcAreReady && (
+                      <div className="mt-2 flex items-center gap-2 text-sm text-green-600">
+                        <CheckCircle size={16} />
+                        <span>✓ {tcFeedbackCount} tax center(s) provided feedback</span>
+                      </div>
+                    )}
                     {plan.directorComment && (
                       <p className="text-xs text-blue-600 mt-0.5 italic">Director: "{plan.directorComment}"</p>
                     )}
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" variant="secondary" icon={Eye} onClick={() => { setViewPlan(plan); setViewTab('distribution'); }}>View</Button>
-                    <Button size="sm" variant="primary" icon={Send} onClick={() => openFeedback(plan)}>
-                      Submit Feedback
-                    </Button>
+                    {tcAreReady ? (
+                      <Button size="sm" variant="primary" icon={Send} onClick={() => openFeedback(plan)}>
+                        Collect & Submit
+                      </Button>
+                    ) : (
+                      <Button size="sm" variant="secondary" disabled title="Waiting for tax centers">
+                        <Clock size={16} />
+                        Waiting...
+                      </Button>
+                    )}
                   </div>
                 </div>
               );
@@ -136,16 +161,16 @@ export default function RegionalDashboard({ view }) {
       <Modal
         open={!!feedbackModal}
         onClose={() => setFeedbackModal(null)}
-        title={step === 1 ? 'Review Plan Allocation' : step === 2 ? 'Distribute to Tax Centers' : 'Confirm & Submit'}
+        title={step === 1 ? 'Review Plan Allocation' : step === 2 ? 'Distribute to Tax Centers' : step === 3 ? 'Send to Tax Centers' : 'Confirm & Submit'}
         size="xl"
         footer={
           <div className="flex items-center justify-between w-full">
-            <span className="text-xs text-gray-400">Step {step} of 3</span>
+            <span className="text-xs text-gray-400">Step {step} of 4</span>
             <div className="flex gap-2">
               {step > 1 && <Button variant="secondary" onClick={() => setStep(s => s - 1)}>← Back</Button>}
               {step === 1 && <Button variant="secondary" onClick={() => setFeedbackModal(null)}>Cancel</Button>}
-              {step < 3 && <Button onClick={() => setStep(s => s + 1)}>Next →</Button>}
-              {step === 3 && (
+              {step < 4 && <Button onClick={() => setStep(s => s + 1)}>Next →</Button>}
+              {step === 4 && (
                 <Button variant="success" icon={Send} loading={loading} onClick={doSubmit} disabled={!allColsMatch()}>
                   Submit Feedback
                 </Button>
@@ -194,9 +219,45 @@ export default function RegionalDashboard({ view }) {
 
             {step === 3 && (
               <div className="space-y-4">
+                <Alert type="success" title="Ready to send to tax centers">
+                  Your allocation is complete. Review the breakdown below and click "Next" to send to your {getTaxCentersForRegion(region).length} tax centers.
+                </Alert>
+                <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                  <p className="text-sm font-semibold text-gray-700">Tax Center Allocations</p>
+                  {getTaxCentersForRegion(region).map(tc => {
+                    const tcTotal = AUDIT_TYPES.reduce((sum, a) => sum + (tcAllocations[tc.id]?.[a.id] || 0), 0);
+                    return (
+                      <div key={tc.id} className="bg-white rounded-lg border border-gray-200 p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="font-semibold text-gray-800">{tc.name}</p>
+                          <p className="text-lg font-bold text-blue-600">{tcTotal} cases</p>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 text-xs">
+                          {AUDIT_TYPES.map(a => (
+                            <div key={a.id} className="flex justify-between">
+                              <span className="text-gray-600">{a.name.split(' ')[0]}:</span>
+                              <span className="font-semibold text-gray-800">{tcAllocations[tc.id]?.[a.id] || 0}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="bg-blue-50 rounded-xl p-3 text-sm text-blue-800">
+                  <strong>Next step:</strong> Click "Next" to send these allocations to your tax centers. They will receive their breakdown and can provide feedback.
+                </div>
+              </div>
+            )}
+
+            {step === 4 && (
+              <div className="space-y-4">
                 {!allColsMatch() && (
                   <Alert type="error" title="Allocation incomplete">Please ensure all audit type column totals match the regional targets before submitting.</Alert>
                 )}
+                <Alert type="info" title="Final step: Your regional feedback">
+                  All allocations have been sent to your tax centers. Now provide your regional feedback for the audit director.
+                </Alert>
                 <Textarea
                   label="Regional Feedback / Comments *"
                   placeholder="Describe your region's capacity, concerns, or special considerations..."
@@ -206,7 +267,8 @@ export default function RegionalDashboard({ view }) {
                 <div className="bg-gray-50 rounded-xl p-4">
                   <p className="text-sm font-semibold text-gray-700 mb-2">Summary</p>
                   <p className="text-sm text-gray-600">Total cases allocated: <strong className="text-blue-700">{regionTotal.toLocaleString()}</strong></p>
-                  <p className="text-sm text-gray-600 mt-1">Tax centers covered: <strong>{getTaxCentersForRegion(region).length}</strong></p>
+                  <p className="text-sm text-gray-600 mt-1">Tax centers: <strong>{getTaxCentersForRegion(region).length}</strong></p>
+                  <p className="text-sm text-gray-600 mt-1">Allocations sent: <strong>✓ Yes</strong></p>
                   <p className={`text-sm mt-1 font-medium ${allColsMatch() ? 'text-green-600' : 'text-red-600'}`}>
                     {allColsMatch() ? '✓ All column totals validated' : '✗ Column totals do not match targets'}
                   </p>
@@ -225,7 +287,16 @@ export default function RegionalDashboard({ view }) {
               tabs={[{ id: 'distribution', label: 'Full Distribution' }, { id: 'timeline', label: 'Timeline' }]}
               active={viewTab} onChange={setViewTab}
             />
-            {viewTab === 'distribution' && <DistributionTable distribution={viewPlan.distribution} />}
+            {viewTab === 'distribution' && (
+              <div>
+                <Alert type="info" className="mb-4">
+                  Showing allocation for <strong>{region.replace(/_/g, ' ').toUpperCase()}</strong> region only
+                </Alert>
+                <DistributionTable 
+                  distribution={{ [region]: viewPlan.distribution?.[region] || {} }} 
+                />
+              </div>
+            )}
             {viewTab === 'timeline' && <PlanTimeline plan={viewPlan} />}
           </div>
         </Modal>

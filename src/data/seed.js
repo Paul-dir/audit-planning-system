@@ -5,50 +5,50 @@ import { REGIONS, AUDIT_TYPES, TAX_CENTERS, SECTORS, getRiskLevel } from './cons
 // ============================================================
 export const SEED_USERS = [
   // Planning Team
-  { id: 'u-pt-01', name: 'Abebe Tadesse',    email: 'abebe.tadesse@mor.gov.et',     role: 'planning_team',     region: null,          taxCenter: null,          password: '1234' },
-  { id: 'u-pt-02', name: 'Hanna Girma',      email: 'hanna.girma@mor.gov.et',       role: 'planning_team',     region: null,          taxCenter: null,          password: '1234' },
+  { id: 'u-pt-01', name: 'Planning Auditor',  email: 'planning.auditor1@mor.gov.et',  role: 'planning_team',     region: null,          taxCenter: null,          password: '1234' },
+  { id: 'u-pt-02', name: 'Abebe Tadesse',     email: 'abebe.tadesse@mor.gov.et',      role: 'planning_team',     region: null,          taxCenter: null,          password: '1234' },
+  { id: 'u-pt-03', name: 'Hanna Girma',       email: 'hanna.girma@mor.gov.et',        role: 'planning_team',     region: null,          taxCenter: null,          password: '1234' },
   // Audit Director
-  { id: 'u-ad-01', name: 'Tesfaye Bekele',   email: 'tesfaye.bekele@mor.gov.et',    role: 'audit_director',    region: null,          taxCenter: null,          password: '1234' },
+  { id: 'u-ad-01', name: 'Tesfaye Bekele',    email: 'tesfaye.bekele@mor.gov.et',     role: 'audit_director',    region: null,          taxCenter: null,          password: '1234' },
   // Senior Management
-  { id: 'u-sm-01', name: 'Rahel Hailu',      email: 'rahel.hailu@mor.gov.et',       role: 'senior_management', region: null,          taxCenter: null,          password: '1234' },
-  { id: 'u-sm-02', name: 'Biruk Assefa',     email: 'biruk.assefa@mor.gov.et',      role: 'senior_management', region: null,          taxCenter: null,          password: '1234' },
+  { id: 'u-sm-01', name: 'Rahel Hailu',       email: 'rahel.hailu@mor.gov.et',        role: 'senior_management', region: null,          taxCenter: null,          password: '1234' },
+  { id: 'u-sm-02', name: 'Biruk Assefa',      email: 'biruk.assefa@mor.gov.et',       role: 'senior_management', region: null,          taxCenter: null,          password: '1234' },
   // Regional Directors
-  { id: 'u-rd-aa', name: 'Getnet Alemu',     email: 'getnet.alemu@mor.gov.et',      role: 'regional_director', region: 'addis_ababa', taxCenter: null,          password: '1234' },
-  { id: 'u-rd-am', name: 'Tadesse Kebede',   email: 'tadesse.kebede@mor.gov.et',    role: 'regional_director', region: 'amhara',      taxCenter: null,          password: '1234' },
-  { id: 'u-rd-or', name: 'Gemechu Negash',   email: 'gemechu.negash@mor.gov.et',    role: 'regional_director', region: 'oromia',      taxCenter: null,          password: '1234' },
-  { id: 'u-rd-sn', name: 'Yonas Mengistu',   email: 'yonas.mengistu@mor.gov.et',    role: 'regional_director', region: 'snnpr',       taxCenter: null,          password: '1234' },
-  { id: 'u-rd-so', name: 'Ibrahim Hassan',   email: 'ibrahim.hassan@mor.gov.et',    role: 'regional_director', region: 'somali',      taxCenter: null,          password: '1234' },
+  { id: 'u-rd-aa', name: 'Getnet Alemu',      email: 'getnet.alemu@mor.gov.et',       role: 'regional_director', region: 'addis_ababa', taxCenter: null,          password: '1234' },
+  { id: 'u-rd-am', name: 'Tadesse Kebede',    email: 'tadesse.kebede@mor.gov.et',     role: 'regional_director', region: 'amhara',      taxCenter: null,          password: '1234' },
+  { id: 'u-rd-or', name: 'Gemechu Negash',    email: 'gemechu.negash@mor.gov.et',     role: 'regional_director', region: 'oromia',      taxCenter: null,          password: '1234' },
+  { id: 'u-rd-sn', name: 'Yonas Mengistu',    email: 'yonas.mengistu@mor.gov.et',     role: 'regional_director', region: 'snnpr',       taxCenter: null,          password: '1234' },
+  { id: 'u-rd-so', name: 'Ibrahim Hassan',    email: 'ibrahim.hassan@mor.gov.et',     role: 'regional_director', region: 'somali',      taxCenter: null,          password: '1234' },
   // Tax Center Managers — Addis Ababa
-  { id: 'u-tc-aa1', name: 'Mekdes Solomon',  email: 'mekdes.solomon@mor.gov.et',    role: 'tax_center_manager',region: 'addis_ababa', taxCenter: 'addis_ababa-tc1', password: '1234' },
-  { id: 'u-tc-aa2', name: 'Dereje Worku',    email: 'dereje.worku@mor.gov.et',      role: 'tax_center_manager',region: 'addis_ababa', taxCenter: 'addis_ababa-tc2', password: '1234' },
-  { id: 'u-tc-aa3', name: 'Selam Tekle',     email: 'selam.tekle@mor.gov.et',       role: 'tax_center_manager',region: 'addis_ababa', taxCenter: 'addis_ababa-tc3', password: '1234' },
+  { id: 'u-tc-aa1', name: 'Mekdes Solomon',  email: 'mekdes.solomon@mor.gov.et',     role: 'tax_center_manager',region: 'addis_ababa', taxCenter: 'addis_ababa-tc1', password: '1234' },
+  { id: 'u-tc-aa2', name: 'Dereje Worku',    email: 'dereje.worku@mor.gov.et',       role: 'tax_center_manager',region: 'addis_ababa', taxCenter: 'addis_ababa-tc2', password: '1234' },
+  { id: 'u-tc-aa3', name: 'Selam Tekle',     email: 'selam.tekle@mor.gov.et',        role: 'tax_center_manager',region: 'addis_ababa', taxCenter: 'addis_ababa-tc3', password: '1234' },
   // Tax Center Managers — Oromia
-  { id: 'u-tc-or1', name: 'Chaltu Girma',    email: 'chaltu.girma@mor.gov.et',      role: 'tax_center_manager',region: 'oromia',      taxCenter: 'oromia-tc1',      password: '1234' },
-  { id: 'u-tc-or2', name: 'Diriba Lema',     email: 'diriba.lema@mor.gov.et',       role: 'tax_center_manager',region: 'oromia',      taxCenter: 'oromia-tc2',      password: '1234' },
-  { id: 'u-tc-or3', name: 'Fatuma Umer',     email: 'fatuma.umer@mor.gov.et',       role: 'tax_center_manager',region: 'oromia',      taxCenter: 'oromia-tc3',      password: '1234' },
+  { id: 'u-tc-or1', name: 'Chaltu Girma',    email: 'chaltu.girma@mor.gov.et',       role: 'tax_center_manager',region: 'oromia',      taxCenter: 'oromia-tc1',      password: '1234' },
+  { id: 'u-tc-or2', name: 'Diriba Lema',     email: 'diriba.lema@mor.gov.et',        role: 'tax_center_manager',region: 'oromia',      taxCenter: 'oromia-tc2',      password: '1234' },
+  { id: 'u-tc-or3', name: 'Fatuma Umer',     email: 'fatuma.umer@mor.gov.et',        role: 'tax_center_manager',region: 'oromia',      taxCenter: 'oromia-tc3',      password: '1234' },
   // Team Leaders — AA-TC1
-  { id: 'u-tl-aa1a', name: 'Henok Belay',   email: 'henok.belay@mor.gov.et',       role: 'team_leader',       region: 'addis_ababa', taxCenter: 'addis_ababa-tc1', password: '1234' },
-  { id: 'u-tl-aa1b', name: 'Tigist Alemu',  email: 'tigist.alemu@mor.gov.et',      role: 'team_leader',       region: 'addis_ababa', taxCenter: 'addis_ababa-tc1', password: '1234' },
+  { id: 'u-tl-aa1a', name: 'Henok Belay',   email: 'henok.belay@mor.gov.et',        role: 'team_leader',       region: 'addis_ababa', taxCenter: 'addis_ababa-tc1', auditType: 'desk_audit',   password: '1234' },
+  { id: 'u-tl-aa1b', name: 'Tigist Alemu',  email: 'tigist.alemu@mor.gov.et',       role: 'team_leader',       region: 'addis_ababa', taxCenter: 'addis_ababa-tc1', auditType: 'field_audit',  password: '1234' },
+  { id: 'u-tl-aa1c', name: 'Melaku Bekele', email: 'melaku.bekele@mor.gov.et',       role: 'team_leader',       region: 'addis_ababa', taxCenter: 'addis_ababa-tc1', auditType: 'joint_audit',  password: '1234', isJointCommittee: true },
   // Team Leaders — AA-TC2
-  { id: 'u-tl-aa2a', name: 'Fikadu Desta',  email: 'fikadu.desta@mor.gov.et',      role: 'team_leader',       region: 'addis_ababa', taxCenter: 'addis_ababa-tc2', password: '1234' },
+  { id: 'u-tl-aa2a', name: 'Fikadu Desta',  email: 'fikadu.desta@mor.gov.et',       role: 'team_leader',       region: 'addis_ababa', taxCenter: 'addis_ababa-tc2', auditType: 'desk_audit',   password: '1234' },
   // Team Leaders — OR-TC1
-  { id: 'u-tl-or1a', name: 'Lalisa Wakjira',email: 'lalisa.wakjira@mor.gov.et',    role: 'team_leader',       region: 'oromia',      taxCenter: 'oromia-tc1',      password: '1234' },
+  { id: 'u-tl-or1a', name: 'Lalisa Wakjira',email: 'lalisa.wakjira@mor.gov.et',     role: 'team_leader',       region: 'oromia',      taxCenter: 'oromia-tc1',      auditType: 'desk_audit',   password: '1234' },
   // Auditors — AA-TC1
-  { id: 'u-aud-aa1a', name: 'Kidist Mehari', email: 'kidist.mehari@mor.gov.et',    role: 'auditor',           region: 'addis_ababa', taxCenter: 'addis_ababa-tc1', teamLeader: 'u-tl-aa1a', password: '1234' },
-  { id: 'u-aud-aa1b', name: 'Robel Tadesse', email: 'robel.tadesse@mor.gov.et',    role: 'auditor',           region: 'addis_ababa', taxCenter: 'addis_ababa-tc1', teamLeader: 'u-tl-aa1a', password: '1234' },
-  { id: 'u-aud-aa1c', name: 'Natnael Kifle', email: 'natnael.kifle@mor.gov.et',    role: 'auditor',           region: 'addis_ababa', taxCenter: 'addis_ababa-tc1', teamLeader: 'u-tl-aa1b', password: '1234' },
+  { id: 'u-aud-aa1a', name: 'Kidist Mehari', email: 'kidist.mehari@mor.gov.et',     role: 'auditor',           region: 'addis_ababa', taxCenter: 'addis_ababa-tc1', teamLeader: 'u-tl-aa1a', password: '1234' },
+  { id: 'u-aud-aa1b', name: 'Robel Tadesse', email: 'robel.tadesse@mor.gov.et',     role: 'auditor',           region: 'addis_ababa', taxCenter: 'addis_ababa-tc1', teamLeader: 'u-tl-aa1a', password: '1234' },
+  { id: 'u-aud-aa1c', name: 'Natnael Kifle', email: 'natnael.kifle@mor.gov.et',     role: 'auditor',           region: 'addis_ababa', taxCenter: 'addis_ababa-tc1', teamLeader: 'u-tl-aa1b', password: '1234' },
   // Auditors — AA-TC2
-  { id: 'u-aud-aa2a', name: 'Meseret Hailu', email: 'meseret.hailu@mor.gov.et',    role: 'auditor',           region: 'addis_ababa', taxCenter: 'addis_ababa-tc2', teamLeader: 'u-tl-aa2a', password: '1234' },
+  { id: 'u-aud-aa2a', name: 'Meseret Hailu', email: 'meseret.hailu@mor.gov.et',     role: 'auditor',           region: 'addis_ababa', taxCenter: 'addis_ababa-tc2', teamLeader: 'u-tl-aa2a', password: '1234' },
   // Auditors — OR-TC1
-  { id: 'u-aud-or1a', name: 'Tolera Banti',  email: 'tolera.banti@mor.gov.et',     role: 'auditor',           region: 'oromia',      taxCenter: 'oromia-tc1',      teamLeader: 'u-tl-or1a', password: '1234' },
+  { id: 'u-aud-or1a', name: 'Tolera Banti',  email: 'tolera.banti@mor.gov.et',      role: 'auditor',           region: 'oromia',      taxCenter: 'oromia-tc1',      teamLeader: 'u-tl-or1a', password: '1234' },
 ];
 
 // ============================================================
 // Deterministic distribution helper
 // ============================================================
 const buildDistribution = (regionWeights) => {
-  // regionWeights: { regionId: totalCases }
-  // Returns distribution: { regionId: { auditTypeId: count } }
   const weights = { desk_audit: 0.30, field_audit: 0.25, joint_audit: 0.18, transfer_pricing: 0.10, comprehensive: 0.10, issue_audit: 0.07 };
   const dist = {};
   for (const [regionId, total] of Object.entries(regionWeights)) {
@@ -74,12 +74,9 @@ const buildTaxCenterDistribution = (regionId, regionDist) => {
   for (const tcWeights of [{ w: 0.40, idx: 0 }, { w: 0.35, idx: 1 }, { w: 0.25, idx: 2 }]) {
     const tc = tcs[tcWeights.idx];
     tcDist[tc.id] = {};
-    let remaining = {};
-    AUDIT_TYPES.forEach(a => { remaining[a.id] = regionDist[a.id] || 0; });
     if (tcWeights.idx < 2) {
       AUDIT_TYPES.forEach(a => { tcDist[tc.id][a.id] = Math.round(regionDist[a.id] * tcWeights.w); });
     } else {
-      // Last TC gets what's left
       AUDIT_TYPES.forEach(a => {
         const prev = (tcDist[tcs[0].id]?.[a.id] || 0) + (tcDist[tcs[1].id]?.[a.id] || 0);
         tcDist[tc.id][a.id] = regionDist[a.id] - prev;
@@ -99,7 +96,6 @@ const makeTimeline = (entries) => entries.map(([status, actor, comment, daysAgo]
 const plan1Dist = buildDistribution({ addis_ababa: 350, amhara: 280, oromia: 320, snnpr: 250, somali: 200 });
 const plan2Dist = buildDistribution({ addis_ababa: 400, amhara: 300, oromia: 350, snnpr: 280, somali: 220 });
 
-// Build regional feedback (all regions submitted) for plan2
 const buildAllRegionalFeedback = (dist) => {
   const feedback = {};
   REGIONS.forEach(region => {
@@ -114,7 +110,7 @@ const buildAllRegionalFeedback = (dist) => {
 };
 
 export const SEED_PLANS = [
-  // Plan 1: Draft — planning team can edit and submit
+  // Plan 1: Draft
   {
     id: 'AP-2025-001',
     name: 'FY 2025 National Audit Plan — Q1',
@@ -126,14 +122,16 @@ export const SEED_PLANS = [
     distribution: plan1Dist,
     totalCases: 1400,
     directorComment: '',
+    amendmentComment: '',
     revisions: [],
     regionalFeedback: {},
     seniorComment: '',
+    riskBased: true,
     timeline: makeTimeline([
-      ['DRAFT', 'u-pt-01', 'Plan created', 10],
+      ['DRAFT', 'u-pt-01', 'Plan created from risk engine analysis', 10],
     ]),
   },
-  // Plan 2: Submitted to Director — director can approve
+  // Plan 2: Submitted to Director
   {
     id: 'AP-2025-002',
     name: 'FY 2025 National Audit Plan — Q2',
@@ -145,15 +143,17 @@ export const SEED_PLANS = [
     distribution: plan2Dist,
     totalCases: 1550,
     directorComment: '',
+    amendmentComment: '',
     revisions: [],
     regionalFeedback: {},
     seniorComment: '',
+    riskBased: true,
     timeline: makeTimeline([
-      ['DRAFT', 'u-pt-01', 'Plan created', 20],
+      ['DRAFT', 'u-pt-01', 'Plan created from risk engine analysis', 20],
       ['SUBMITTED_TO_DIRECTOR', 'u-pt-01', 'Submitted for director review', 18],
     ]),
   },
-  // Plan 3: Awaiting Regional Feedback — regional directors can act
+  // Plan 3: Awaiting Regional Feedback
   {
     id: 'AP-2025-003',
     name: 'FY 2025 National Audit Plan — Q3',
@@ -164,7 +164,8 @@ export const SEED_PLANS = [
     createdAt: new Date(Date.now() - 35 * 86400000).toISOString(),
     distribution: plan1Dist,
     totalCases: 1400,
-    directorComment: 'Approved. The plan is well-structured. Send to regions for their allocations.',
+    directorComment: 'Approved. The plan is well-structured. Send to regions for their allocations and tax center distribution.',
+    amendmentComment: '',
     revisions: [],
     regionalFeedback: {},
     seniorComment: '',
@@ -187,7 +188,15 @@ export const SEED_PLANS = [
     distribution: plan2Dist,
     totalCases: 1550,
     directorComment: 'Excellent plan. Approved and sent to regions.',
-    revisions: [],
+    amendmentComment: 'Please increase desk audit allocation for Addis Ababa and reduce joint audit cases in Oromia based on capacity feedback.',
+    revisions: [
+      {
+        comment: 'Increase desk audit allocation for Addis Ababa; reduce joint audit in Oromia.',
+        timestamp: new Date(Date.now() - 58 * 86400000).toISOString(),
+        by: 'u-ad-01',
+        type: 'amendment',
+      },
+    ],
     regionalFeedback: buildAllRegionalFeedback(plan2Dist),
     seniorComment: '',
     timeline: makeTimeline([
@@ -196,7 +205,9 @@ export const SEED_PLANS = [
       ['DIRECTOR_APPROVED', 'u-ad-01', 'Approved', 75],
       ['AWAITING_REGIONAL_FEEDBACK', 'u-ad-01', 'Sent to regions', 74],
       ['FEEDBACK_COLLECTED', 'system', 'All regional feedback received', 60],
-      ['SUBMITTED_TO_SENIOR_MGMT', 'u-pt-01', 'Submitted for final approval', 55],
+      ['AMENDMENT_REQUIRED', 'u-ad-01', 'Increase desk audit for AA; reduce joint in Oromia', 58],
+      ['SUBMITTED_TO_DIRECTOR', 'u-pt-01', 'Amended plan resubmitted', 56],
+      ['SUBMITTED_TO_SENIOR_MGMT', 'u-ad-01', 'Submitted amended plan for final approval', 55],
     ]),
   },
 ];
@@ -214,13 +225,11 @@ const TAXPAYER_NAMES = [
   'Adama Sugar Factory', 'Ziway Flower Farm', 'Nazareth Auto Spare Parts', 'Gambella Resources',
 ];
 
-// Browser-safe cap per (tax-center, audit-type) cell — keeps localStorage lean while
-// preserving proportional accuracy. Set high enough that realistic plans (1 400–1 600
-// cases spread across 15 TCs × 6 types) show meaningful case counts per cell.
 const DEMO_CAP_PER_CELL = 30;
 
 const makeCase = (planId, auditTypeId, regionId, taxCenterId, caseNum) => {
-  const score = 50 + (caseNum * 17 + 31) % 50; // deterministic, no Math.random
+  const score = 50 + (caseNum * 17 + 31) % 50;
+  // Joint audit cases get isJointCommittee flag
   return {
     id: `CASE-${planId}-${String(caseNum).padStart(5, '0')}`,
     planId,
@@ -234,7 +243,9 @@ const makeCase = (planId, auditTypeId, regionId, taxCenterId, caseNum) => {
     auditType: auditTypeId,
     region: regionId,
     taxCenter: taxCenterId,
+    isJointCommittee: auditTypeId === 'joint_audit',
     status: 'PENDING',
+    priority: null, // null | 'high' | 'medium' | 'low'
     assignedTeamLeader: null,
     assignedAuditor: null,
     assignedAt: null,
@@ -245,20 +256,6 @@ const makeCase = (planId, auditTypeId, regionId, taxCenterId, caseNum) => {
   };
 };
 
-/**
- * Generate cases for a finalized plan.
- *
- * @param {string} planId
- * @param {Object} dist   - regional distribution: { regionId: { auditTypeId: count } }
- * @param {Object} regionalFeedback - plan.regionalFeedback (may be empty for plans
- *                          finalized before regions submitted allocations)
- *
- * Strategy:
- *  1. When a region has submitted taxCenterAllocations (the normal path), use those
- *     exact counts per (TC, auditType), capped at DEMO_CAP_PER_CELL for browser perf.
- *  2. When a region has NO feedback (edge case / early finalize), fall back to
- *     distributing the regional total evenly across its 3 tax centers.
- */
 export const generateCases = (planId, dist, regionalFeedback = {}) => {
   const cases = [];
   let caseNum = 1;
@@ -270,7 +267,6 @@ export const generateCases = (planId, dist, regionalFeedback = {}) => {
 
     for (const auditType of AUDIT_TYPES) {
       if (tcAllocations) {
-        // ── Path 1: use approved tax-center allocations ──────────────────
         for (const tc of tcs) {
           const count = tcAllocations[tc.id]?.[auditType.id] || 0;
           const capped = Math.min(count, DEMO_CAP_PER_CELL);
@@ -279,7 +275,6 @@ export const generateCases = (planId, dist, regionalFeedback = {}) => {
           }
         }
       } else {
-        // ── Path 2: fallback — distribute evenly across TCs ─────────────
         const total = Math.min(regionDist[auditType.id] || 0, DEMO_CAP_PER_CELL * tcs.length);
         for (let i = 0; i < total; i++) {
           const tc = tcs[i % tcs.length];

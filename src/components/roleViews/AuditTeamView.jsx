@@ -7,6 +7,7 @@ import AuditPlanningTeamAmendView from '../views/AuditPlanningTeamAmendView';
 import PlanJourneyView from '../views/PlanJourneyView';
 import ConfigurationView from '../views/ConfigurationView';
 import CascadePlanToCasesView from '../views/CascadePlanToCasesView';
+import PlanConfigurationPage from '../../pages/planning/PlanConfigurationPage.jsx';
 
 /**
  * Audit Team View Container
@@ -23,6 +24,8 @@ function AuditTeamView() {
         return <AuditPlanningTeamAmendView />;
       case 'plan-journey':
         return <PlanJourneyView />;
+      case 'plan-configuration':
+        return <PlanConfigurationPage />;
       case 'risk-engine':
       case 'create-plan':
       case 'my-plans':

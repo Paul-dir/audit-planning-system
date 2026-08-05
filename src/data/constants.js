@@ -54,6 +54,7 @@ export const PLAN_STATUS = {
   DIRECTOR_APPROVED:           { id: 'DIRECTOR_APPROVED',           label: 'Director Approved',            color: 'blue'   },
   AWAITING_REGIONAL_FEEDBACK:  { id: 'AWAITING_REGIONAL_FEEDBACK',  label: 'Awaiting Regional Feedback',   color: 'purple' },
   FEEDBACK_COLLECTED:          { id: 'FEEDBACK_COLLECTED',          label: 'All Feedback Received',        color: 'teal'   },
+  AMENDMENT_REQUIRED:          { id: 'AMENDMENT_REQUIRED',          label: 'Amendment Required',           color: 'orange' },
   SUBMITTED_TO_SENIOR_MGMT:    { id: 'SUBMITTED_TO_SENIOR_MGMT',    label: 'Pending Senior Approval',      color: 'indigo' },
   SENIOR_MGMT_APPROVED:        { id: 'SENIOR_MGMT_APPROVED',        label: 'Senior Management Approved',   color: 'green'  },
   FINALIZED:                   { id: 'FINALIZED',                   label: 'Finalized & Deployed',         color: 'green'  },

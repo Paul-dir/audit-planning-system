@@ -31,5 +31,5 @@ export const STORE_KEYS = {
   USERS: 'users',
   PLANS: 'plans',
   CASES: 'cases',
-  SEEDED: 'seeded_v4',
+  SEEDED: 'seeded_v5',
 };

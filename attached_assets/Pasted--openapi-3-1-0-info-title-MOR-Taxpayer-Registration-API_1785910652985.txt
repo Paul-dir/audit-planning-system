@@ -1,0 +1,1940 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "MOR Taxpayer Registration API",
+    "version": "1.0.0",
+    "description": "Public REST API of the Ethiopia Ministry of Revenue (MOR) Taxpayer Registration Service. It is the taxpayer master-data provider consumed by the Risk Engine, Annual Audit Planning, Case Management, Reporting and Dashboards. This service stores factual taxpayer data only — it holds no risk score, risk level, priority rank or audit-selection field. Every endpoint returns a `{ data, error, meta }` envelope. Read endpoints require no authentication. Only POST /admin/generate-taxpayers requires a bearer token.",
+    "contact": {
+      "name": "MOR Taxpayer Registration Service"
+    },
+    "license": {
+      "name": "Internal use — MOR"
+    }
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Current host"
+    },
+    {
+      "url": "https://project--d0918d51-a625-4432-b108-ecc84cb59ed8.lovable.app",
+      "description": "Production (stable)"
+    },
+    {
+      "url": "https://project--d0918d51-a625-4432-b108-ecc84cb59ed8-dev.lovable.app",
+      "description": "Preview (stable)"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Organization",
+      "description": "Regions and tax centers (national → region → tax center)"
+    },
+    {
+      "name": "Reference",
+      "description": "Business sectors and tax types"
+    },
+    {
+      "name": "Taxpayers",
+      "description": "Taxpayer register, search and 360 profile"
+    },
+    {
+      "name": "Taxpayer Detail",
+      "description": "Filing, payment, financial, third-party and audit history"
+    },
+    {
+      "name": "Statistics",
+      "description": "National, regional and tax-center taxpayer counts"
+    },
+    {
+      "name": "Export",
+      "description": "Bulk dataset downloads"
+    },
+    {
+      "name": "Admin",
+      "description": "Synthetic register generation (bearer token required)"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "Envelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "description": "Payload, or null on error"
+          },
+          "error": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "message": {
+                "type": "string"
+              },
+              "code": {
+                "type": "integer"
+              }
+            }
+          },
+          "meta": {
+            "type": "object",
+            "nullable": true
+          }
+        },
+        "required": [
+          "data",
+          "error",
+          "meta"
+        ]
+      },
+      "Region": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string",
+            "examples": [
+              "OR"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "examples": [
+              "Oromia"
+            ]
+          }
+        }
+      },
+      "TaxCenter": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string",
+            "examples": [
+              "OR-SHA"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "examples": [
+              "Shashemene Tax Center"
+            ]
+          },
+          "region_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "region_code": {
+            "type": "string",
+            "examples": [
+              "OR"
+            ]
+          }
+        }
+      },
+      "BusinessSector": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "examples": [
+              "WHL"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "examples": [
+              "Wholesale Trade"
+            ]
+          },
+          "sub_sectors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "TaxType": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "examples": [
+              "VAT"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "examples": [
+              "Value Added Tax"
+            ]
+          },
+          "frequency": {
+            "type": "string",
+            "enum": [
+              "monthly",
+              "quarterly",
+              "annual",
+              "event"
+            ]
+          }
+        }
+      },
+      "Taxpayer": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tin": {
+            "type": "string",
+            "examples": [
+              "0100000123"
+            ]
+          },
+          "legal_name": {
+            "type": "string"
+          },
+          "trade_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "owner_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "taxpayer_type": {
+            "type": "string",
+            "enum": [
+              "LTO",
+              "MTO",
+              "STO"
+            ]
+          },
+          "legal_form": {
+            "type": "string"
+          },
+          "sector_code": {
+            "type": "string"
+          },
+          "sub_sector": {
+            "type": "string",
+            "nullable": true
+          },
+          "business_activity": {
+            "type": "string",
+            "nullable": true
+          },
+          "registration_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive",
+              "deregistered"
+            ]
+          },
+          "tin_status": {
+            "type": "string",
+            "enum": [
+              "valid",
+              "suspended"
+            ]
+          },
+          "vat_registered": {
+            "type": "boolean"
+          },
+          "excise_registered": {
+            "type": "boolean"
+          },
+          "tot_registered": {
+            "type": "boolean"
+          },
+          "paye_registered": {
+            "type": "boolean"
+          },
+          "withholding_registered": {
+            "type": "boolean"
+          },
+          "income_tax_category": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "address": {
+            "type": "string",
+            "nullable": true
+          },
+          "region_code": {
+            "type": "string"
+          },
+          "tax_center_code": {
+            "type": "string"
+          },
+          "latitude": {
+            "type": "number",
+            "nullable": true
+          },
+          "longitude": {
+            "type": "number",
+            "nullable": true
+          },
+          "assigned_officer": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "TaxReturn": {
+        "type": "object",
+        "properties": {
+          "tax_type": {
+            "type": "string",
+            "enum": [
+              "VAT",
+              "CIT",
+              "PAYE",
+              "WHT",
+              "TOT",
+              "EXC",
+              "STD"
+            ]
+          },
+          "tax_year": {
+            "type": "integer"
+          },
+          "period": {
+            "type": "string",
+            "examples": [
+              "Q1"
+            ]
+          },
+          "due_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "filed_date": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "description": "null = return not filed"
+          },
+          "filed_late": {
+            "type": "boolean"
+          },
+          "declared_amount": {
+            "type": "number"
+          },
+          "taxable_income": {
+            "type": "number"
+          },
+          "tax_due": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "filed",
+              "filed_late",
+              "not_filed"
+            ]
+          },
+          "filing_channel": {
+            "type": "string"
+          }
+        }
+      },
+      "Payment": {
+        "type": "object",
+        "properties": {
+          "tax_type": {
+            "type": "string"
+          },
+          "tax_year": {
+            "type": "integer"
+          },
+          "period": {
+            "type": "string"
+          },
+          "due_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "payment_date": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "amount_due": {
+            "type": "number"
+          },
+          "amount_paid": {
+            "type": "number"
+          },
+          "outstanding": {
+            "type": "number"
+          },
+          "penalty": {
+            "type": "number"
+          },
+          "interest": {
+            "type": "number"
+          },
+          "payment_method": {
+            "type": "string"
+          },
+          "late_payment": {
+            "type": "boolean"
+          }
+        }
+      },
+      "FinancialStatement": {
+        "type": "object",
+        "properties": {
+          "tax_year": {
+            "type": "integer"
+          },
+          "revenue": {
+            "type": "number"
+          },
+          "cost_of_goods_sold": {
+            "type": "number"
+          },
+          "gross_profit": {
+            "type": "number"
+          },
+          "operating_expenses": {
+            "type": "number"
+          },
+          "payroll_expense": {
+            "type": "number"
+          },
+          "net_profit_loss": {
+            "type": "number"
+          },
+          "total_assets": {
+            "type": "number"
+          },
+          "total_liabilities": {
+            "type": "number"
+          },
+          "equity": {
+            "type": "number"
+          },
+          "cash": {
+            "type": "number"
+          },
+          "inventory": {
+            "type": "number"
+          },
+          "accounts_receivable": {
+            "type": "number"
+          },
+          "accounts_payable": {
+            "type": "number"
+          }
+        }
+      },
+      "VatDeclaration": {
+        "type": "object",
+        "properties": {
+          "tax_year": {
+            "type": "integer"
+          },
+          "period": {
+            "type": "string"
+          },
+          "gross_sales_per_vat": {
+            "type": "number"
+          },
+          "output_vat": {
+            "type": "number"
+          },
+          "input_vat": {
+            "type": "number"
+          },
+          "net_vat_payable": {
+            "type": "number"
+          },
+          "refund_claimed": {
+            "type": "number"
+          }
+        }
+      },
+      "PayrollRecord": {
+        "type": "object",
+        "properties": {
+          "tax_year": {
+            "type": "integer"
+          },
+          "employees_count": {
+            "type": "integer"
+          },
+          "total_salaries_wages_expense": {
+            "type": "number"
+          },
+          "payroll_tax_withheld": {
+            "type": "number"
+          },
+          "payroll_tax_paid": {
+            "type": "number"
+          }
+        }
+      },
+      "ImportRecord": {
+        "type": "object",
+        "properties": {
+          "tax_year": {
+            "type": "integer"
+          },
+          "declaration_count": {
+            "type": "integer"
+          },
+          "declared_import_value": {
+            "type": "number"
+          },
+          "customs_declared_value": {
+            "type": "number"
+          },
+          "duty_paid": {
+            "type": "number"
+          },
+          "commodity_category": {
+            "type": "string"
+          }
+        }
+      },
+      "ThirdPartyRecord": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "bank",
+              "customs",
+              "e-invoicing"
+            ]
+          },
+          "tax_year": {
+            "type": "integer"
+          },
+          "reported_value": {
+            "type": "number"
+          },
+          "taxpayer_declared_value": {
+            "type": "number"
+          },
+          "variance_pct": {
+            "type": "number"
+          },
+          "match_status": {
+            "type": "string",
+            "enum": [
+              "matched",
+              "discrepancy",
+              "unverified"
+            ]
+          },
+          "reference": {
+            "type": "string"
+          }
+        }
+      },
+      "AuditHistoryRecord": {
+        "type": "object",
+        "properties": {
+          "prior_case_id": {
+            "type": "string"
+          },
+          "audit_year": {
+            "type": "integer"
+          },
+          "audit_type": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "no_change",
+              "adjustment",
+              "penalty"
+            ]
+          },
+          "finding": {
+            "type": "string"
+          },
+          "additional_assessment": {
+            "type": "number"
+          },
+          "penalty": {
+            "type": "number"
+          },
+          "interest": {
+            "type": "number"
+          },
+          "appealed": {
+            "type": "boolean"
+          },
+          "closed_date": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "ComplianceRecord": {
+        "type": "object",
+        "properties": {
+          "tax_year": {
+            "type": "integer"
+          },
+          "filing_on_time_rate": {
+            "type": "number"
+          },
+          "payment_on_time_rate": {
+            "type": "number"
+          },
+          "late_filings_count": {
+            "type": "integer"
+          },
+          "late_payments_count": {
+            "type": "integer"
+          },
+          "missing_returns_count": {
+            "type": "integer"
+          },
+          "outstanding_debt": {
+            "type": "number"
+          },
+          "penalties_count": {
+            "type": "integer"
+          },
+          "enforcement_actions_count": {
+            "type": "integer"
+          },
+          "objections_count": {
+            "type": "integer"
+          },
+          "appeals_count": {
+            "type": "integer"
+          },
+          "court_cases_count": {
+            "type": "integer"
+          },
+          "tax_clearance_status": {
+            "type": "string",
+            "enum": [
+              "granted",
+              "withheld"
+            ]
+          }
+        }
+      },
+      "TaxpayerProfile": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Taxpayer"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "business_info": {
+                "type": "object"
+              },
+              "returns": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/TaxReturn"
+                }
+              },
+              "payments": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Payment"
+                }
+              },
+              "financial_statements": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/FinancialStatement"
+                }
+              },
+              "vat_declarations": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/VatDeclaration"
+                }
+              },
+              "payroll_records": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/PayrollRecord"
+                }
+              },
+              "import_records": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ImportRecord"
+                }
+              },
+              "export_records": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "third_party_data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ThirdPartyRecord"
+                }
+              },
+              "compliance_history": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ComplianceRecord"
+                }
+              },
+              "audit_history": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AuditHistoryRecord"
+                }
+              },
+              "documents": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "paths": {
+    "/api/public/v1/regions": {
+      "get": {
+        "tags": [
+          "Organization"
+        ],
+        "summary": "List all regions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Region"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/regions/{code}": {
+      "get": {
+        "tags": [
+          "Organization"
+        ],
+        "summary": "Get a region with its tax centers and taxpayer count",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "OR"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Region"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/tax-centers": {
+      "get": {
+        "tags": [
+          "Organization"
+        ],
+        "summary": "List tax centers",
+        "parameters": [
+          {
+            "name": "region",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by region code",
+            "example": "OR"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/TaxCenter"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/tax-centers/{code}": {
+      "get": {
+        "tags": [
+          "Organization"
+        ],
+        "summary": "Get one tax center with its taxpayer count",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "OR-SHA"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/TaxCenter"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/business-sectors": {
+      "get": {
+        "tags": [
+          "Reference"
+        ],
+        "summary": "List business sectors",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/BusinessSector"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/tax-types": {
+      "get": {
+        "tags": [
+          "Reference"
+        ],
+        "summary": "List tax types",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/TaxType"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/taxpayers": {
+      "get": {
+        "tags": [
+          "Taxpayers"
+        ],
+        "summary": "List / filter the taxpayer register",
+        "parameters": [
+          {
+            "name": "region",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": "OR"
+          },
+          {
+            "name": "taxCenter",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": "OR-SHA"
+          },
+          {
+            "name": "sector",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": "WHL"
+          },
+          {
+            "name": "taxpayerType",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "LTO",
+                "MTO",
+                "STO"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "active",
+                "inactive",
+                "deregistered"
+              ]
+            }
+          },
+          {
+            "name": "vatRegistered",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "registrationDateFrom",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "registrationDateTo",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Free text on TIN / legal name / trade name"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500,
+              "default": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Taxpayer"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/taxpayers/search": {
+      "get": {
+        "tags": [
+          "Taxpayers"
+        ],
+        "summary": "Search taxpayers by TIN or name",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "Sheger"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 25
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Taxpayer"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/taxpayers/{tin}": {
+      "get": {
+        "tags": [
+          "Taxpayers"
+        ],
+        "summary": "Full 360 taxpayer profile with all related records nested",
+        "parameters": [
+          null
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/TaxpayerProfile"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Taxpayer not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Envelope"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/taxpayers/{tin}/returns": {
+      "get": {
+        "tags": [
+          "Taxpayer Detail"
+        ],
+        "summary": "returns for a taxpayer",
+        "parameters": [
+          null
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/TaxReturn"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/taxpayers/{tin}/payments": {
+      "get": {
+        "tags": [
+          "Taxpayer Detail"
+        ],
+        "summary": "payments for a taxpayer",
+        "parameters": [
+          null
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Payment"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/taxpayers/{tin}/financial-statements": {
+      "get": {
+        "tags": [
+          "Taxpayer Detail"
+        ],
+        "summary": "financial statements for a taxpayer",
+        "parameters": [
+          null
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/FinancialStatement"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/taxpayers/{tin}/vat-declarations": {
+      "get": {
+        "tags": [
+          "Taxpayer Detail"
+        ],
+        "summary": "vat declarations for a taxpayer",
+        "parameters": [
+          null
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/VatDeclaration"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/taxpayers/{tin}/payroll-records": {
+      "get": {
+        "tags": [
+          "Taxpayer Detail"
+        ],
+        "summary": "payroll records for a taxpayer",
+        "parameters": [
+          null
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/PayrollRecord"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/taxpayers/{tin}/import-records": {
+      "get": {
+        "tags": [
+          "Taxpayer Detail"
+        ],
+        "summary": "import records for a taxpayer",
+        "parameters": [
+          null
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ImportRecord"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/taxpayers/{tin}/export-records": {
+      "get": {
+        "tags": [
+          "Taxpayer Detail"
+        ],
+        "summary": "export records for a taxpayer",
+        "parameters": [
+          null
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ImportRecord"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/taxpayers/{tin}/third-party-data": {
+      "get": {
+        "tags": [
+          "Taxpayer Detail"
+        ],
+        "summary": "third party data for a taxpayer",
+        "parameters": [
+          null
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ThirdPartyRecord"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/taxpayers/{tin}/audit-history": {
+      "get": {
+        "tags": [
+          "Taxpayer Detail"
+        ],
+        "summary": "audit history for a taxpayer",
+        "parameters": [
+          null
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/AuditHistoryRecord"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/taxpayers/{tin}/compliance-history": {
+      "get": {
+        "tags": [
+          "Taxpayer Detail"
+        ],
+        "summary": "compliance history for a taxpayer",
+        "parameters": [
+          null
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ComplianceRecord"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/taxpayers/{tin}/documents": {
+      "get": {
+        "tags": [
+          "Taxpayer Detail"
+        ],
+        "summary": "documents for a taxpayer",
+        "parameters": [
+          null
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Envelope"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/taxpayers/{tin}/business-info": {
+      "get": {
+        "tags": [
+          "Taxpayer Detail"
+        ],
+        "summary": "business info for a taxpayer",
+        "parameters": [
+          null
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Envelope"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/statistics/national": {
+      "get": {
+        "tags": [
+          "Statistics"
+        ],
+        "summary": "National taxpayer totals with breakdowns by region, sector, type and status",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Envelope"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/statistics/regions": {
+      "get": {
+        "tags": [
+          "Statistics"
+        ],
+        "summary": "Taxpayer totals per region",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Envelope"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/statistics/tax-centers": {
+      "get": {
+        "tags": [
+          "Statistics"
+        ],
+        "summary": "Taxpayer totals per tax center",
+        "parameters": [
+          {
+            "name": "region",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Envelope"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/export/taxpayers.csv": {
+      "get": {
+        "tags": [
+          "Export"
+        ],
+        "summary": "Download the whole taxpayer register as CSV",
+        "responses": {
+          "200": {
+            "description": "CSV file",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/export/taxpayers.json": {
+      "get": {
+        "tags": [
+          "Export"
+        ],
+        "summary": "Download the whole taxpayer register as JSON",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Taxpayer"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/openapi.json": {
+      "get": {
+        "tags": [
+          "Reference"
+        ],
+        "summary": "This OpenAPI document (JSON)",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/public/v1/openapi.yaml": {
+      "get": {
+        "tags": [
+          "Reference"
+        ],
+        "summary": "This OpenAPI document (YAML)",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/public/v1/admin/generate-taxpayers": {
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Generate the synthetic taxpayer register",
+        "description": "Admin only. Requires a bearer token from an authenticated session. Either tops up to `count` taxpayers or resets the register first.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5000,
+                    "default": 1250
+                  },
+                  "resetFirst": {
+                    "type": "boolean",
+                    "default": true
+                  }
+                }
+              },
+              "example": {
+                "count": 1250,
+                "resetFirst": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Envelope"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    }
+  }
+}

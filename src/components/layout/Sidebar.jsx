@@ -1,36 +1,40 @@
-import { LayoutDashboard, ClipboardList, CheckSquare, Map, Building2, Users, Search, Star, LogOut, ChevronRight, Shield } from 'lucide-react';
+import {
+  LayoutDashboard, ClipboardList, CheckSquare, Map, Building2,
+  Users, Search, Star, LogOut, ChevronRight, Activity,
+} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 
 const NAV = {
   planning_team: [
-    { id: 'dashboard', label: 'Dashboard',   icon: LayoutDashboard },
-    { id: 'plans',     label: 'Audit Plans', icon: ClipboardList  },
+    { id: 'dashboard',    label: 'Dashboard',      icon: LayoutDashboard },
+    { id: 'plans',        label: 'Audit Plans',    icon: ClipboardList   },
+    { id: 'risk_analysis',label: 'Risk Analysis',  icon: Activity, badge: 'Live' },
   ],
   audit_director: [
-    { id: 'dashboard', label: 'Dashboard',        icon: LayoutDashboard },
-    { id: 'review',    label: 'Plan Review',       icon: CheckSquare     },
-    { id: 'deploy',    label: 'Deploy to Regions', icon: Map             },
+    { id: 'dashboard', label: 'Dashboard',          icon: LayoutDashboard },
+    { id: 'review',    label: 'Plan Review',         icon: CheckSquare    },
+    { id: 'deploy',    label: 'Deploy to Regions',   icon: Map            },
   ],
   regional_director: [
-    { id: 'dashboard', label: 'Dashboard',    icon: LayoutDashboard },
-    { id: 'plans',     label: 'Regional Plans',icon: ClipboardList  },
-    { id: 'feedback',  label: 'Submit Feedback',icon: Map            },
+    { id: 'dashboard', label: 'Dashboard',      icon: LayoutDashboard },
+    { id: 'plans',     label: 'Regional Plans', icon: ClipboardList   },
+    { id: 'feedback',  label: 'Submit Feedback',icon: Map             },
   ],
   tax_center_manager: [
-    { id: 'dashboard', label: 'Dashboard',    icon: LayoutDashboard },
-    { id: 'cases',     label: 'Case Management',icon: Building2     },
+    { id: 'dashboard', label: 'Dashboard',       icon: LayoutDashboard },
+    { id: 'cases',     label: 'Case Management', icon: Building2       },
   ],
   team_leader: [
-    { id: 'dashboard', label: 'Dashboard',     icon: LayoutDashboard },
-    { id: 'cases',     label: 'Assigned Cases',icon: Users           },
+    { id: 'dashboard', label: 'Dashboard',      icon: LayoutDashboard },
+    { id: 'cases',     label: 'Assigned Cases', icon: Users           },
   ],
   auditor: [
-    { id: 'dashboard', label: 'Dashboard',    icon: LayoutDashboard },
-    { id: 'cases',     label: 'My Cases',     icon: Search          },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'cases',     label: 'My Cases',  icon: Search          },
   ],
   senior_management: [
-    { id: 'dashboard', label: 'Dashboard',    icon: LayoutDashboard },
-    { id: 'approval',  label: 'Plan Approval',icon: Star            },
+    { id: 'dashboard', label: 'Dashboard',     icon: LayoutDashboard },
+    { id: 'approval',  label: 'Plan Approval', icon: Star            },
   ],
 };
 
@@ -54,9 +58,18 @@ export default function Sidebar({ activeView, onNavigate }) {
     <aside className="w-64 bg-slate-900 flex flex-col h-screen fixed left-0 top-0 z-30">
       {/* Logo */}
       <div className="px-5 py-5 border-b border-slate-700/60">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
-            <Shield size={16} className="text-white" />
+        <div className="flex items-center gap-3">
+          <img
+            src="/logo.png"
+            alt="MOR"
+            className="w-9 h-9 rounded-xl object-cover flex-shrink-0 shadow-lg"
+            onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }}
+          />
+          <div
+            className="w-9 h-9 bg-gradient-to-br from-pink-500 via-purple-500 to-blue-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg"
+            style={{ display: 'none' }}
+          >
+            <span className="text-white font-bold text-xs">MOR</span>
           </div>
           <div>
             <p className="text-white font-bold text-sm leading-tight">MOR</p>
@@ -70,7 +83,8 @@ export default function Sidebar({ activeView, onNavigate }) {
         <div className="bg-slate-800 rounded-lg px-3 py-2.5">
           <p className="text-white text-sm font-medium truncate">{user.name}</p>
           <p className="text-slate-400 text-xs mt-0.5 truncate">{ROLE_LABELS[user.role]}</p>
-          {user.region && <p className="text-blue-400 text-xs mt-0.5 truncate capitalize">{user.region.replace('_', ' ')}</p>}
+          {user.email && <p className="text-slate-500 text-[10px] mt-0.5 truncate">{user.email}</p>}
+          {user.region && <p className="text-blue-400 text-xs mt-0.5 truncate capitalize">{user.region.replace(/_/g, ' ')}</p>}
           {user.taxCenter && <p className="text-slate-500 text-xs mt-0.5 truncate">{user.taxCenter}</p>}
         </div>
       </div>
@@ -96,7 +110,14 @@ export default function Sidebar({ activeView, onNavigate }) {
                     <Icon size={16} />
                     {item.label}
                   </span>
-                  {active && <ChevronRight size={14} />}
+                  <span className="flex items-center gap-1">
+                    {item.badge && (
+                      <span className="text-[9px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded-full font-semibold border border-green-500/30">
+                        {item.badge}
+                      </span>
+                    )}
+                    {active && <ChevronRight size={14} />}
+                  </span>
                 </button>
               </li>
             );

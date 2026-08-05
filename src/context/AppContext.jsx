@@ -62,6 +62,7 @@ export function AppProvider({ children }) {
   const getCase = (id) => state.cases.find(c => c.id === id);
 
   const actions = {
+    // ── Plan creation ──────────────────────────────────────────────────────
     createPlan: (data) => {
       const plan = {
         id: `AP-${Date.now()}`,
@@ -72,6 +73,7 @@ export function AppProvider({ children }) {
         revisions: [],
         regionalFeedback: {},
         seniorComment: '',
+        amendmentComment: '',
         timeline: [{ status: 'DRAFT', actor: data.createdBy, comment: 'Plan created', timestamp: new Date().toISOString() }],
       };
       dispatch({ type: 'CREATE_PLAN', payload: plan });
@@ -83,34 +85,87 @@ export function AppProvider({ children }) {
       if (plan) dispatch({ type: 'UPDATE_PLAN', payload: { ...plan, ...updates } });
     },
 
+    // ── Planning Team → Director ───────────────────────────────────────────
     submitToDirector: (planId, actorId) => {
       const plan = getPlan(planId);
-      if (plan) dispatch({ type: 'UPDATE_PLAN', payload: timeline(plan, 'SUBMITTED_TO_DIRECTOR', actorId, 'Submitted for director review') });
+      if (plan) dispatch({
+        type: 'UPDATE_PLAN',
+        payload: timeline(plan, 'SUBMITTED_TO_DIRECTOR', actorId, 'Submitted for director review'),
+      });
     },
 
+    // ── Director actions ───────────────────────────────────────────────────
     approvePlan: (planId, actorId, comment) => {
       const plan = getPlan(planId);
-      if (plan) dispatch({ type: 'UPDATE_PLAN', payload: timeline({ ...plan, directorComment: comment }, 'DIRECTOR_APPROVED', actorId, comment || 'Approved') });
+      if (plan) dispatch({
+        type: 'UPDATE_PLAN',
+        payload: timeline({ ...plan, directorComment: comment }, 'DIRECTOR_APPROVED', actorId, comment || 'Approved'),
+      });
     },
 
     requestRevision: (planId, actorId, comment) => {
       const plan = getPlan(planId);
       if (!plan) return;
-      const updated = { ...plan, directorComment: comment, revisions: [...(plan.revisions || []), { comment, timestamp: new Date().toISOString(), by: actorId }] };
+      const updated = {
+        ...plan,
+        directorComment: comment,
+        revisions: [...(plan.revisions || []), { comment, timestamp: new Date().toISOString(), by: actorId }],
+      };
       dispatch({ type: 'UPDATE_PLAN', payload: timeline(updated, 'REVISION_REQUESTED', actorId, comment) });
     },
 
     sendToRegions: (planId, actorId) => {
       const plan = getPlan(planId);
-      if (plan) dispatch({ type: 'UPDATE_PLAN', payload: timeline(plan, 'AWAITING_REGIONAL_FEEDBACK', actorId, 'Sent to all regions for feedback') });
+      if (plan) dispatch({
+        type: 'UPDATE_PLAN',
+        payload: timeline(plan, 'AWAITING_REGIONAL_FEEDBACK', actorId, 'Sent to all regions for feedback'),
+      });
     },
 
+    // Director: after all feedback collected, send back to planning team for amendment
+    sendAmendmentToPlanningTeam: (planId, actorId, comment) => {
+      const plan = getPlan(planId);
+      if (!plan) return;
+      const updated = {
+        ...plan,
+        amendmentComment: comment,
+        revisions: [...(plan.revisions || []), { comment, timestamp: new Date().toISOString(), by: actorId, type: 'amendment' }],
+      };
+      dispatch({ type: 'UPDATE_PLAN', payload: timeline(updated, 'AMENDMENT_REQUIRED', actorId, comment || 'Feedback sent for amendment') });
+    },
+
+    // Director: submit amended plan directly to senior management (after amendment cycle)
+    submitToSeniorMgmt: (planId, actorId) => {
+      const plan = getPlan(planId);
+      if (plan) dispatch({
+        type: 'UPDATE_PLAN',
+        payload: timeline(plan, 'SUBMITTED_TO_SENIOR_MGMT', actorId, 'Submitted for senior management approval'),
+      });
+    },
+
+    // Director: send senior-management-approved plan to regions → generates cases
+    sendApprovedToRegions: (planId, actorId) => {
+      const plan = getPlan(planId);
+      if (!plan) return;
+      dispatch({
+        type: 'UPDATE_PLAN',
+        payload: timeline(plan, 'FINALIZED', actorId, 'Approved plan sent to all regions and tax centers'),
+      });
+      dispatch({ type: 'ADD_CASES', payload: generateCases(planId, plan.distribution, plan.regionalFeedback || {}) });
+    },
+
+    // ── Regional actions ───────────────────────────────────────────────────
     submitRegionalFeedback: (planId, regionId, feedbackText, taxCenterAllocations, actorId) => {
       const plan = getPlan(planId);
       if (!plan) return;
       const newFeedback = {
         ...plan.regionalFeedback,
-        [regionId]: { feedback: feedbackText, taxCenterAllocations, submittedAt: new Date().toISOString(), submittedBy: actorId },
+        [regionId]: {
+          feedback: feedbackText,
+          taxCenterAllocations,
+          submittedAt: new Date().toISOString(),
+          submittedBy: actorId,
+        },
       };
       const allDone = REGIONS.every(r => newFeedback[r.id]);
       const newStatus = allDone ? 'FEEDBACK_COLLECTED' : 'AWAITING_REGIONAL_FEEDBACK';
@@ -118,40 +173,59 @@ export function AppProvider({ children }) {
       dispatch({ type: 'UPDATE_PLAN', payload: timeline({ ...plan, regionalFeedback: newFeedback }, newStatus, actorId, msg) });
     },
 
-    submitToSeniorMgmt: (planId, actorId) => {
-      const plan = getPlan(planId);
-      if (plan) dispatch({ type: 'UPDATE_PLAN', payload: timeline(plan, 'SUBMITTED_TO_SENIOR_MGMT', actorId, 'Submitted for senior management approval') });
-    },
-
+    // ── Senior Management ──────────────────────────────────────────────────
     approveBySenior: (planId, actorId, comment) => {
       const plan = getPlan(planId);
-      if (plan) dispatch({ type: 'UPDATE_PLAN', payload: timeline({ ...plan, seniorComment: comment }, 'SENIOR_MGMT_APPROVED', actorId, comment || 'Approved') });
+      if (plan) dispatch({
+        type: 'UPDATE_PLAN',
+        payload: timeline({ ...plan, seniorComment: comment }, 'SENIOR_MGMT_APPROVED', actorId, comment || 'Approved'),
+      });
     },
 
     rejectBySenior: (planId, actorId, comment) => {
       const plan = getPlan(planId);
       if (!plan) return;
-      const updated = { ...plan, seniorComment: comment, revisions: [...(plan.revisions || []), { comment, timestamp: new Date().toISOString(), by: actorId }] };
+      const updated = {
+        ...plan,
+        seniorComment: comment,
+        revisions: [...(plan.revisions || []), { comment, timestamp: new Date().toISOString(), by: actorId }],
+      };
       dispatch({ type: 'UPDATE_PLAN', payload: timeline(updated, 'REVISION_REQUESTED', actorId, comment) });
     },
 
+    // Legacy: finalize directly (kept for backward compat)
     finalizePlan: (planId, actorId) => {
       const plan = getPlan(planId);
       if (!plan) return;
       dispatch({ type: 'UPDATE_PLAN', payload: timeline(plan, 'FINALIZED', actorId, 'Plan finalized and cases deployed') });
-      // Pass regionalFeedback so generateCases honours the approved tax-centre allocations.
-      // Falls back gracefully to even distribution when feedback is missing.
       dispatch({ type: 'ADD_CASES', payload: generateCases(planId, plan.distribution, plan.regionalFeedback || {}) });
     },
 
+    // ── Case assignment ────────────────────────────────────────────────────
     assignCaseToTeamLeader: (caseId, teamLeaderId) => {
       const c = getCase(caseId);
-      if (c) dispatch({ type: 'UPDATE_CASE', payload: { ...c, assignedTeamLeader: teamLeaderId, status: 'ASSIGNED', assignedAt: new Date().toISOString() } });
+      if (c) dispatch({
+        type: 'UPDATE_CASE',
+        payload: { ...c, assignedTeamLeader: teamLeaderId, status: 'ASSIGNED', assignedAt: new Date().toISOString() },
+      });
+    },
+
+    assignCasesToTeamLeader: (caseIds, teamLeaderId) => {
+      caseIds.forEach(caseId => {
+        const c = getCase(caseId);
+        if (c) dispatch({
+          type: 'UPDATE_CASE',
+          payload: { ...c, assignedTeamLeader: teamLeaderId, status: 'ASSIGNED', assignedAt: new Date().toISOString() },
+        });
+      });
     },
 
     assignCaseToAuditor: (caseId, auditorId) => {
       const c = getCase(caseId);
-      if (c) dispatch({ type: 'UPDATE_CASE', payload: { ...c, assignedAuditor: auditorId, status: 'IN_PROGRESS', startDate: new Date().toISOString() } });
+      if (c) dispatch({
+        type: 'UPDATE_CASE',
+        payload: { ...c, assignedAuditor: auditorId, status: 'IN_PROGRESS', startDate: new Date().toISOString() },
+      });
     },
 
     updateCaseStatus: (caseId, status, notes = '') => {
@@ -160,6 +234,11 @@ export function AppProvider({ children }) {
         ...c, status, notes: notes || c.notes,
         ...(status === 'COMPLETED' ? { completedDate: new Date().toISOString() } : {}),
       }});
+    },
+
+    updateCasePriority: (caseId, priority) => {
+      const c = getCase(caseId);
+      if (c) dispatch({ type: 'UPDATE_CASE', payload: { ...c, priority } });
     },
   };
 
@@ -177,9 +256,10 @@ export function AppProvider({ children }) {
       total: state.plans.length,
       draft: state.plans.filter(p => p.status === 'DRAFT').length,
       pendingDirector: state.plans.filter(p => p.status === 'SUBMITTED_TO_DIRECTOR').length,
-      active: state.plans.filter(p => ['DIRECTOR_APPROVED','AWAITING_REGIONAL_FEEDBACK','FEEDBACK_COLLECTED'].includes(p.status)).length,
+      active: state.plans.filter(p => ['DIRECTOR_APPROVED','AWAITING_REGIONAL_FEEDBACK','FEEDBACK_COLLECTED','AMENDMENT_REQUIRED'].includes(p.status)).length,
       pendingSenior: state.plans.filter(p => p.status === 'SUBMITTED_TO_SENIOR_MGMT').length,
       finalized: state.plans.filter(p => p.status === 'FINALIZED').length,
+      amendmentRequired: state.plans.filter(p => p.status === 'AMENDMENT_REQUIRED').length,
     }),
   };
 

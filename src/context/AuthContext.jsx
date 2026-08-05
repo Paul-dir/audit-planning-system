@@ -35,8 +35,42 @@ export function AuthProvider({ children }) {
     storage.remove('session');
   };
 
+  // Helper function to get user info
+  const getUserInfo = () => user || null;
+
+  // Helper function to check permissions
+  const hasPermission = (permission) => {
+    if (!user) return false;
+    return (user.permissions || []).includes(permission);
+  };
+
+  // Build authContext object for backward compatibility
+  const authContext = user ? {
+    user,
+    userId: user.id,
+    email: user.email,
+    role: user.role,
+    fullName: user.name,
+    region: user.region,
+    taxCenter: user.taxCenter,
+    permissions: user.permissions || [],
+    org_context: {
+      assignedRegion: user.region,
+      assignedTaxCenter: user.taxCenter,
+      level: user.role
+    }
+  } : null;
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      authContext,
+      login, 
+      logout, 
+      loading,
+      getUserInfo,
+      hasPermission
+    }}>
       {children}
     </AuthContext.Provider>
   );

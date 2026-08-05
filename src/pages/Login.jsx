@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Shield, ChevronRight, Eye, EyeOff } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { SEED_USERS } from '../data/seed.js';
 import { storage, STORE_KEYS } from '../services/storage.js';
@@ -61,8 +61,13 @@ export default function Login() {
       <div className="relative w-full max-w-3xl">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl shadow-2xl shadow-blue-500/40 mb-4">
-            <Shield size={32} className="text-white" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl shadow-2xl mb-4 overflow-hidden bg-gradient-to-br from-pink-500 via-purple-500 to-blue-500">
+            <img
+              src="/logo.png"
+              alt="MOR"
+              className="w-full h-full object-cover"
+              onError={e => { e.target.style.display = 'none'; }}
+            />
           </div>
           <h1 className="text-3xl font-bold text-white mb-1">Ministry of Revenues</h1>
           <p className="text-slate-400 text-sm">Audit Planning & Management System</p>

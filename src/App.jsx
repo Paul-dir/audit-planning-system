@@ -12,50 +12,59 @@ import SeniorDashboard from './pages/senior/SeniorDashboard.jsx';
 import TaxCenterDashboard from './pages/taxcenter/TaxCenterDashboard.jsx';
 import TeamLeaderDashboard from './pages/teamleader/TeamLeaderDashboard.jsx';
 import AuditorDashboard from './pages/auditor/AuditorDashboard.jsx';
+import RiskAnalysisDashboard from './pages/planning/RiskAnalysisDashboard.jsx';
 import { Spinner } from './components/ui/index.jsx';
 
 const PAGE_TITLES = {
   planning_team: {
-    dashboard: { title: 'Planning Dashboard', subtitle: 'Manage and track national audit plans' },
-    plans: { title: 'Audit Plans', subtitle: 'All audit plans overview' },
+    dashboard:     { title: 'Planning Dashboard',    subtitle: 'Manage and track national audit plans'         },
+    plans:         { title: 'Audit Plans',            subtitle: 'All audit plans overview'                      },
+    risk_analysis: { title: 'Risk Engine Analysis',   subtitle: 'Live taxpayer risk data from the MOR Risk Engine' },
   },
   audit_director: {
-    dashboard: { title: 'Director Dashboard', subtitle: 'Review and approve audit plans' },
-    review: { title: 'Plan Review', subtitle: 'Plans awaiting your decision' },
-    deploy: { title: 'Deploy Plans', subtitle: 'Send approved plans to regions' },
+    dashboard: { title: 'Director Dashboard',     subtitle: 'Review and approve audit plans'         },
+    review:    { title: 'Plan Review',            subtitle: 'Plans awaiting your decision'           },
+    deploy:    { title: 'Deploy Plans',           subtitle: 'Send approved plans to regions'         },
   },
   regional_director: {
-    dashboard: { title: 'Regional Dashboard', subtitle: 'Manage your regional allocation' },
-    plans: { title: 'Regional Plans', subtitle: 'Plans assigned to your region' },
-    feedback: { title: 'Submit Feedback', subtitle: 'Provide regional feedback and tax center allocations' },
+    dashboard: { title: 'Regional Dashboard',  subtitle: 'Manage your regional allocation'                     },
+    plans:     { title: 'Regional Plans',      subtitle: 'Plans assigned to your region'                       },
+    feedback:  { title: 'Submit Feedback',     subtitle: 'Provide regional feedback and tax center allocations' },
   },
   tax_center_manager: {
-    dashboard: { title: 'Tax Center Dashboard', subtitle: 'Manage cases for your tax center' },
-    cases: { title: 'Case Management', subtitle: 'Assign and track audit cases' },
+    dashboard: { title: 'Tax Center Dashboard', subtitle: 'Manage and assign audit cases for your tax center' },
+    cases:     { title: 'Case Management',      subtitle: 'Assign and track audit cases'                      },
   },
   team_leader: {
     dashboard: { title: 'Team Leader Dashboard', subtitle: 'Assign cases to your audit team' },
-    cases: { title: 'Assigned Cases', subtitle: 'Cases under your team' },
+    cases:     { title: 'Assigned Cases',         subtitle: 'Cases under your team'           },
   },
   auditor: {
     dashboard: { title: 'Auditor Dashboard', subtitle: 'Your active audit cases' },
-    cases: { title: 'My Cases', subtitle: 'Cases assigned to you' },
+    cases:     { title: 'My Cases',           subtitle: 'Cases assigned to you'   },
   },
   senior_management: {
-    dashboard: { title: 'Senior Management', subtitle: 'Final approval of national audit plans' },
-    approval: { title: 'Plan Approval', subtitle: 'Plans awaiting senior management approval' },
+    dashboard: { title: 'Senior Management',  subtitle: 'Final approval of national audit plans' },
+    approval:  { title: 'Plan Approval',      subtitle: 'Plans awaiting senior management approval' },
   },
 };
 
 function RoleRouter({ user, view }) {
   const role = user.role;
-  if (role === 'planning_team') return <PlanningDashboard view={view} />;
-  if (role === 'audit_director') return <DirectorDashboard view={view} />;
+
+  // Standalone risk analysis page (accessible to planning team via sidebar)
+  if (view === 'risk_analysis' && role === 'planning_team') {
+    return <RiskAnalysisDashboard />;
+  }
+
+  if (role === 'planning_team')    return <PlanningDashboard view={view} />;
+  if (role === 'audit_director')   return <DirectorDashboard view={view} />;
   if (role === 'regional_director') return <RegionalDashboard view={view} />;
   if (role === 'senior_management') return <SeniorDashboard view={view} />;
   if (role === 'tax_center_manager') return <TaxCenterDashboard view={view} />;
-  if (role === 'team_leader') return <TeamLeaderDashboard view={view} />;
-  if (role === 'auditor') return <AuditorDashboard view={view} />;
+  if (role === 'team_leader')      return <TeamLeaderDashboard view={view} />;
+  if (role === 'auditor')          return <AuditorDashboard view={view} />;
+
   return (
     <div className="flex items-center justify-center h-64">
       <p className="text-gray-500">Role not recognized: {role}</p>
@@ -73,7 +82,7 @@ export default function App() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <Spinner size={32} />
-          <p className="text-sm text-gray-500">Loading MOR Audit Planning System...</p>
+          <p className="text-sm text-gray-500">Loading MOR Audit Planning System…</p>
         </div>
       </div>
     );
@@ -81,7 +90,10 @@ export default function App() {
 
   if (!user) return <Login />;
 
-  const pageInfo = PAGE_TITLES[user.role]?.[view] || PAGE_TITLES[user.role]?.['dashboard'] || { title: 'Dashboard', subtitle: '' };
+  const pageInfo =
+    PAGE_TITLES[user.role]?.[view] ||
+    PAGE_TITLES[user.role]?.['dashboard'] ||
+    { title: 'Dashboard', subtitle: '' };
 
   return (
     <Layout
