@@ -109,13 +109,10 @@ export default function RegionalDashboard({ view }) {
                     )}
                   </div>
                   <div className="flex gap-2">
-                  </div>
-                  <div className="flex gap-2">
                     <Button size="sm" variant="secondary" icon={Eye} onClick={() => { setViewPlan(plan); setViewTab('distribution'); }}>View</Button>
                     <Button size="sm" variant="primary" icon={Send} onClick={() => openFeedback(plan)}>
                       Allocate & Submit
                     </Button>
-                  </div>
                   </div>
                 </div>
               );
