@@ -1,81 +1,96 @@
-import React, { useState } from 'react';
-import MORLoginPage from './components/MORLoginPage';
-import ConfigurationDashboard from './components/configuration/ConfigurationDashboard';
-import RegionFormatTest from './components/RegionFormatTest';
-import { DataProvider } from './services/dataService';
-import { RegionalProvider } from './context/RegionalContext';
-import { useAuth } from './context/AuthContext';
-// Import role-specific view containers
-import AuditTeamView from './components/roleViews/AuditTeamView';
-import AuditDirectorView from './components/roleViews/AuditDirectorView';
-import RegionalDirectorView from './components/roleViews/RegionalDirectorView';
-import TaxCenterManagerView from './components/roleViews/TaxCenterManagerView';
-import TeamLeaderView from './components/roleViews/TeamLeaderView';
-import AuditorView from './components/roleViews/AuditorView';
-import SeniorManagementView from './components/roleViews/SeniorManagementView';
-import RequesterDashboardView from './components/roleViews/RequesterDashboardView';
+import { useState } from 'react';
+import { useAuth } from './context/AuthContext.jsx';
+import { useApp } from './context/AppContext.jsx';
+import Layout from './components/layout/Layout.jsx';
+import Login from './pages/Login.jsx';
 
-function AppContent() {
-  const { isAuthenticated, authContext } = useAuth();
+// Role-specific dashboard pages
+import PlanningDashboard from './pages/planning/PlanningDashboard.jsx';
+import DirectorDashboard from './pages/director/DirectorDashboard.jsx';
+import RegionalDashboard from './pages/regional/RegionalDashboard.jsx';
+import SeniorDashboard from './pages/senior/SeniorDashboard.jsx';
+import TaxCenterDashboard from './pages/taxcenter/TaxCenterDashboard.jsx';
+import TeamLeaderDashboard from './pages/teamleader/TeamLeaderDashboard.jsx';
+import AuditorDashboard from './pages/auditor/AuditorDashboard.jsx';
+import { Spinner } from './components/ui/index.jsx';
 
-  // Check if running tests
-  const urlParams = new URLSearchParams(window.location.search);
-  const runTests = urlParams.get('test') === 'region-format';
+const PAGE_TITLES = {
+  planning_team: {
+    dashboard: { title: 'Planning Dashboard', subtitle: 'Manage and track national audit plans' },
+    plans: { title: 'Audit Plans', subtitle: 'All audit plans overview' },
+  },
+  audit_director: {
+    dashboard: { title: 'Director Dashboard', subtitle: 'Review and approve audit plans' },
+    review: { title: 'Plan Review', subtitle: 'Plans awaiting your decision' },
+    deploy: { title: 'Deploy Plans', subtitle: 'Send approved plans to regions' },
+  },
+  regional_director: {
+    dashboard: { title: 'Regional Dashboard', subtitle: 'Manage your regional allocation' },
+    plans: { title: 'Regional Plans', subtitle: 'Plans assigned to your region' },
+    feedback: { title: 'Submit Feedback', subtitle: 'Provide regional feedback and tax center allocations' },
+  },
+  tax_center_manager: {
+    dashboard: { title: 'Tax Center Dashboard', subtitle: 'Manage cases for your tax center' },
+    cases: { title: 'Case Management', subtitle: 'Assign and track audit cases' },
+  },
+  team_leader: {
+    dashboard: { title: 'Team Leader Dashboard', subtitle: 'Assign cases to your audit team' },
+    cases: { title: 'Assigned Cases', subtitle: 'Cases under your team' },
+  },
+  auditor: {
+    dashboard: { title: 'Auditor Dashboard', subtitle: 'Your active audit cases' },
+    cases: { title: 'My Cases', subtitle: 'Cases assigned to you' },
+  },
+  senior_management: {
+    dashboard: { title: 'Senior Management', subtitle: 'Final approval of national audit plans' },
+    approval: { title: 'Plan Approval', subtitle: 'Plans awaiting senior management approval' },
+  },
+};
 
-  if (runTests) {
-    return <RegionFormatTest />;
+function RoleRouter({ user, view }) {
+  const role = user.role;
+  if (role === 'planning_team') return <PlanningDashboard view={view} />;
+  if (role === 'audit_director') return <DirectorDashboard view={view} />;
+  if (role === 'regional_director') return <RegionalDashboard view={view} />;
+  if (role === 'senior_management') return <SeniorDashboard view={view} />;
+  if (role === 'tax_center_manager') return <TaxCenterDashboard view={view} />;
+  if (role === 'team_leader') return <TeamLeaderDashboard view={view} />;
+  if (role === 'auditor') return <AuditorDashboard view={view} />;
+  return (
+    <div className="flex items-center justify-center h-64">
+      <p className="text-gray-500">Role not recognized: {role}</p>
+    </div>
+  );
+}
+
+export default function App() {
+  const { user, loading: authLoading } = useAuth();
+  const { ready } = useApp();
+  const [view, setView] = useState('dashboard');
+
+  if (authLoading || !ready) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <Spinner size={32} />
+          <p className="text-sm text-gray-500">Loading MOR Audit Planning System...</p>
+        </div>
+      </div>
+    );
   }
 
-  // Use role from auth context
-  const currentRole = authContext?.role;
+  if (!user) return <Login />;
 
-  // Render role-specific view container
-  const renderRoleView = () => {
-    if (!isAuthenticated) {
-      return <MORLoginPage />;
-    }
-
-    switch (currentRole) {
-      case 'audit_team':
-      case 'audit_team_leader':
-        // Both audit_team and audit_team_leader use AuditTeamView
-        return <AuditTeamView />;
-      case 'audit_director':
-        return <AuditDirectorView />;
-      case 'regional_director':
-        return <RegionalDirectorView />;
-      case 'tax_center_manager':
-        return <TaxCenterManagerView />;
-      case 'team_leader':
-        return <TeamLeaderView />;
-      case 'auditor':
-        return <AuditorView />;
-      case 'senior_management':
-        return <SeniorManagementView />;
-      case 'directorate_requester':
-        return <RequesterDashboardView userRole="directorate_requester" />;
-      case 'external_stakeholder':
-        return <RequesterDashboardView userRole="external_stakeholder" />;
-      default:
-        return <AuditTeamView />;
-    }
-  };
+  const pageInfo = PAGE_TITLES[user.role]?.[view] || PAGE_TITLES[user.role]?.['dashboard'] || { title: 'Dashboard', subtitle: '' };
 
   return (
-    <RegionalProvider userRole={currentRole}>
-      {isAuthenticated ? renderRoleView() : <MORLoginPage />}
-    </RegionalProvider>
+    <Layout
+      activeView={view}
+      onNavigate={(v) => setView(v)}
+      title={pageInfo.title}
+      subtitle={pageInfo.subtitle}
+    >
+      <RoleRouter user={user} view={view} />
+    </Layout>
   );
 }
-
-function App() {
-  return (
-    <DataProvider>
-      <RegionalProvider userRole={null}>
-        <AppContent />
-      </RegionalProvider>
-    </DataProvider>
-  );
-}
-
-export default App;
