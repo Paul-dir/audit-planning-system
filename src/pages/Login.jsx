@@ -25,6 +25,7 @@ const ROLE_COLORS = {
 };
 
 export default function Login() {
+  console.log("Login component mounted");
   const { login } = useAuth();
   const [email, setEmail]         = useState('');
   const [password, setPassword]   = useState('');
@@ -34,6 +35,7 @@ export default function Login() {
   const [showDemo, setShowDemo]   = useState(false);
 
   const handleSubmit = async (e) => {
+    console.log("Sign in button clicked");
     e.preventDefault();
     if (!email.trim())    { setError('Email is required');    return; }
     if (!password.trim()) { setError('Password is required'); return; }
