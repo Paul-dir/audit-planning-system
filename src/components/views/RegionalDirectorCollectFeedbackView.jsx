@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useData } from '../../services/dataService';
 import { denormalizeRegionName, getDisplayRegionName } from '../../utils/regionNormalizer';
+import { filterPlansForRegion } from '../../utils/regionalDataFilter';
 import { useAuth } from '../../context/AuthContext';
 import Card from '../Card';
 import Badge from '../Badge';
@@ -24,9 +25,7 @@ function RegionalDirectorCollectFeedbackView() {
   const userInfo = getUserInfo();
 
   // Get regional director's assigned region
-  const directorRegion = authContext?.org_context?.assignedRegion 
-    ? denormalizeRegionName(authContext.org_context.assignedRegion)
-    : null;
+  const directorRegion = authContext?.region || null;
 
   // State
   const [plans, setPlans] = useState([]);
@@ -54,52 +53,35 @@ function RegionalDirectorCollectFeedbackView() {
   const loadPlans = () => {
     setLoading(true);
 
-    console.log('🔍 Regional Director loadPlans:', {
-      directorRegion,
-      totalPlans: data?.plans?.length,
-      plansWithTaxCenterFeedback: (data?.plans || []).filter(p => p.taxCenterFeedback).length
+    if (!directorRegion) {
+      setPlans([]);
+      setLoading(false);
+      return;
+    }
+
+    // ✅ REGIONAL ISOLATION: Only show plans for THIS region
+    const allFeedbackPlans = (data.plans || []).filter(plan => {
+      // Check if allocation was sent from any region
+      const hasAllocationSent = !!plan.allocationSentStatus && 
+        Object.keys(plan.allocationSentStatus).length > 0;
+      
+      // Check if there's feedback from any tax centers
+      const hasFeedback = plan.taxCenterFeedback &&
+        Object.keys(plan.taxCenterFeedback).length > 0;
+      
+      return hasAllocationSent && hasFeedback;
     });
 
-    // Find plans where:
-    // 1. Allocations were sent to tax centers (allocationSentStatus exists)
-    // 2. Tax centers have provided feedback
-    const feedbackPlans = (data.plans || []).filter(plan => {
-      // Check if allocation was sent from this region
-      const allocationSent = !!plan.allocationSentStatus?.[directorRegion];
-      
-      // Check if there's feedback from tax centers in this region
-      const hasFeedback = plan.taxCenterFeedback?.[directorRegion] &&
-        Object.keys(plan.taxCenterFeedback[directorRegion]).length > 0;
-      
-      // Debug: show ALL plans and their status
-      if (!allocationSent || !hasFeedback) {
-        console.log(`📊 Plan ${plan.id}:`, {
-          allocationSent,
-          hasFeedback,
-          directorRegion,
-          allocationSentStatus: plan.allocationSentStatus,
-          taxCenterFeedbackKeys: Object.keys(plan.taxCenterFeedback || {}),
-          taxCenterFeedbackForRegion: Object.keys(plan.taxCenterFeedback?.[directorRegion] || {})
-        });
-      }
-      
-      if (hasFeedback) {
-        console.log(`✅ Plan ${plan.id} QUALIFIES - has feedback:`, {
-          region: directorRegion,
-          taxCenters: Object.keys(plan.taxCenterFeedback[directorRegion])
-        });
-      }
-      
-      return allocationSent && hasFeedback;
-    });
+    // Filter only plans for this region
+    const regionalPlans = filterPlansForRegion(allFeedbackPlans, directorRegion);
 
-    console.log(`✅ Regional Director: Found ${feedbackPlans.length} plans with tax center feedback`);
+    console.log(`✅ Regional Director (${directorRegion}): Found ${regionalPlans.length} plans with feedback out of ${allFeedbackPlans.length} total`);
 
-    setPlans(feedbackPlans);
+    setPlans(regionalPlans);
 
-    // Build submitted status - check if feedback was already sent to director
+    // Build submitted status
     const submittedStatus = {};
-    feedbackPlans.forEach(plan => {
+    regionalPlans.forEach(plan => {
       submittedStatus[plan.id] = !!plan.regionalFeedbackStatus?.[directorRegion]?.sentToDirector;
     });
     setSubmitted(submittedStatus);

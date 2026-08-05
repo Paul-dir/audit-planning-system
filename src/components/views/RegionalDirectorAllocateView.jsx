@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useData } from '../../services/dataService';
 import { denormalizeRegionName, getDisplayRegionName } from '../../utils/regionNormalizer';
+import { filterPlansForRegion } from '../../utils/regionalDataFilter';
 import { useAuth } from '../../context/AuthContext';
 import Card from '../Card';
 import Badge from '../Badge';
@@ -22,9 +23,7 @@ function RegionalDirectorAllocateView() {
   const { data, updateData } = useData();
 
   // Get regional director's assigned region
-  const directorRegion = authContext?.org_context?.assignedRegion 
-    ? denormalizeRegionName(authContext.org_context.assignedRegion)
-    : null;
+  const directorRegion = authContext?.region || null;
 
   // Tax centers in each region - use lowercase_underscore format to match TAX_CENTER_MAPPING
   const taxCentersByRegion = {
@@ -60,9 +59,14 @@ function RegionalDirectorAllocateView() {
   const loadPlans = () => {
     setLoading(true);
 
-    // ✅ Simple approach: Show all plans that have been ACCEPTED (by any region)
-    // Regional directors will see allocations they can work with
-    const acceptedPlans = (data.plans || []).filter(plan => {
+    if (!directorRegion) {
+      setPlans([]);
+      setLoading(false);
+      return;
+    }
+
+    // ✅ REGIONAL ISOLATION: Only show plans for THIS region
+    const allAcceptedPlans = (data.plans || []).filter(plan => {
       // Show plans where ANY region has accepted the plan
       const hasAcceptance = plan.planAcceptanceStatus && 
         Object.values(plan.planAcceptanceStatus).some(status => status?.status === 'ACCEPTED');
@@ -73,14 +77,16 @@ function RegionalDirectorAllocateView() {
       return hasAcceptance && hasAllocation;
     });
 
-    console.log(`✅ Regional Director: Found ${acceptedPlans.length} accepted plans (showing all accepted plans)`);
+    // Filter only plans for this region
+    const regionalPlans = filterPlansForRegion(allAcceptedPlans, directorRegion);
 
-    setPlans(acceptedPlans);
+    console.log(`✅ Regional Director (${directorRegion}): Found ${regionalPlans.length} accepted plans out of ${allAcceptedPlans.length} total`);
+
+    setPlans(regionalPlans);
     
-    // Build submitted status - check allocationSentStatus, not taxCenterAllocations
-    // taxCenterAllocations is just the data, allocationSentStatus tracks if it was actually sent
+    // Build submitted status
     const submittedStatus = {};
-    acceptedPlans.forEach(plan => {
+    regionalPlans.forEach(plan => {
       submittedStatus[plan.id] = !!plan.allocationSentStatus?.[directorRegion]?.status;
     });
     setSubmitted(submittedStatus);

@@ -1,0 +1,2440 @@
+openapi: 3.1.0
+info:
+  title: Tax Audit Risk Engine API
+  version: 1.0.0
+  description: "Public REST API of the Ethiopia Ministry of Revenue Tax Audit Risk Engine. The Risk Engine is an independent analysis microservice: it retrieves taxpayer master data from the Taxpayer Registration Service, evaluates configurable risk indicators, scores and ranks taxpayers, and publishes audit recommendations for the Audit Planning System, Audit Case Management, reporting and dashboards.\n\nThe Risk Engine does not register, manage, or store taxpayer master data. It persists risk assessments, indicator results, rankings, recommendations, configuration and processing logs only, keyed by TIN and organisational codes.\n\nEvery JSON endpoint returns a `{ data, error, meta }` envelope. No authentication is required in this deployment; access control will be enforced later by the API gateway."
+  contact:
+    name: MOR Tax Audit Risk Engine
+  license:
+    name: Internal use — MOR
+servers:
+  -
+    url: "https://audit-ally-score.lovable.app"
+    description: Current host
+  -
+    url: /
+    description: Relative
+tags:
+  -
+    name: Risk Assessments
+    description: Retrieve and execute risk assessments
+  -
+    name: Ranking
+    description: "Risk-ranked taxpayer lists, nationally and by organisation unit"
+  -
+    name: High Risk
+    description: High and critical risk audit candidates
+  -
+    name: Recommendations
+    description: Audit recommendations for downstream planning
+  -
+    name: Statistics
+    description: Aggregate risk statistics
+  -
+    name: Configuration
+    description: "Risk rules, indicator weights and categories"
+  -
+    name: History
+    description: Historical assessments and processing runs
+  -
+    name: Export
+    description: "CSV, XLSX and JSON downloads"
+  -
+    name: Reference
+    description: OpenAPI specification and integration health
+components:
+  schemas:
+    RiskIndicator:
+      type: object
+      description: Result of one configured risk indicator for one taxpayer.
+      properties:
+        code:
+          type: string
+          examples:
+            - THIRD_PARTY_VARIANCE
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+          examples:
+            - THIRD_PARTY
+        method:
+          type: string
+          enum:
+            - rule
+            - benchmark
+            - trend
+            - outlier
+            - random
+        weight:
+          type: number
+          examples:
+            - 1.4
+        threshold:
+          type: number
+        observed:
+          type:
+            - number
+            - null
+        score:
+          type: number
+          minimum: 0
+          maximum: 100
+        triggered:
+          type: boolean
+        severity:
+          type: string
+          enum:
+            - low
+            - medium
+            - high
+            - critical
+        status:
+          type: string
+          enum:
+            - triggered
+            - clear
+            - insufficient_data
+        enabled:
+          type: boolean
+        explanation:
+          type: string
+    RiskAssessment:
+      type: object
+      description: A published risk assessment. Contains risk output plus taxpayer identifiers and classification codes only — never taxpayer master data.
+      properties:
+        id:
+          type: string
+          format: uuid
+        tin:
+          type: string
+          examples:
+            - 0100000123
+        taxpayer_ref_id:
+          type:
+            - string
+            - null
+          description: Reference id in the Registration Service
+        region_code:
+          type:
+            - string
+            - null
+        tax_center_code:
+          type:
+            - string
+            - null
+        sector_code:
+          type:
+            - string
+            - null
+        taxpayer_type:
+          type:
+            - string
+            - null
+          examples:
+            - LTO
+        registration_status:
+          type:
+            - string
+            - null
+        vat_registered:
+          type:
+            - boolean
+            - null
+        overall_score:
+          type: number
+          minimum: 0
+          maximum: 100
+          examples:
+            - 78.4
+        risk_level:
+          type: string
+          enum:
+            - critical
+            - high
+            - medium
+            - low
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+          examples:
+            - 0.86
+        priority_rank:
+          type:
+            - integer
+            - null
+          examples:
+            - 12
+        audit_recommendation:
+          type: string
+          enum:
+            - audit_immediately
+            - select_for_audit
+            - monitor
+            - no_action
+        suggested_audit_type:
+          type:
+            - string
+            - null
+        explanation:
+          type: string
+          description: "Natural-language risk explanation"
+        indicators:
+          type: array
+          items:
+            "$ref": "#/components/schemas/RiskIndicator"
+        category_scores:
+          type: object
+          additionalProperties:
+            type: number
+        features:
+          type: object
+          additionalProperties: true
+        data_quality:
+          type: object
+          additionalProperties:
+            type: boolean
+        is_current:
+          type: boolean
+        assessed_at:
+          type: string
+          format: "date-time"
+    RiskRule:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        category_code:
+          type: string
+        method:
+          type: string
+        weight:
+          type: number
+        threshold:
+          type: number
+        max_score:
+          type: number
+        severity:
+          type: string
+        enabled:
+          type: boolean
+        config:
+          type: object
+          additionalProperties: true
+    RiskCategory:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        weight:
+          type: number
+    RunSummary:
+      type: object
+      properties:
+        run_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+        requested:
+          type: integer
+        processed:
+          type: integer
+        failed:
+          type: integer
+        duration_ms:
+          type: integer
+        benchmarks_rebuilt:
+          type: boolean
+    Error:
+      type: object
+      properties:
+        data:
+          type: null
+        error:
+          type: object
+          properties:
+            message:
+              type: string
+            code:
+              type: integer
+        meta:
+          type: null
+paths:
+  /api/public/v1/risk-assessments:
+    get:
+      tags:
+        - Risk Assessments
+      summary: List current risk assessments
+      description: "Returns the current risk assessment for each taxpayer, filtered and paginated. Historical assessments are excluded."
+      parameters:
+        -
+          name: tin
+          in: query
+          schema:
+            type: string
+          description: Exact taxpayer identification number
+          example: 0100000123
+        -
+          name: region
+          in: query
+          schema:
+            type: string
+          description: Region code as defined by the Registration Service
+          example: OR
+        -
+          name: taxCenter
+          in: query
+          schema:
+            type: string
+          description: Tax center code
+          example: "OR-SHA"
+        -
+          name: sector
+          in: query
+          schema:
+            type: string
+          description: Business sector code
+          example: WHL
+        -
+          name: taxpayerType
+          in: query
+          schema:
+            type: string
+          description: "LTO | MTO | STO"
+          example: LTO
+        -
+          name: riskLevel
+          in: query
+          schema:
+            type: string
+          description: "Comma separated: critical,high,medium,low"
+          example: "critical,high"
+        -
+          name: riskCategory
+          in: query
+          schema:
+            type: string
+          description: Only rows whose category score is material
+          example: THIRD_PARTY
+        -
+          name: registrationStatus
+          in: query
+          schema:
+            type: string
+          description: "active | inactive | deregistered"
+          example: active
+        -
+          name: recommendation
+          in: query
+          schema:
+            type: string
+          description: "audit_immediately | select_for_audit | monitor | no_action"
+          example: select_for_audit
+        -
+          name: suggestedAuditType
+          in: query
+          schema:
+            type: string
+          description: Suggested audit type
+          example: Comprehensive field audit
+        -
+          name: assessedFrom
+          in: query
+          schema:
+            type: string
+          description: "ISO date-time lower bound"
+          example: "2026-01-01"
+        -
+          name: assessedTo
+          in: query
+          schema:
+            type: string
+          description: "ISO date-time upper bound"
+          example: "2026-12-31"
+        -
+          name: vatRegistered
+          in: query
+          schema:
+            type: boolean
+          description: VAT registration flag
+        -
+          name: minScore
+          in: query
+          schema:
+            type: number
+            minimum: 0
+            maximum: 100
+        -
+          name: maxScore
+          in: query
+          schema:
+            type: number
+            minimum: 0
+            maximum: 100
+        -
+          name: sort
+          in: query
+          schema:
+            type: string
+            enum:
+              - overall_score
+              - priority_rank
+              - assessed_at
+              - confidence
+              - tin
+              - risk_level
+            default: overall_score
+        -
+          name: order
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+        -
+          name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        -
+          name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - error
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      "$ref": "#/components/schemas/RiskAssessment"
+                  error:
+                    type:
+                      - object
+                      - null
+                    properties:
+                      message:
+                        type: string
+                      code:
+                        type: integer
+                  meta:
+                    type:
+                      - object
+                      - null
+                    additionalProperties: true
+  /api/public/v1/risk-assessments/{tin}:
+    get:
+      tags:
+        - Risk Assessments
+      summary: Get the current risk assessment for one taxpayer
+      parameters:
+        -
+          name: tin
+          in: path
+          required: true
+          schema:
+            type: string
+          example: 0100000123
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - error
+                  - meta
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/RiskAssessment"
+                  error:
+                    type:
+                      - object
+                      - null
+                    properties:
+                      message:
+                        type: string
+                      code:
+                        type: integer
+                  meta:
+                    type:
+                      - object
+                      - null
+                    additionalProperties: true
+        404:
+          description: Assessment not found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - error
+                  - meta
+                properties:
+                  data:
+                    type: null
+                  error:
+                    type:
+                      - object
+                      - null
+                    properties:
+                      message:
+                        type: string
+                      code:
+                        type: integer
+                  meta:
+                    type:
+                      - object
+                      - null
+                    additionalProperties: true
+  /api/public/v1/risk-assessments/run:
+    post:
+      tags:
+        - Risk Assessments
+      summary: Run a risk assessment for one taxpayer
+      description: "Retrieves the taxpayer profile from the Taxpayer Registration Service, evaluates all enabled indicators, publishes the assessment and recalculates rankings."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - tin
+              properties:
+                tin:
+                  type: string
+                  minLength: 3
+                  maxLength: 32
+            example:
+              tin: 0100000123
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - error
+                  - meta
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/RiskAssessment"
+                  error:
+                    type:
+                      - object
+                      - null
+                    properties:
+                      message:
+                        type: string
+                      code:
+                        type: integer
+                  meta:
+                    type:
+                      - object
+                      - null
+                    additionalProperties: true
+        400:
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+        502:
+          description: Registration Service unavailable
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+  /api/public/v1/risk-assessments/run-all:
+    post:
+      tags:
+        - Risk Assessments
+      summary: Run a batch risk assessment across the register
+      description: "Retrieves a population of taxpayers from the Registration Service, rebuilds sector benchmarks, scores every taxpayer and republishes the national ranking."
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                region:
+                  type: string
+                taxCenter:
+                  type: string
+                sector:
+                  type: string
+                taxpayerType:
+                  type: string
+                  enum:
+                    - LTO
+                    - MTO
+                    - STO
+                status:
+                  type: string
+                  enum:
+                    - active
+                    - inactive
+                    - deregistered
+                limit:
+                  type: integer
+                  minimum: 1
+                  maximum: 2000
+                  default: 500
+                concurrency:
+                  type: integer
+                  minimum: 1
+                  maximum: 20
+                  default: 10
+            example:
+              limit: 300
+              concurrency: 10
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - error
+                  - meta
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/RunSummary"
+                  error:
+                    type:
+                      - object
+                      - null
+                    properties:
+                      message:
+                        type: string
+                      code:
+                        type: integer
+                  meta:
+                    type:
+                      - object
+                      - null
+                    additionalProperties: true
+  /api/public/v1/risk-ranking:
+    get:
+      tags:
+        - Ranking
+      summary: National risk ranking
+      description: "Taxpayers ordered by priority rank, for consumption by the Audit Planning System."
+      parameters:
+        -
+          name: tin
+          in: query
+          schema:
+            type: string
+          description: Exact taxpayer identification number
+          example: 0100000123
+        -
+          name: region
+          in: query
+          schema:
+            type: string
+          description: Region code as defined by the Registration Service
+          example: OR
+        -
+          name: taxCenter
+          in: query
+          schema:
+            type: string
+          description: Tax center code
+          example: "OR-SHA"
+        -
+          name: sector
+          in: query
+          schema:
+            type: string
+          description: Business sector code
+          example: WHL
+        -
+          name: taxpayerType
+          in: query
+          schema:
+            type: string
+          description: "LTO | MTO | STO"
+          example: LTO
+        -
+          name: riskLevel
+          in: query
+          schema:
+            type: string
+          description: "Comma separated: critical,high,medium,low"
+          example: "critical,high"
+        -
+          name: riskCategory
+          in: query
+          schema:
+            type: string
+          description: Only rows whose category score is material
+          example: THIRD_PARTY
+        -
+          name: registrationStatus
+          in: query
+          schema:
+            type: string
+          description: "active | inactive | deregistered"
+          example: active
+        -
+          name: recommendation
+          in: query
+          schema:
+            type: string
+          description: "audit_immediately | select_for_audit | monitor | no_action"
+          example: select_for_audit
+        -
+          name: suggestedAuditType
+          in: query
+          schema:
+            type: string
+          description: Suggested audit type
+          example: Comprehensive field audit
+        -
+          name: assessedFrom
+          in: query
+          schema:
+            type: string
+          description: "ISO date-time lower bound"
+          example: "2026-01-01"
+        -
+          name: assessedTo
+          in: query
+          schema:
+            type: string
+          description: "ISO date-time upper bound"
+          example: "2026-12-31"
+        -
+          name: vatRegistered
+          in: query
+          schema:
+            type: boolean
+          description: VAT registration flag
+        -
+          name: minScore
+          in: query
+          schema:
+            type: number
+            minimum: 0
+            maximum: 100
+        -
+          name: maxScore
+          in: query
+          schema:
+            type: number
+            minimum: 0
+            maximum: 100
+        -
+          name: sort
+          in: query
+          schema:
+            type: string
+            enum:
+              - overall_score
+              - priority_rank
+              - assessed_at
+              - confidence
+              - tin
+              - risk_level
+            default: overall_score
+        -
+          name: order
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+        -
+          name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        -
+          name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - error
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      "$ref": "#/components/schemas/RiskAssessment"
+                  error:
+                    type:
+                      - object
+                      - null
+                    properties:
+                      message:
+                        type: string
+                      code:
+                        type: integer
+                  meta:
+                    type:
+                      - object
+                      - null
+                    additionalProperties: true
+  /api/public/v1/risk-ranking/regions:
+    get:
+      tags:
+        - Ranking
+      summary: Aggregated risk ranking by region
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - error
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  error:
+                    type:
+                      - object
+                      - null
+                    properties:
+                      message:
+                        type: string
+                      code:
+                        type: integer
+                  meta:
+                    type:
+                      - object
+                      - null
+                    additionalProperties: true
+  /api/public/v1/risk-ranking/tax-centers:
+    get:
+      tags:
+        - Ranking
+      summary: Aggregated risk ranking by tax center
+      parameters:
+        -
+          name: region
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - error
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  error:
+                    type:
+                      - object
+                      - null
+                    properties:
+                      message:
+                        type: string
+                      code:
+                        type: integer
+                  meta:
+                    type:
+                      - object
+                      - null
+                    additionalProperties: true
+  /api/public/v1/high-risk:
+    get:
+      tags:
+        - High Risk
+      summary: High and critical risk audit candidates
+      parameters:
+        -
+          name: tin
+          in: query
+          schema:
+            type: string
+          description: Exact taxpayer identification number
+          example: 0100000123
+        -
+          name: region
+          in: query
+          schema:
+            type: string
+          description: Region code as defined by the Registration Service
+          example: OR
+        -
+          name: taxCenter
+          in: query
+          schema:
+            type: string
+          description: Tax center code
+          example: "OR-SHA"
+        -
+          name: sector
+          in: query
+          schema:
+            type: string
+          description: Business sector code
+          example: WHL
+        -
+          name: taxpayerType
+          in: query
+          schema:
+            type: string
+          description: "LTO | MTO | STO"
+          example: LTO
+        -
+          name: riskLevel
+          in: query
+          schema:
+            type: string
+          description: "Comma separated: critical,high,medium,low"
+          example: "critical,high"
+        -
+          name: riskCategory
+          in: query
+          schema:
+            type: string
+          description: Only rows whose category score is material
+          example: THIRD_PARTY
+        -
+          name: registrationStatus
+          in: query
+          schema:
+            type: string
+          description: "active | inactive | deregistered"
+          example: active
+        -
+          name: recommendation
+          in: query
+          schema:
+            type: string
+          description: "audit_immediately | select_for_audit | monitor | no_action"
+          example: select_for_audit
+        -
+          name: suggestedAuditType
+          in: query
+          schema:
+            type: string
+          description: Suggested audit type
+          example: Comprehensive field audit
+        -
+          name: assessedFrom
+          in: query
+          schema:
+            type: string
+          description: "ISO date-time lower bound"
+          example: "2026-01-01"
+        -
+          name: assessedTo
+          in: query
+          schema:
+            type: string
+          description: "ISO date-time upper bound"
+          example: "2026-12-31"
+        -
+          name: vatRegistered
+          in: query
+          schema:
+            type: boolean
+          description: VAT registration flag
+        -
+          name: minScore
+          in: query
+          schema:
+            type: number
+            minimum: 0
+            maximum: 100
+        -
+          name: maxScore
+          in: query
+          schema:
+            type: number
+            minimum: 0
+            maximum: 100
+        -
+          name: sort
+          in: query
+          schema:
+            type: string
+            enum:
+              - overall_score
+              - priority_rank
+              - assessed_at
+              - confidence
+              - tin
+              - risk_level
+            default: overall_score
+        -
+          name: order
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+        -
+          name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        -
+          name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - error
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      "$ref": "#/components/schemas/RiskAssessment"
+                  error:
+                    type:
+                      - object
+                      - null
+                    properties:
+                      message:
+                        type: string
+                      code:
+                        type: integer
+                  meta:
+                    type:
+                      - object
+                      - null
+                    additionalProperties: true
+  /api/public/v1/high-risk/{tin}:
+    get:
+      tags:
+        - High Risk
+      summary: "High-risk detail for one taxpayer"
+      parameters:
+        -
+          name: tin
+          in: path
+          required: true
+          schema:
+            type: string
+          example: 0100000123
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - error
+                  - meta
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/RiskAssessment"
+                  error:
+                    type:
+                      - object
+                      - null
+                    properties:
+                      message:
+                        type: string
+                      code:
+                        type: integer
+                  meta:
+                    type:
+                      - object
+                      - null
+                    additionalProperties: true
+        404:
+          description: Assessment not found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - error
+                  - meta
+                properties:
+                  data:
+                    type: null
+                  error:
+                    type:
+                      - object
+                      - null
+                    properties:
+                      message:
+                        type: string
+                      code:
+                        type: integer
+                  meta:
+                    type:
+                      - object
+                      - null
+                    additionalProperties: true
+  /api/public/v1/recommendations:
+    get:
+      tags:
+        - Recommendations
+      summary: Audit recommendations
+      description: "Actionable recommendations with suggested audit type, ordered by priority rank."
+      parameters:
+        -
+          name: tin
+          in: query
+          schema:
+            type: string
+          description: Exact taxpayer identification number
+          example: 0100000123
+        -
+          name: region
+          in: query
+          schema:
+            type: string
+          description: Region code as defined by the Registration Service
+          example: OR
+        -
+          name: taxCenter
+          in: query
+          schema:
+            type: string
+          description: Tax center code
+          example: "OR-SHA"
+        -
+          name: sector
+          in: query
+          schema:
+            type: string
+          description: Business sector code
+          example: WHL
+        -
+          name: taxpayerType
+          in: query
+          schema:
+            type: string
+          description: "LTO | MTO | STO"
+          example: LTO
+        -
+          name: riskLevel
+          in: query
+          schema:
+            type: string
+          description: "Comma separated: critical,high,medium,low"
+          example: "critical,high"
+        -
+          name: riskCategory
+          in: query
+          schema:
+            type: string
+          description: Only rows whose category score is material
+          example: THIRD_PARTY
+        -
+          name: registrationStatus
+          in: query
+          schema:
+            type: string
+          description: "active | inactive | deregistered"
+          example: active
+        -
+          name: recommendation
+          in: query
+          schema:
+            type: string
+          description: "audit_immediately | select_for_audit | monitor | no_action"
+          example: select_for_audit
+        -
+          name: suggestedAuditType
+          in: query
+          schema:
+            type: string
+          description: Suggested audit type
+          example: Comprehensive field audit
+        -
+          name: assessedFrom
+          in: query
+          schema:
+            type: string
+          description: "ISO date-time lower bound"
+          example: "2026-01-01"
+        -
+          name: assessedTo
+          in: query
+          schema:
+            type: string
+          description: "ISO date-time upper bound"
+          example: "2026-12-31"
+        -
+          name: vatRegistered
+          in: query
+          schema:
+            type: boolean
+          description: VAT registration flag
+        -
+          name: minScore
+          in: query
+          schema:
+            type: number
+            minimum: 0
+            maximum: 100
+        -
+          name: maxScore
+          in: query
+          schema:
+            type: number
+            minimum: 0
+            maximum: 100
+        -
+          name: sort
+          in: query
+          schema:
+            type: string
+            enum:
+              - overall_score
+              - priority_rank
+              - assessed_at
+              - confidence
+              - tin
+              - risk_level
+            default: overall_score
+        -
+          name: order
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+        -
+          name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        -
+          name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - error
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  error:
+                    type:
+                      - object
+                      - null
+                    properties:
+                      message:
+                        type: string
+                      code:
+                        type: integer
+                  meta:
+                    type:
+                      - object
+                      - null
+                    additionalProperties: true
+  /api/public/v1/statistics:
+    get:
+      tags:
+        - Statistics
+      summary: Aggregate risk statistics
+      description: "Totals by risk level, recommendation, region, sector, taxpayer type and indicator."
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - error
+                  - meta
+                properties:
+                  data:
+                    type: object
+                    additionalProperties: true
+                  error:
+                    type:
+                      - object
+                      - null
+                    properties:
+                      message:
+                        type: string
+                      code:
+                        type: integer
+                  meta:
+                    type:
+                      - object
+                      - null
+                    additionalProperties: true
+  /api/public/v1/risk-rules:
+    get:
+      tags:
+        - Configuration
+      summary: List configured risk indicators
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - error
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      "$ref": "#/components/schemas/RiskRule"
+                  error:
+                    type:
+                      - object
+                      - null
+                    properties:
+                      message:
+                        type: string
+                      code:
+                        type: integer
+                  meta:
+                    type:
+                      - object
+                      - null
+                    additionalProperties: true
+    patch:
+      tags:
+        - Configuration
+      summary: "Update a risk indicator's weight, threshold or enabled state"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - code
+              properties:
+                code:
+                  type: string
+                weight:
+                  type: number
+                  minimum: 0
+                  maximum: 10
+                threshold:
+                  type: number
+                enabled:
+                  type: boolean
+                severity:
+                  type: string
+                  enum:
+                    - low
+                    - medium
+                    - high
+                    - critical
+            example:
+              code: LATE_FILING
+              weight: 1.2
+              threshold: 0.9
+              enabled: true
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - error
+                  - meta
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/RiskRule"
+                  error:
+                    type:
+                      - object
+                      - null
+                    properties:
+                      message:
+                        type: string
+                      code:
+                        type: integer
+                  meta:
+                    type:
+                      - object
+                      - null
+                    additionalProperties: true
+        404:
+          description: Unknown rule code
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+  /api/public/v1/risk-categories:
+    get:
+      tags:
+        - Configuration
+      summary: List risk categories
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - error
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      "$ref": "#/components/schemas/RiskCategory"
+                  error:
+                    type:
+                      - object
+                      - null
+                    properties:
+                      message:
+                        type: string
+                      code:
+                        type: integer
+                  meta:
+                    type:
+                      - object
+                      - null
+                    additionalProperties: true
+  /api/public/v1/assessment-history/{tin}:
+    get:
+      tags:
+        - History
+      summary: Assessment history for one taxpayer
+      parameters:
+        -
+          name: tin
+          in: path
+          required: true
+          schema:
+            type: string
+          example: 0100000123
+        -
+          name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - error
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      "$ref": "#/components/schemas/RiskAssessment"
+                  error:
+                    type:
+                      - object
+                      - null
+                    properties:
+                      message:
+                        type: string
+                      code:
+                        type: integer
+                  meta:
+                    type:
+                      - object
+                      - null
+                    additionalProperties: true
+  /api/public/v1/runs:
+    get:
+      tags:
+        - History
+      summary: Engine execution history and processing logs
+      parameters:
+        -
+          name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - error
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  error:
+                    type:
+                      - object
+                      - null
+                    properties:
+                      message:
+                        type: string
+                      code:
+                        type: integer
+                  meta:
+                    type:
+                      - object
+                      - null
+                    additionalProperties: true
+  /api/public/v1/health:
+    get:
+      tags:
+        - Reference
+      summary: Engine health and Registration Service connectivity
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - error
+                  - meta
+                properties:
+                  data:
+                    type: object
+                    additionalProperties: true
+                  error:
+                    type:
+                      - object
+                      - null
+                    properties:
+                      message:
+                        type: string
+                      code:
+                        type: integer
+                  meta:
+                    type:
+                      - object
+                      - null
+                    additionalProperties: true
+  /api/public/v1/export/risk-assessments.csv:
+    get:
+      tags:
+        - Export
+      summary: Download current risk assessments as CSV
+      parameters:
+        -
+          name: tin
+          in: query
+          schema:
+            type: string
+          description: Exact taxpayer identification number
+          example: 0100000123
+        -
+          name: region
+          in: query
+          schema:
+            type: string
+          description: Region code as defined by the Registration Service
+          example: OR
+        -
+          name: taxCenter
+          in: query
+          schema:
+            type: string
+          description: Tax center code
+          example: "OR-SHA"
+        -
+          name: sector
+          in: query
+          schema:
+            type: string
+          description: Business sector code
+          example: WHL
+        -
+          name: taxpayerType
+          in: query
+          schema:
+            type: string
+          description: "LTO | MTO | STO"
+          example: LTO
+        -
+          name: riskLevel
+          in: query
+          schema:
+            type: string
+          description: "Comma separated: critical,high,medium,low"
+          example: "critical,high"
+        -
+          name: riskCategory
+          in: query
+          schema:
+            type: string
+          description: Only rows whose category score is material
+          example: THIRD_PARTY
+        -
+          name: registrationStatus
+          in: query
+          schema:
+            type: string
+          description: "active | inactive | deregistered"
+          example: active
+        -
+          name: recommendation
+          in: query
+          schema:
+            type: string
+          description: "audit_immediately | select_for_audit | monitor | no_action"
+          example: select_for_audit
+        -
+          name: suggestedAuditType
+          in: query
+          schema:
+            type: string
+          description: Suggested audit type
+          example: Comprehensive field audit
+        -
+          name: assessedFrom
+          in: query
+          schema:
+            type: string
+          description: "ISO date-time lower bound"
+          example: "2026-01-01"
+        -
+          name: assessedTo
+          in: query
+          schema:
+            type: string
+          description: "ISO date-time upper bound"
+          example: "2026-12-31"
+        -
+          name: vatRegistered
+          in: query
+          schema:
+            type: boolean
+          description: VAT registration flag
+        -
+          name: minScore
+          in: query
+          schema:
+            type: number
+            minimum: 0
+            maximum: 100
+        -
+          name: maxScore
+          in: query
+          schema:
+            type: number
+            minimum: 0
+            maximum: 100
+        -
+          name: sort
+          in: query
+          schema:
+            type: string
+            enum:
+              - overall_score
+              - priority_rank
+              - assessed_at
+              - confidence
+              - tin
+              - risk_level
+            default: overall_score
+        -
+          name: order
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+        -
+          name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        -
+          name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+      responses:
+        200:
+          description: CSV file
+          content:
+            text/csv:
+              schema:
+                type: string
+  /api/public/v1/export/risk-assessments.xlsx:
+    get:
+      tags:
+        - Export
+      summary: Download current risk assessments as XLSX
+      parameters:
+        -
+          name: tin
+          in: query
+          schema:
+            type: string
+          description: Exact taxpayer identification number
+          example: 0100000123
+        -
+          name: region
+          in: query
+          schema:
+            type: string
+          description: Region code as defined by the Registration Service
+          example: OR
+        -
+          name: taxCenter
+          in: query
+          schema:
+            type: string
+          description: Tax center code
+          example: "OR-SHA"
+        -
+          name: sector
+          in: query
+          schema:
+            type: string
+          description: Business sector code
+          example: WHL
+        -
+          name: taxpayerType
+          in: query
+          schema:
+            type: string
+          description: "LTO | MTO | STO"
+          example: LTO
+        -
+          name: riskLevel
+          in: query
+          schema:
+            type: string
+          description: "Comma separated: critical,high,medium,low"
+          example: "critical,high"
+        -
+          name: riskCategory
+          in: query
+          schema:
+            type: string
+          description: Only rows whose category score is material
+          example: THIRD_PARTY
+        -
+          name: registrationStatus
+          in: query
+          schema:
+            type: string
+          description: "active | inactive | deregistered"
+          example: active
+        -
+          name: recommendation
+          in: query
+          schema:
+            type: string
+          description: "audit_immediately | select_for_audit | monitor | no_action"
+          example: select_for_audit
+        -
+          name: suggestedAuditType
+          in: query
+          schema:
+            type: string
+          description: Suggested audit type
+          example: Comprehensive field audit
+        -
+          name: assessedFrom
+          in: query
+          schema:
+            type: string
+          description: "ISO date-time lower bound"
+          example: "2026-01-01"
+        -
+          name: assessedTo
+          in: query
+          schema:
+            type: string
+          description: "ISO date-time upper bound"
+          example: "2026-12-31"
+        -
+          name: vatRegistered
+          in: query
+          schema:
+            type: boolean
+          description: VAT registration flag
+        -
+          name: minScore
+          in: query
+          schema:
+            type: number
+            minimum: 0
+            maximum: 100
+        -
+          name: maxScore
+          in: query
+          schema:
+            type: number
+            minimum: 0
+            maximum: 100
+        -
+          name: sort
+          in: query
+          schema:
+            type: string
+            enum:
+              - overall_score
+              - priority_rank
+              - assessed_at
+              - confidence
+              - tin
+              - risk_level
+            default: overall_score
+        -
+          name: order
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+        -
+          name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        -
+          name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+      responses:
+        200:
+          description: Excel workbook
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+  /api/public/v1/export/risk-assessments.json:
+    get:
+      tags:
+        - Export
+      summary: Download current risk assessments as JSON
+      parameters:
+        -
+          name: tin
+          in: query
+          schema:
+            type: string
+          description: Exact taxpayer identification number
+          example: 0100000123
+        -
+          name: region
+          in: query
+          schema:
+            type: string
+          description: Region code as defined by the Registration Service
+          example: OR
+        -
+          name: taxCenter
+          in: query
+          schema:
+            type: string
+          description: Tax center code
+          example: "OR-SHA"
+        -
+          name: sector
+          in: query
+          schema:
+            type: string
+          description: Business sector code
+          example: WHL
+        -
+          name: taxpayerType
+          in: query
+          schema:
+            type: string
+          description: "LTO | MTO | STO"
+          example: LTO
+        -
+          name: riskLevel
+          in: query
+          schema:
+            type: string
+          description: "Comma separated: critical,high,medium,low"
+          example: "critical,high"
+        -
+          name: riskCategory
+          in: query
+          schema:
+            type: string
+          description: Only rows whose category score is material
+          example: THIRD_PARTY
+        -
+          name: registrationStatus
+          in: query
+          schema:
+            type: string
+          description: "active | inactive | deregistered"
+          example: active
+        -
+          name: recommendation
+          in: query
+          schema:
+            type: string
+          description: "audit_immediately | select_for_audit | monitor | no_action"
+          example: select_for_audit
+        -
+          name: suggestedAuditType
+          in: query
+          schema:
+            type: string
+          description: Suggested audit type
+          example: Comprehensive field audit
+        -
+          name: assessedFrom
+          in: query
+          schema:
+            type: string
+          description: "ISO date-time lower bound"
+          example: "2026-01-01"
+        -
+          name: assessedTo
+          in: query
+          schema:
+            type: string
+          description: "ISO date-time upper bound"
+          example: "2026-12-31"
+        -
+          name: vatRegistered
+          in: query
+          schema:
+            type: boolean
+          description: VAT registration flag
+        -
+          name: minScore
+          in: query
+          schema:
+            type: number
+            minimum: 0
+            maximum: 100
+        -
+          name: maxScore
+          in: query
+          schema:
+            type: number
+            minimum: 0
+            maximum: 100
+        -
+          name: sort
+          in: query
+          schema:
+            type: string
+            enum:
+              - overall_score
+              - priority_rank
+              - assessed_at
+              - confidence
+              - tin
+              - risk_level
+            default: overall_score
+        -
+          name: order
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+        -
+          name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        -
+          name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - error
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      "$ref": "#/components/schemas/RiskAssessment"
+                  error:
+                    type:
+                      - object
+                      - null
+                    properties:
+                      message:
+                        type: string
+                      code:
+                        type: integer
+                  meta:
+                    type:
+                      - object
+                      - null
+                    additionalProperties: true
+  /api/public/v1/export/high-risk-taxpayers.csv:
+    get:
+      tags:
+        - Export
+      summary: Download high and critical risk taxpayers as CSV
+      parameters:
+        -
+          name: tin
+          in: query
+          schema:
+            type: string
+          description: Exact taxpayer identification number
+          example: 0100000123
+        -
+          name: region
+          in: query
+          schema:
+            type: string
+          description: Region code as defined by the Registration Service
+          example: OR
+        -
+          name: taxCenter
+          in: query
+          schema:
+            type: string
+          description: Tax center code
+          example: "OR-SHA"
+        -
+          name: sector
+          in: query
+          schema:
+            type: string
+          description: Business sector code
+          example: WHL
+        -
+          name: taxpayerType
+          in: query
+          schema:
+            type: string
+          description: "LTO | MTO | STO"
+          example: LTO
+        -
+          name: riskLevel
+          in: query
+          schema:
+            type: string
+          description: "Comma separated: critical,high,medium,low"
+          example: "critical,high"
+        -
+          name: riskCategory
+          in: query
+          schema:
+            type: string
+          description: Only rows whose category score is material
+          example: THIRD_PARTY
+        -
+          name: registrationStatus
+          in: query
+          schema:
+            type: string
+          description: "active | inactive | deregistered"
+          example: active
+        -
+          name: recommendation
+          in: query
+          schema:
+            type: string
+          description: "audit_immediately | select_for_audit | monitor | no_action"
+          example: select_for_audit
+        -
+          name: suggestedAuditType
+          in: query
+          schema:
+            type: string
+          description: Suggested audit type
+          example: Comprehensive field audit
+        -
+          name: assessedFrom
+          in: query
+          schema:
+            type: string
+          description: "ISO date-time lower bound"
+          example: "2026-01-01"
+        -
+          name: assessedTo
+          in: query
+          schema:
+            type: string
+          description: "ISO date-time upper bound"
+          example: "2026-12-31"
+        -
+          name: vatRegistered
+          in: query
+          schema:
+            type: boolean
+          description: VAT registration flag
+        -
+          name: minScore
+          in: query
+          schema:
+            type: number
+            minimum: 0
+            maximum: 100
+        -
+          name: maxScore
+          in: query
+          schema:
+            type: number
+            minimum: 0
+            maximum: 100
+        -
+          name: sort
+          in: query
+          schema:
+            type: string
+            enum:
+              - overall_score
+              - priority_rank
+              - assessed_at
+              - confidence
+              - tin
+              - risk_level
+            default: overall_score
+        -
+          name: order
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+        -
+          name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        -
+          name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+      responses:
+        200:
+          description: CSV file
+          content:
+            text/csv:
+              schema:
+                type: string
+  /api/public/v1/export/recommendations.xlsx:
+    get:
+      tags:
+        - Export
+      summary: Download audit recommendations as XLSX
+      parameters:
+        -
+          name: tin
+          in: query
+          schema:
+            type: string
+          description: Exact taxpayer identification number
+          example: 0100000123
+        -
+          name: region
+          in: query
+          schema:
+            type: string
+          description: Region code as defined by the Registration Service
+          example: OR
+        -
+          name: taxCenter
+          in: query
+          schema:
+            type: string
+          description: Tax center code
+          example: "OR-SHA"
+        -
+          name: sector
+          in: query
+          schema:
+            type: string
+          description: Business sector code
+          example: WHL
+        -
+          name: taxpayerType
+          in: query
+          schema:
+            type: string
+          description: "LTO | MTO | STO"
+          example: LTO
+        -
+          name: riskLevel
+          in: query
+          schema:
+            type: string
+          description: "Comma separated: critical,high,medium,low"
+          example: "critical,high"
+        -
+          name: riskCategory
+          in: query
+          schema:
+            type: string
+          description: Only rows whose category score is material
+          example: THIRD_PARTY
+        -
+          name: registrationStatus
+          in: query
+          schema:
+            type: string
+          description: "active | inactive | deregistered"
+          example: active
+        -
+          name: recommendation
+          in: query
+          schema:
+            type: string
+          description: "audit_immediately | select_for_audit | monitor | no_action"
+          example: select_for_audit
+        -
+          name: suggestedAuditType
+          in: query
+          schema:
+            type: string
+          description: Suggested audit type
+          example: Comprehensive field audit
+        -
+          name: assessedFrom
+          in: query
+          schema:
+            type: string
+          description: "ISO date-time lower bound"
+          example: "2026-01-01"
+        -
+          name: assessedTo
+          in: query
+          schema:
+            type: string
+          description: "ISO date-time upper bound"
+          example: "2026-12-31"
+        -
+          name: vatRegistered
+          in: query
+          schema:
+            type: boolean
+          description: VAT registration flag
+        -
+          name: minScore
+          in: query
+          schema:
+            type: number
+            minimum: 0
+            maximum: 100
+        -
+          name: maxScore
+          in: query
+          schema:
+            type: number
+            minimum: 0
+            maximum: 100
+        -
+          name: sort
+          in: query
+          schema:
+            type: string
+            enum:
+              - overall_score
+              - priority_rank
+              - assessed_at
+              - confidence
+              - tin
+              - risk_level
+            default: overall_score
+        -
+          name: order
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+        -
+          name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        -
+          name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+      responses:
+        200:
+          description: Excel workbook
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+  /api/public/v1/openapi.json:
+    get:
+      tags:
+        - Reference
+      summary: This OpenAPI 3.1 document (JSON)
+      responses:
+        200:
+          description: OK
+  /api/public/v1/openapi.yaml:
+    get:
+      tags:
+        - Reference
+      summary: This OpenAPI 3.1 document (YAML)
+      responses:
+        200:
+          description: OK

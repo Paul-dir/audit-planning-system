@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useData } from '../../services/dataService';
 import { denormalizeRegionName, getDisplayRegionName } from '../../utils/regionNormalizer';
+import { filterPlansForRegion } from '../../utils/regionalDataFilter';
 import { useAuth } from '../../context/AuthContext';
 import Card from '../Card';
 import Badge from '../Badge';
@@ -22,9 +23,7 @@ function RegionalDirectorReceivePlansView() {
   const userInfo = getUserInfo();
 
   // Get regional director's assigned region from auth context
-  const directorRegion = authContext?.org_context?.assignedRegion 
-    ? denormalizeRegionName(authContext.org_context.assignedRegion)
-    : null;
+  const directorRegion = authContext?.region || null;
 
   // State
   const [plans, setPlans] = useState([]);
@@ -40,23 +39,28 @@ function RegionalDirectorReceivePlansView() {
 
   const loadPlans = () => {
     setLoading(true);
-    // Using data from hook
+    
+    if (!directorRegion) {
+      setPlans([]);
+      setLoading(false);
+      return;
+    }
 
-    // ✅ Simple approach: Show all plans that have been submitted to ANY region
-    // Regional directors will see the allocation for their region
-    const submittedPlans = (data.plans || []).filter(plan => {
-      // Show plans that:
-      // 1. Have sentToRegions (director submitted them)
-      // 2. Have regional allocation (plans are finalized with allocation)
+    // ✅ REGIONAL ISOLATION: Only show plans allocated to THIS region
+    const allSubmittedPlans = (data.plans || []).filter(plan => {
+      // Show plans that have been submitted to regions
       const hasSentToRegions = plan.sentToRegions && plan.sentToRegions.length > 0;
       const hasAllocation = plan.regionalAllocation && Object.keys(plan.regionalAllocation).length > 0;
       
       return hasSentToRegions && hasAllocation;
     });
 
-    console.log(`✅ Regional Director: Found ${submittedPlans.length} submitted plans (showing all submitted plans)`);
+    // Filter only plans for this region
+    const regionalPlans = filterPlansForRegion(allSubmittedPlans, directorRegion);
 
-    setPlans(submittedPlans);
+    console.log(`✅ Regional Director (${directorRegion}): Found ${regionalPlans.length} plans out of ${allSubmittedPlans.length} submitted plans`);
+
+    setPlans(regionalPlans);
     setLoading(false);
   };
 

@@ -17,6 +17,7 @@ export const ROLE_NAVIGATION = {
         items: [
           { id: 'create-plan', label: 'Create annual plan', icon: 'fas fa-bullseye' },
           { id: 'my-plans', label: 'My plans', icon: 'fas fa-folder-open' },
+          { id: 'plan-configuration', label: 'Plan Configuration', icon: 'fas fa-sliders-h' },
           { id: 'amend-plans', label: 'Amend plans', icon: 'fas fa-edit' },
           { id: 'cascade-plan-cases', label: 'Cascade to cases', icon: 'fas fa-sitemap' },
         ],
@@ -47,6 +48,7 @@ export const ROLE_NAVIGATION = {
         items: [
           { id: 'create-plan', label: 'Create annual plan', icon: 'fas fa-bullseye' },
           { id: 'my-plans', label: 'My plans', icon: 'fas fa-folder-open' },
+          { id: 'plan-configuration', label: 'Plan Configuration', icon: 'fas fa-sliders-h' },
           { id: 'amend-plans', label: 'Amend plans', icon: 'fas fa-edit' },
           { id: 'cascade-plan-cases', label: 'Cascade to cases', icon: 'fas fa-sitemap' },
         ],
