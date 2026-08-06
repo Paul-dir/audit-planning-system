@@ -55,11 +55,16 @@ export default function Sidebar({ activeView, onNavigate }) {
   const items = NAV[user.role] || [];
 
   const handleNavClick = (id) => {
-    console.log('Sidebar clicked:', id);
-    if (onNavigate) {
+    console.log('=== Sidebar Navigation Click ===');
+    console.log('View ID:', id);
+    console.log('onNavigate function:', onNavigate);
+    console.log('User role:', user?.role);
+    
+    if (onNavigate && typeof onNavigate === 'function') {
       onNavigate(id);
+      console.log('Navigation completed to:', id);
     } else {
-      console.error('onNavigate is not defined!');
+      console.error('onNavigate is not defined or not a function!', onNavigate);
     }
   };
 

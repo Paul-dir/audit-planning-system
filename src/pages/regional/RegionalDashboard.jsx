@@ -15,10 +15,11 @@ export default function RegionalDashboard({ view }) {
   const [feedbackModal, setFeedbackModal] = useState(null); // the plan being given feedback for
   const [feedbackText, setFeedbackText] = useState('');
   const [tcAllocations, setTcAllocations] = useState({});
-  const [step, setStep] = useState(1); // 1: review, 2: tc allocations, 3: confirm
+  const [step, setStep] = useState(1); // 1: review, 2: tc allocations, 3: send to TC, 4: collect TC feedback, 5: final submission
   const [loading, setLoading] = useState(false);
   const [viewPlan, setViewPlan] = useState(null);
   const [viewTab, setViewTab] = useState('overview');
+  const [tcFeedbackReviewModal, setTcFeedbackReviewModal] = useState(null);
 
   const allPlans = state.plans;
   const awaitingFeedback = allPlans.filter(p => p.status === 'AWAITING_REGIONAL_FEEDBACK' && !p.regionalFeedback?.[region]);
@@ -33,21 +34,42 @@ export default function RegionalDashboard({ view }) {
     setFeedbackModal(plan);
     setFeedbackText('');
     
-    // Auto-distribute cases evenly across tax centers
+    // Check if tax centers have provided feedback
+    const tcFeedback = plan.taxCenterFeedback?.[region] || {};
+    const hasTCFeedback = Object.keys(tcFeedback).length > 0;
+    
+    // If tax centers provided feedback, use their adjusted allocations as default
+    // Otherwise, auto-distribute evenly
     const regionDist = plan.distribution?.[region] || {};
     const taxCenters = getTaxCentersForRegion(region);
     const autoAllocations = {};
     
-    taxCenters.forEach((tc, index) => {
-      autoAllocations[tc.id] = {};
-      AUDIT_TYPES.forEach(auditType => {
-        const totalForType = regionDist[auditType.id] || 0;
-        const perTC = Math.floor(totalForType / taxCenters.length);
-        const remainder = totalForType % taxCenters.length;
-        // Distribute evenly, give remainder to first tax centers
-        autoAllocations[tc.id][auditType.id] = perTC + (index < remainder ? 1 : 0);
+    if (hasTCFeedback) {
+      // Use tax center adjusted allocations
+      taxCenters.forEach(tc => {
+        const tcFeedbackData = tcFeedback[tc.id];
+        if (tcFeedbackData?.adjustedAllocation) {
+          autoAllocations[tc.id] = { ...tcFeedbackData.adjustedAllocation };
+        } else {
+          // If this TC didn't provide feedback, give them 0
+          autoAllocations[tc.id] = {};
+          AUDIT_TYPES.forEach(auditType => {
+            autoAllocations[tc.id][auditType.id] = 0;
+          });
+        }
       });
-    });
+    } else {
+      // Auto-distribute evenly across tax centers
+      taxCenters.forEach((tc, index) => {
+        autoAllocations[tc.id] = {};
+        AUDIT_TYPES.forEach(auditType => {
+          const totalForType = regionDist[auditType.id] || 0;
+          const perTC = Math.floor(totalForType / taxCenters.length);
+          const remainder = totalForType % taxCenters.length;
+          autoAllocations[tc.id][auditType.id] = perTC + (index < remainder ? 1 : 0);
+        });
+      });
+    }
     
     setTcAllocations(autoAllocations);
     setStep(1);
@@ -127,6 +149,11 @@ export default function RegionalDashboard({ view }) {
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" variant="secondary" icon={Eye} onClick={() => { setViewPlan(plan); setViewTab('distribution'); }}>View</Button>
+                    {tcAreReady && (
+                      <Button size="sm" variant="outline" onClick={() => setTcFeedbackReviewModal(plan)}>
+                        Review TC Feedback
+                      </Button>
+                    )}
                     <Button size="sm" variant="primary" icon={Send} onClick={() => openFeedback(plan)}>
                       Allocate & Submit
                     </Button>
@@ -172,16 +199,22 @@ export default function RegionalDashboard({ view }) {
       <Modal
         open={!!feedbackModal}
         onClose={() => setFeedbackModal(null)}
-        title={step === 1 ? 'Review Plan Allocation' : step === 2 ? 'Distribute to Tax Centers' : step === 3 ? 'Send to Tax Centers' : 'Confirm & Submit'}
+        title={
+          step === 1 ? 'Review Plan Allocation' : 
+          step === 2 ? 'Distribute to Tax Centers' : 
+          step === 3 ? 'Send to Tax Centers' : 
+          step === 4 ? 'Review Tax Center Feedback' :
+          'Confirm & Submit'
+        }
         size="xl"
         footer={
           <div className="flex items-center justify-between w-full">
-            <span className="text-xs text-gray-400">Step {step} of 4</span>
+            <span className="text-xs text-gray-400">Step {step} of 5</span>
             <div className="flex gap-2">
               {step > 1 && <Button variant="secondary" onClick={() => setStep(s => s - 1)}>← Back</Button>}
               {step === 1 && <Button variant="secondary" onClick={() => setFeedbackModal(null)}>Cancel</Button>}
-              {step < 4 && <Button onClick={() => setStep(s => s + 1)}>Next →</Button>}
-              {step === 4 && (
+              {step < 5 && <Button onClick={() => setStep(s => s + 1)}>Next →</Button>}
+              {step === 5 && (
                 <Button variant="success" icon={Send} loading={loading} onClick={doSubmit} disabled={!allColsMatch()}>
                   Submit Feedback
                 </Button>
@@ -263,6 +296,96 @@ export default function RegionalDashboard({ view }) {
 
             {step === 4 && (
               <div className="space-y-4">
+                {(() => {
+                  const tcFeedback = feedbackModal?.taxCenterFeedback?.[region] || {};
+                  const tcCount = Object.keys(tcFeedback).length;
+                  const taxCenters = getTaxCentersForRegion(region);
+                  
+                  if (tcCount === 0) {
+                    return (
+                      <Alert type="info" title="No tax center feedback yet">
+                        Tax centers haven't submitted their feedback yet. You can proceed to submit your regional feedback now, or wait for their input to aggregate their adjustments.
+                      </Alert>
+                    );
+                  }
+                  
+                  return (
+                    <>
+                      <Alert type="success" title={`${tcCount} tax center(s) provided feedback`}>
+                        Review their adjusted allocations and feedback comments below. The allocations have been pre-filled with their adjustments.
+                      </Alert>
+                      
+                      <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                        <p className="text-sm font-semibold text-gray-700">Tax Center Feedback Summary</p>
+                        {taxCenters.map(tc => {
+                          const tcFeedbackData = tcFeedback[tc.id];
+                          
+                          if (!tcFeedbackData) {
+                            return (
+                              <div key={tc.id} className="bg-white rounded-lg border border-gray-200 p-3">
+                                <div className="flex items-center justify-between">
+                                  <p className="font-semibold text-gray-700">{tc.name}</p>
+                                  <Badge color="gray">No feedback yet</Badge>
+                                </div>
+                              </div>
+                            );
+                          }
+                          
+                          const originalAlloc = tcAllocations[tc.id] || {};
+                          const adjustedAlloc = tcFeedbackData.adjustedAllocation || {};
+                          const hasChanges = AUDIT_TYPES.some(a => 
+                            (originalAlloc[a.id] || 0) !== (adjustedAlloc[a.id] || 0)
+                          );
+                          
+                          return (
+                            <div key={tc.id} className="bg-white rounded-lg border border-gray-200 p-3">
+                              <div className="flex items-center justify-between mb-2">
+                                <p className="font-semibold text-gray-800">{tc.name}</p>
+                                {hasChanges ? (
+                                  <Badge color="yellow">Adjusted</Badge>
+                                ) : (
+                                  <Badge color="green">Accepted</Badge>
+                                )}
+                              </div>
+                              
+                              {tcFeedbackData.feedback && (
+                                <div className="mb-3 p-2 bg-blue-50 rounded text-sm text-blue-900 italic">
+                                  <strong>Comment:</strong> {tcFeedbackData.feedback}
+                                </div>
+                              )}
+                              
+                              <div className="grid grid-cols-3 gap-2 text-xs">
+                                {AUDIT_TYPES.map(a => {
+                                  const adjusted = adjustedAlloc[a.id] || 0;
+                                  const hasChange = (originalAlloc[a.id] || 0) !== adjusted;
+                                  
+                                  return (
+                                    <div key={a.id} className="flex justify-between items-center">
+                                      <span className="text-gray-600">{a.name.split(' ')[0]}:</span>
+                                      <span className={`font-semibold ${hasChange ? 'text-orange-600' : 'text-gray-800'}`}>
+                                        {adjusted}
+                                        {hasChange && <span className="ml-1 text-xs">*</span>}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      
+                      <div className="bg-amber-50 rounded-xl p-3 text-sm text-amber-900">
+                        <strong>Note:</strong> Tax center adjustments have been automatically applied to your allocations. You can review and modify them in the next step if needed.
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            )}
+
+            {step === 5 && (
+              <div className="space-y-4">
                 {!allColsMatch() && (
                   <Alert type="error" title="Allocation incomplete">Please ensure all audit type column totals match the regional targets before submitting.</Alert>
                 )}
@@ -310,6 +433,97 @@ export default function RegionalDashboard({ view }) {
               </div>
             )}
             {viewTab === 'timeline' && <PlanTimeline plan={viewPlan} />}
+          </div>
+        </Modal>
+      )}
+
+      {/* Tax Center Feedback Review Modal */}
+      {tcFeedbackReviewModal && (
+        <Modal 
+          open={!!tcFeedbackReviewModal} 
+          onClose={() => setTcFeedbackReviewModal(null)} 
+          title="Tax Center Feedback Review"
+          size="xl"
+        >
+          <div className="space-y-4">
+            {(() => {
+              const tcFeedback = tcFeedbackReviewModal.taxCenterFeedback?.[region] || {};
+              const tcCount = Object.keys(tcFeedback).length;
+              const taxCenters = getTaxCentersForRegion(region);
+              
+              if (tcCount === 0) {
+                return (
+                  <Alert type="info" title="No feedback submitted yet">
+                    None of your tax centers have submitted feedback for this plan yet.
+                  </Alert>
+                );
+              }
+              
+              return (
+                <>
+                  <Alert type="success" title={`${tcCount} of ${taxCenters.length} tax center(s) submitted feedback`}>
+                    Review their adjusted allocations and comments below.
+                  </Alert>
+                  
+                  <div className="space-y-3">
+                    {taxCenters.map(tc => {
+                      const tcFeedbackData = tcFeedback[tc.id];
+                      
+                      if (!tcFeedbackData) {
+                        return (
+                          <div key={tc.id} className="bg-gray-50 rounded-lg border border-gray-200 p-4">
+                            <div className="flex items-center justify-between">
+                              <p className="font-semibold text-gray-700">{tc.name}</p>
+                              <Badge color="gray">Pending</Badge>
+                            </div>
+                            <p className="text-sm text-gray-500 mt-1">No feedback submitted yet</p>
+                          </div>
+                        );
+                      }
+                      
+                      const adjustedAlloc = tcFeedbackData.adjustedAllocation || {};
+                      const totalCases = AUDIT_TYPES.reduce((sum, a) => sum + (adjustedAlloc[a.id] || 0), 0);
+                      
+                      return (
+                        <div key={tc.id} className="bg-white rounded-lg border-2 border-green-200 p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <div>
+                              <p className="font-semibold text-gray-900">{tc.name}</p>
+                              <p className="text-xs text-gray-500">
+                                Submitted {new Date(tcFeedbackData.submittedAt).toLocaleDateString()} at {new Date(tcFeedbackData.submittedAt).toLocaleTimeString()}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <Badge color="green" dot>Submitted</Badge>
+                              <p className="text-lg font-bold text-blue-600 mt-1">{totalCases} cases</p>
+                            </div>
+                          </div>
+                          
+                          {tcFeedbackData.feedback && (
+                            <div className="mb-3 p-3 bg-blue-50 rounded-lg">
+                              <p className="text-xs font-semibold text-blue-900 mb-1">Feedback Comment:</p>
+                              <p className="text-sm text-blue-900 italic">"{tcFeedbackData.feedback}"</p>
+                            </div>
+                          )}
+                          
+                          <div className="bg-gray-50 rounded-lg p-3">
+                            <p className="text-xs font-semibold text-gray-700 mb-2">Adjusted Allocation by Audit Type:</p>
+                            <div className="grid grid-cols-3 gap-3">
+                              {AUDIT_TYPES.map(a => (
+                                <div key={a.id} className="bg-white rounded border border-gray-200 px-3 py-2 text-center">
+                                  <p className="text-xs text-gray-600">{a.name}</p>
+                                  <p className="text-lg font-bold text-gray-900">{adjustedAlloc[a.id] || 0}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </Modal>
       )}
