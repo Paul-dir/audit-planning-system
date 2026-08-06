@@ -83,16 +83,7 @@ export default function RegionalDashboard({ view }) {
   };
 
   const doSubmit = () => {
-    if (!allColsMatch()) {
-      alert('❌ Validation Failed!\n\nThe tax center allocations do not match the regional targets.\n\nPlease go back to Step 2 and ensure all columns add up correctly.');
-      return;
-    }
-    
-    if (!feedbackText.trim()) {
-      alert('❌ Feedback Required!\n\nPlease provide your regional feedback comments before submitting.');
-      return;
-    }
-    
+    if (!allColsMatch()) return;
     setLoading(true);
     setTimeout(() => {
       actions.submitRegionalFeedback(feedbackModal.id, region, feedbackText, tcAllocations, user.id);
@@ -132,13 +123,6 @@ export default function RegionalDashboard({ view }) {
               const tcFeedback = plan.taxCenterFeedback?.[region] || {};
               const tcFeedbackCount = Object.keys(tcFeedback).length;
               const tcAreReady = tcFeedbackCount > 0;
-              
-              // DEBUG: Log TC feedback status
-              console.log('🔍 DEBUG - Plan:', plan.name);
-              console.log('🔍 plan.taxCenterFeedback:', plan.taxCenterFeedback);
-              console.log('🔍 tcFeedback for region:', region, tcFeedback);
-              console.log('🔍 tcFeedbackCount:', tcFeedbackCount);
-              console.log('🔍 tcAreReady:', tcAreReady);
               
               return (
                 <div key={plan.id} className="flex items-center justify-between px-6 py-4">
