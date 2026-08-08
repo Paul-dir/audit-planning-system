@@ -1,0 +1,4 @@
+  File "/home/paul/itas_tax_audit_project/audit-planning-system/generate_taxpayers.py", line 24
+    'Meta Abo Brewery', 'Harar Brewery', 'Bed
+                                         ^
+SyntaxError: unterminated string literal (detected at line 24)

@@ -20,7 +20,8 @@ export default function SeniorDashboard({ view }) {
   const [tab, setTab] = useState('pending');
 
   const pending = state.plans.filter(p => p.status === 'SUBMITTED_TO_SENIOR_MGMT');
-  const approved = state.plans.filter(p => ['SENIOR_MGMT_APPROVED','FINALIZED'].includes(p.status));
+  const approved = state.plans.filter(p => p.status === 'SENIOR_MGMT_APPROVED');
+  const finalized = state.plans.filter(p => p.status === 'FINALIZED');
   const allPlans = state.plans;
 
   const stats = selectors.getPlanStats();
@@ -41,14 +42,10 @@ export default function SeniorDashboard({ view }) {
     }, 300);
   };
 
-  const doFinalize = (plan) => {
-    actions.finalizePlan(plan.id, user.id);
-  };
-
   const cols = [
-    { key: 'id', label: 'ID', render: v => <span className="font-mono text-xs text-gray-400">{v}</span> },
+    { key: 'id', label: 'ID', render: v => <span className="font-mono text-xs text-gray-400 dark:text-gray-500">{v}</span> },
     { key: 'name', label: 'Plan', render: (v, row) => (
-      <div><p className="font-medium text-sm text-gray-900">{v}</p><p className="text-xs text-gray-400">FY {row.year}</p></div>
+      <div><p className="font-medium text-sm text-gray-900 dark:text-white">{v}</p><p className="text-xs text-gray-400 dark:text-gray-500">FY {row.year}</p></div>
     )},
     { key: 'totalCases', label: 'Cases', render: v => <span className="font-semibold tabular-nums">{v?.toLocaleString()}</span> },
     { key: 'status', label: 'Status', render: v => <PlanStatusBadge status={v} /> },
@@ -61,8 +58,9 @@ export default function SeniorDashboard({ view }) {
             <Button size="xs" variant="danger" icon={XCircle} onClick={() => { setReviewPlan(row); setAction('reject'); }}>Reject</Button>
           </>
         )}
+        {/* Approved plans are deployed by the Director — no action needed from Senior Management */}
         {row.status === 'SENIOR_MGMT_APPROVED' && (
-          <Button size="xs" variant="primary" icon={Award} onClick={() => doFinalize(row)}>Finalize & Deploy</Button>
+          <span className="text-xs text-green-600 font-medium px-2">✓ Awaiting Director deployment</span>
         )}
       </div>
     )},
@@ -72,9 +70,9 @@ export default function SeniorDashboard({ view }) {
     <div className="space-y-6">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Pending Approval" value={pending.length} icon={Clock} color="yellow" />
-        <StatCard label="Approved" value={approved.length} icon={CheckCircle} color="green" />
+        <StatCard label="Approved" value={approved.length} icon={CheckCircle} color="green" sub="Awaiting Director deployment" />
         <StatCard label="Total Plans" value={allPlans.length} icon={FileText} color="blue" />
-        <StatCard label="Finalized" value={stats.finalized} icon={Award} color="teal" />
+        <StatCard label="Finalized" value={finalized.length} icon={Award} color="teal" />
       </div>
 
       {pending.length > 0 && (
@@ -84,7 +82,7 @@ export default function SeniorDashboard({ view }) {
       )}
 
       <Card padding={false}>
-        <div className="px-6 pt-4 pb-0 border-b border-gray-100">
+        <div className="px-6 pt-4 pb-0 border-b border-gray-100 dark:border-gray-700">
           <Tabs
             tabs={[
               { id: 'pending', label: 'Pending Approval', count: pending.length },
@@ -119,6 +117,7 @@ export default function SeniorDashboard({ view }) {
             variant={action === 'approve' ? 'success' : 'danger'}
             icon={action === 'approve' ? CheckCircle : XCircle}
             loading={loading} onClick={doAction}
+            disabled={action === 'reject' && !comment.trim()}
           >
             {action === 'approve' ? 'Approve Plan' : 'Reject Plan'}
           </Button>
@@ -128,15 +127,15 @@ export default function SeniorDashboard({ view }) {
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-3 text-center">
               <div className="bg-blue-50 rounded-xl p-3">
-                <p className="text-xs text-gray-500">Total Cases</p>
+                <p className="text-xs text-gray-500 dark:text-slate-400">Total Cases</p>
                 <p className="text-xl font-bold text-blue-700">{reviewPlan.totalCases?.toLocaleString()}</p>
               </div>
               <div className="bg-green-50 rounded-xl p-3">
-                <p className="text-xs text-gray-500">Regions</p>
+                <p className="text-xs text-gray-500 dark:text-slate-400">Regions</p>
                 <p className="text-xl font-bold text-green-700">{REGIONS.length}</p>
               </div>
               <div className="bg-purple-50 rounded-xl p-3">
-                <p className="text-xs text-gray-500">Fiscal Year</p>
+                <p className="text-xs text-gray-500 dark:text-slate-400">Fiscal Year</p>
                 <p className="text-xl font-bold text-purple-700">FY {reviewPlan.year}</p>
               </div>
             </div>
@@ -156,8 +155,8 @@ export default function SeniorDashboard({ view }) {
           <div className="space-y-4">
             <div className="flex gap-2 flex-wrap">
               <PlanStatusBadge status={viewPlan.status} />
-              <span className="text-xs text-gray-400">FY {viewPlan.year}</span>
-              <span className="text-xs font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full">{viewPlan.totalCases?.toLocaleString()} cases</span>
+              <span className="text-xs text-gray-400 dark:text-slate-400">FY {viewPlan.year}</span>
+              <span className="text-xs font-semibold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded-full">{viewPlan.totalCases?.toLocaleString()} cases</span>
             </div>
             <Tabs
               tabs={[{ id: 'distribution', label: 'Distribution' }, { id: 'feedback', label: 'Regional Feedback' }, { id: 'timeline', label: 'Timeline' }]}
@@ -169,12 +168,12 @@ export default function SeniorDashboard({ view }) {
                 {REGIONS.map(r => {
                   const fb = viewPlan.regionalFeedback?.[r.id];
                   return (
-                    <div key={r.id} className={`p-3 rounded-xl border ${fb ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
+                    <div key={r.id} className={`p-3 rounded-xl border ${fb ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20' : 'border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-700'}`}>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium">{r.name}</span>
-                        {fb ? <span className="text-xs text-green-600">✓ Submitted</span> : <span className="text-xs text-gray-400">Pending</span>}
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">{r.name}</span>
+                        {fb ? <span className="text-xs text-green-600 dark:text-green-400">✓ Submitted</span> : <span className="text-xs text-gray-400 dark:text-slate-400">Pending</span>}
                       </div>
-                      {fb?.feedback && <p className="text-xs text-gray-600 italic">"{fb.feedback}"</p>}
+                      {fb?.feedback && <p className="text-xs text-gray-600 dark:text-slate-400 italic">"{fb.feedback}"</p>}
                     </div>
                   );
                 })}

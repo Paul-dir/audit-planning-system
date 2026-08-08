@@ -113,7 +113,7 @@ export default function PlanningDashboard({ view }) {
 
   const stats = selectors.getPlanStats();
   const plans = state.plans;
-  const amendmentPlans = plans.filter(p => p.status === 'AMENDMENT_REQUIRED');
+  const amendmentPlans = plans.filter(p => ['AMENDMENT_REQUIRED', 'SENIOR_MGMT_REJECTED'].includes(p.status));
 
   const handleSubmit = (plan) => {
     actions.submitToDirector(plan.id, user.id);
@@ -121,30 +121,25 @@ export default function PlanningDashboard({ view }) {
   };
 
   const columns = [
-    { key: 'id', label: 'Plan ID', render: (v) => <span className="font-mono text-xs text-gray-500">{v}</span> },
+    { key: 'id', label: 'Plan ID', render: (v) => <span className="font-mono text-xs text-gray-500 dark:text-slate-400">{v}</span> },
     { key: 'name', label: 'Plan Name', render: (v, row) => (
       <div>
         <p className="font-medium text-gray-900 text-sm">{v}</p>
         <div className="flex items-center gap-1.5 mt-0.5">
-          <p className="text-xs text-gray-400">FY {row.year}</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500">FY {row.year}</p>
           {row.riskBased && <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-medium rounded-full"><Activity size={9} /> Risk-based</span>}
         </div>
       </div>
     )},
     { key: 'totalCases', label: 'Cases', render: (v) => <span className="font-semibold text-gray-700 tabular-nums">{v?.toLocaleString()}</span> },
     { key: 'status', label: 'Status', render: (v) => <PlanStatusBadge status={v} /> },
-    { key: 'createdAt', label: 'Created', render: (v) => <span className="text-xs text-gray-500">{new Date(v).toLocaleDateString()}</span> },
+    { key: 'createdAt', label: 'Created', render: (v) => <span className="text-xs text-gray-500 dark:text-slate-400">{new Date(v).toLocaleDateString()}</span> },
     { key: '_actions', label: '', render: (_, row) => (
       <div className="flex items-center gap-1.5 justify-end" onClick={e => e.stopPropagation()}>
         <Button size="xs" variant="ghost" icon={Eye} onClick={() => setSelectedPlan(row)}>View</Button>
-        {(row.status === 'DRAFT' || row.status === 'REVISION_REQUESTED' || row.status === 'AMENDMENT_REQUIRED') && (
+        {(row.status === 'DRAFT' || row.status === 'REVISION_REQUESTED' || row.status === 'AMENDMENT_REQUIRED' || row.status === 'SENIOR_MGMT_REJECTED') && (
           <Button size="xs" variant="primary" icon={Send} onClick={() => setConfirmSubmit(row)}>
-            {row.status === 'AMENDMENT_REQUIRED' ? 'Resubmit' : 'Submit'}
-          </Button>
-        )}
-        {row.status === 'FEEDBACK_COLLECTED' && (
-          <Button size="xs" variant="success" icon={ArrowRight} onClick={() => actions.submitToSeniorMgmt(row.id, user.id)}>
-            → Senior Mgmt
+            {(row.status === 'AMENDMENT_REQUIRED' || row.status === 'SENIOR_MGMT_REJECTED') ? 'Resubmit' : 'Submit'}
           </Button>
         )}
       </div>
@@ -182,19 +177,33 @@ export default function PlanningDashboard({ view }) {
 
             {/* Alerts */}
             {amendmentPlans.map(p => (
-              <Alert key={p.id} type="warning" title={`Amendment Required — ${p.name}`} action={<Button size="xs" variant="warning" icon={RotateCcw} onClick={() => setConfirmSubmit(p)}>Review & Resubmit</Button>}>
+              <Alert
+                key={p.id}
+                type={p.status === 'SENIOR_MGMT_REJECTED' ? 'error' : 'warning'}
+                title={p.status === 'SENIOR_MGMT_REJECTED' ? `Rejected by Senior Management — ${p.name}` : `Amendment Required — ${p.name}`}
+                action={<Button size="xs" variant={p.status === 'SENIOR_MGMT_REJECTED' ? 'danger' : 'warning'} icon={RotateCcw} onClick={() => setConfirmSubmit(p)}>Review & Resubmit</Button>}
+              >
                 <div className="text-xs space-y-1">
-                  <p>{p.amendmentComment || 'Director has requested amendments based on regional feedback.'}</p>
-                  <p className="text-orange-600 font-medium">Please amend the plan and resubmit to the Director.</p>
+                  {p.status === 'SENIOR_MGMT_REJECTED' ? (
+                    <>
+                      <p>{p.seniorComment || 'Senior Management has rejected this plan.'}</p>
+                      <p className="text-red-600 font-medium">Please address the concerns and resubmit to the Audit Director.</p>
+                    </>
+                  ) : (
+                    <>
+                      <p>{p.amendmentComment || 'Director has requested amendments based on regional feedback.'}</p>
+                      <p className="text-orange-600 font-medium">Please amend the plan and resubmit to the Director.</p>
+                    </>
+                  )}
                 </div>
               </Alert>
             ))}
 
             {/* Plans Table */}
             <Card padding={false}>
-              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
                 <div>
-                  <h3 className="text-base font-semibold text-gray-900">Audit Plans</h3>
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-white">Audit Plans</h3>
                   <p className="text-xs text-gray-500 mt-0.5">Manage and track all national audit plans</p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -210,18 +219,18 @@ export default function PlanningDashboard({ view }) {
           <div className="col-span-1">
             <Card className="sticky top-4">
               <div className="space-y-4">
-                <div className="flex items-center gap-2 pb-3 border-b border-gray-200">
+                <div className="flex items-center gap-2 pb-3 border-b border-gray-200 dark:border-slate-600">
                   <Settings size={18} className="text-blue-600" />
                   <div>
-                    <h4 className="font-semibold text-gray-900">Planning Config</h4>
+                    <h4 className="font-semibold text-gray-900 dark:text-white">Planning Config</h4>
                     <span className="text-[10px] text-blue-600">Planning Only</span>
                   </div>
                 </div>
 
                 {/* Audit Types */}
                 <div className="space-y-2">
-                  <button onClick={() => toggleSection('auditTypes')} className="flex w-full items-center justify-between px-2 py-1.5 hover:bg-gray-50 rounded">
-                    <span className="text-sm font-semibold text-gray-900">Audit Types <span className="text-xs text-gray-500 ml-1">({planningConfig.auditTypes.length})</span></span>
+                  <button onClick={() => toggleSection('auditTypes')} className="flex w-full items-center justify-between px-2 py-1.5 hover:bg-gray-50 rounded dark:bg-slate-700">
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">Audit Types <span className="text-xs text-gray-500 ml-1">({planningConfig.auditTypes.length})</span></span>
                     {expandedSections.auditTypes ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                   </button>
                   {expandedSections.auditTypes && (
@@ -246,11 +255,11 @@ export default function PlanningDashboard({ view }) {
                               </div>
                             </div>
                           ) : (
-                            <div className="border border-gray-200 rounded p-2 flex items-center justify-between hover:bg-gray-50">
+                            <div className="border border-gray-200 rounded p-2 flex items-center justify-between hover:bg-gray-50 dark:bg-gray-800 dark:bg-slate-700">
                               <div>
-                                <p className="text-xs font-medium text-gray-900">{at.name}</p>
+                                <p className="text-xs font-medium text-gray-900 dark:text-white">{at.name}</p>
                                 <div className="flex items-center gap-1 mt-0.5">
-                                  <span className="text-[10px] text-gray-600">{at.effortPerCase}h</span>
+                                  <span className="text-[10px] text-gray-600 dark:text-slate-400">{at.effortPerCase}h</span>
                                   <Badge variant="gray" className={`text-[9px] ${complexityColors[at.complexity]}`}>{at.complexity}</Badge>
                                 </div>
                               </div>
@@ -269,8 +278,8 @@ export default function PlanningDashboard({ view }) {
 
                 {/* Skills */}
                 <div className="space-y-2">
-                  <button onClick={() => toggleSection('skills')} className="flex w-full items-center justify-between px-2 py-1.5 hover:bg-gray-50 rounded">
-                    <span className="text-sm font-semibold text-gray-900">Skills <span className="text-xs text-gray-500 ml-1">({planningConfig.skills.length})</span></span>
+                  <button onClick={() => toggleSection('skills')} className="flex w-full items-center justify-between px-2 py-1.5 hover:bg-gray-50 rounded dark:bg-slate-700">
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">Skills <span className="text-xs text-gray-500 ml-1">({planningConfig.skills.length})</span></span>
                     {expandedSections.skills ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                   </button>
                   {expandedSections.skills && (
@@ -294,10 +303,10 @@ export default function PlanningDashboard({ view }) {
                               </div>
                             </div>
                           ) : (
-                            <div className="border border-gray-200 rounded p-1.5 flex items-center justify-between hover:bg-gray-50">
+                            <div className="border border-gray-200 rounded p-1.5 flex items-center justify-between hover:bg-gray-50 dark:bg-gray-800 dark:bg-slate-700">
                               <div>
-                                <p className="text-xs font-medium text-gray-900">{skill.name}</p>
-                                <span className="text-[9px] text-gray-600">{levelLabels[skill.level]}</span>
+                                <p className="text-xs font-medium text-gray-900 dark:text-white">{skill.name}</p>
+                                <span className="text-[9px] text-gray-600 dark:text-slate-400">{levelLabels[skill.level]}</span>
                               </div>
                               <div className="flex gap-0.5">
                                 <button onClick={() => startEdit(skill, 'skill')} className="p-0.5 hover:bg-gray-200 rounded text-amber-600"><Edit2 size={11} /></button>
@@ -326,7 +335,7 @@ export default function PlanningDashboard({ view }) {
         footer={<><Button variant="secondary" onClick={() => setConfirmSubmit(null)}>Cancel</Button><Button variant="primary" icon={Send} onClick={() => handleSubmit(confirmSubmit)}>{confirmSubmit?.status === 'AMENDMENT_REQUIRED' ? 'Resubmit' : 'Submit'}</Button></>}>
         {confirmSubmit?.status === 'AMENDMENT_REQUIRED' ? (
           <div className="space-y-3">
-            <p className="text-sm text-gray-600">Resubmit the amended plan <strong>{confirmSubmit?.name}</strong> back to the Audit Director?</p>
+            <p className="text-sm text-gray-600 dark:text-slate-400">Resubmit the amended plan <strong>{confirmSubmit?.name}</strong> back to the Audit Director?</p>
             {confirmSubmit?.amendmentComment && (
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
                 <p className="text-xs font-semibold text-orange-700 mb-1">Director's amendment instructions:</p>
@@ -334,8 +343,18 @@ export default function PlanningDashboard({ view }) {
               </div>
             )}
           </div>
+        ) : confirmSubmit?.status === 'SENIOR_MGMT_REJECTED' ? (
+          <div className="space-y-3">
+            <p className="text-sm text-gray-600 dark:text-slate-400">Resubmit <strong>{confirmSubmit?.name}</strong> back to the Audit Director after addressing Senior Management's concerns?</p>
+            {confirmSubmit?.seniorComment && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-xs font-semibold text-red-700 mb-1">Senior Management rejection reason:</p>
+                <p className="text-xs text-red-600">{confirmSubmit.seniorComment}</p>
+              </div>
+            )}
+          </div>
         ) : (
-          <p className="text-sm text-gray-600">Submit <strong>{confirmSubmit?.name}</strong> for Audit Director review? You will not be able to edit it while under review.</p>
+          <p className="text-sm text-gray-600 dark:text-slate-400">Submit <strong>{confirmSubmit?.name}</strong> for Audit Director review? You will not be able to edit it while under review.</p>
         )}
       </Modal>
     </div>

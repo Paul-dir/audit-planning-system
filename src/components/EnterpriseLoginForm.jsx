@@ -87,7 +87,7 @@ function EnterpriseLoginForm() {
           <h1 className="m-0 text-[28px] font-bold tracking-tight text-gray-100">
             Audit Planning System
           </h1>
-          <p className="m-0 mb-2 text-sm font-medium text-gray-500">
+          <p className="m-0 mb-2 text-sm font-medium text-gray-500 dark:text-gray-400 dark:text-gray-500">
             Ministry of Revenue — Ethiopia
           </p>
           <p className="m-0 text-xs font-medium text-green-500">
@@ -98,7 +98,7 @@ function EnterpriseLoginForm() {
         {/* Search & Filter Row 1 */}
         <div className="mb-3 flex gap-3">
           <div className="relative flex-1">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 dark:text-gray-400 dark:text-gray-500">
               🔍
             </span>
             <input
@@ -185,15 +185,15 @@ function EnterpriseLoginForm() {
 
         {/* User Grid */}
         {loading ? (
-          <div className="px-5 py-16 text-center text-gray-500">
+          <div className="px-5 py-16 text-center text-gray-500 dark:text-gray-400 dark:text-gray-500">
             <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-[3px] border-green-500/30 border-t-green-500" />
             <p className="m-0 text-sm">Signing you in...</p>
           </div>
         ) : filteredUsers.length === 0 ? (
-          <div className="px-5 py-12 text-center text-gray-500">
+          <div className="px-5 py-12 text-center text-gray-500 dark:text-gray-400 dark:text-gray-500">
             <div className="mb-3 text-4xl opacity-50">🔍</div>
             <p className="m-0 mb-1 text-sm text-gray-100">No users found</p>
-            <p className="m-0 text-xs text-gray-500">Try a different search or role filter</p>
+            <p className="m-0 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500">Try a different search or role filter</p>
           </div>
         ) : (
           <div className="grid max-h-[480px] gap-2.5 overflow-y-auto p-1"
@@ -218,7 +218,7 @@ function EnterpriseLoginForm() {
                   <div className="truncate text-sm font-semibold text-gray-100">
                     {user.full_name}
                   </div>
-                  <div className="flex items-center gap-1 text-xs text-gray-500">
+                  <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500">
                     <span>{ROLE_ICONS[user.role] || '👤'}</span>
                     <span>{getRoleLabel(user.role)}</span>
                   </div>
@@ -246,7 +246,7 @@ function EnterpriseLoginForm() {
         )}
 
         {/* Footer */}
-        <div className="mt-5 text-center text-xs text-gray-500">
+        <div className="mt-5 text-center text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500">
           {filteredUsers.length > 0 && !loading && (
             <p className="m-0">
               {filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''} found

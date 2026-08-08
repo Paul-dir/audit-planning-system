@@ -62,10 +62,10 @@ export default function PlanTimeline({ plan }) {
       {plan.timeline && plan.timeline.length > 0 && (
         <div className="mt-4 space-y-2">
           {[...plan.timeline].reverse().slice(0, 4).map((entry, i) => (
-            <div key={i} className="flex items-start gap-2 text-xs text-gray-500">
+            <div key={i} className="flex items-start gap-2 text-xs text-gray-500 dark:text-slate-400">
               <div className="w-1.5 h-1.5 rounded-full bg-gray-300 flex-shrink-0 mt-1.5" />
-              <span className="font-medium text-gray-700">{entry.status.replace(/_/g, ' ')}</span>
-              {entry.comment && <span className="text-gray-400">— {entry.comment}</span>}
+              <span className="font-medium text-gray-700 dark:text-slate-200">{entry.status.replace(/_/g, ' ')}</span>
+              {entry.comment && <span className="text-gray-400 dark:text-gray-500">— {entry.comment}</span>}
               <span className="ml-auto flex-shrink-0">{new Date(entry.timestamp).toLocaleDateString()}</span>
             </div>
           ))}

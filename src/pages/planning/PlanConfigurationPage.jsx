@@ -170,9 +170,9 @@ export default function PlanConfigurationPage() {
       <div>
         <div className="flex items-center gap-2 mb-2">
           <Settings size={24} className="text-blue-600" />
-          <h1 className="text-2xl font-bold text-gray-900">Plan Configuration</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Plan Configuration</h1>
         </div>
-        <p className="text-gray-600">Manage audit types, effort estimates, and skill capacities</p>
+        <p className="text-gray-600 dark:text-slate-400">Manage audit types, effort estimates, and skill capacities</p>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
@@ -181,18 +181,18 @@ export default function PlanConfigurationPage() {
           <Card>
             <div
               onClick={() => toggleSection('auditTypes')}
-              className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 border-b border-gray-200"
+              className="flex items-center justify-between p-4 cursor-pointer border-b border-gray-200 dark:border-slate-600"
             >
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold text-gray-900">Audit Types</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Audit Types</h3>
                 <span className="text-sm bg-blue-100 text-blue-700 px-2 py-1 rounded">
                   {planningConfig.auditTypes.length}
                 </span>
               </div>
               {expandedSections.auditTypes ? (
-                <ChevronUp size={18} className="text-gray-500" />
+                <ChevronUp size={18} className="text-gray-500 dark:text-slate-400" />
               ) : (
-                <ChevronDown size={18} className="text-gray-500" />
+                <ChevronDown size={18} className="text-gray-500 dark:text-slate-400" />
               )}
             </div>
 
@@ -248,11 +248,11 @@ export default function PlanConfigurationPage() {
                         </div>
                       </div>
                     ) : (
-                      <div className="border border-gray-200 rounded-lg p-4 flex items-center justify-between hover:bg-gray-50">
+                      <div className="no-hover-effect border border-gray-200 dark:border-slate-600 rounded-lg p-4 flex items-center justify-between bg-white dark:bg-slate-700">
                         <div className="flex-1">
-                          <p className="font-semibold text-gray-900">{auditType.name}</p>
+                          <p className="font-semibold text-gray-900 dark:text-white">{auditType.name}</p>
                           <div className="flex items-center gap-2 mt-2">
-                            <span className="text-sm text-gray-600">{auditType.effortPerCase}h effort</span>
+                            <span className="text-sm text-gray-600 dark:text-slate-400">{auditType.effortPerCase}h effort</span>
                             <Badge
                               variant="gray"
                               className={`text-xs border ${complexityColors[auditType.complexity]}`}
@@ -273,7 +273,7 @@ export default function PlanConfigurationPage() {
                             variant="ghost"
                             icon={Trash2}
                             onClick={() => deleteAuditType(auditType.id)}
-                            className="text-red-500 hover:text-red-700"
+                            className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                           />
                         </div>
                       </div>
@@ -286,7 +286,7 @@ export default function PlanConfigurationPage() {
                   variant="ghost"
                   icon={Plus}
                   onClick={addNewAuditType}
-                  className="w-full text-blue-600 hover:bg-blue-50 mt-2"
+                  className="w-full text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 mt-2"
                 >
                   Add Audit Type
                 </Button>
@@ -300,18 +300,18 @@ export default function PlanConfigurationPage() {
           <Card>
             <div
               onClick={() => toggleSection('skills')}
-              className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 border-b border-gray-200"
+              className="flex items-center justify-between p-4 cursor-pointer border-b border-gray-200 dark:border-slate-600"
             >
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold text-gray-900">Skills</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Skills</h3>
                 <span className="text-sm bg-purple-100 text-purple-700 px-2 py-1 rounded">
                   {planningConfig.skills.length}
                 </span>
               </div>
               {expandedSections.skills ? (
-                <ChevronUp size={18} className="text-gray-500" />
+                <ChevronUp size={18} className="text-gray-500 dark:text-slate-400" />
               ) : (
-                <ChevronDown size={18} className="text-gray-500" />
+                <ChevronDown size={18} className="text-gray-500 dark:text-slate-400" />
               )}
             </div>
 
@@ -366,11 +366,11 @@ export default function PlanConfigurationPage() {
                         </div>
                       </div>
                     ) : (
-                      <div className="border border-gray-200 rounded-lg p-2 flex items-center justify-between hover:bg-gray-50">
+                      <div className="no-hover-effect border border-gray-200 dark:border-slate-600 rounded-lg p-2 flex items-center justify-between bg-white dark:bg-slate-700">
                         <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-900">{skill.name}</p>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">{skill.name}</p>
                           <div className="flex items-center gap-1 mt-1">
-                            <span className="text-xs text-gray-600">{levelLabels[skill.level]}</span>
+                            <span className="text-xs text-gray-600 dark:text-slate-400">{levelLabels[skill.level]}</span>
                             <Badge variant="gray" className="text-xs">
                               {skill.category}
                             </Badge>
@@ -388,7 +388,7 @@ export default function PlanConfigurationPage() {
                             variant="ghost"
                             icon={Trash2}
                             onClick={() => deleteSkill(skill.id)}
-                            className="text-red-500 hover:text-red-700"
+                            className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                           />
                         </div>
                       </div>
@@ -401,7 +401,7 @@ export default function PlanConfigurationPage() {
                   variant="ghost"
                   icon={Plus}
                   onClick={addNewSkill}
-                  className="w-full text-blue-600 hover:bg-blue-50 text-xs mt-2"
+                  className="w-full text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-xs mt-2"
                 >
                   Add Skill
                 </Button>

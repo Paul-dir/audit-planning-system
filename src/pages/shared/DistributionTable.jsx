@@ -20,41 +20,41 @@ export function DistributionTable({ distribution, regions = REGIONS }) {
   const grandTotal = Object.values(totals).reduce((s, v) => s + v, 0);
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-gray-200">
+    <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-slate-600">
       <table className="min-w-full text-xs">
-        <thead className="bg-gray-50">
+        <thead className="bg-gray-50 dark:bg-slate-700 dark:bg-slate-700">
           <tr>
-            <th className="px-3 py-2.5 text-left font-semibold text-gray-600 sticky left-0 bg-gray-50">Region</th>
+            <th className="px-3 py-2.5 text-left font-semibold text-gray-600 dark:text-slate-300 sticky left-0 bg-gray-50 dark:bg-slate-700 dark:bg-slate-700">Region</th>
             {AUDIT_TYPES.map(a => (
-              <th key={a.id} className="px-3 py-2.5 text-center font-semibold text-gray-600 whitespace-nowrap">{a.shortName}</th>
+              <th key={a.id} className="px-3 py-2.5 text-center font-semibold text-gray-600 dark:text-slate-300 whitespace-nowrap">{a.shortName}</th>
             ))}
-            <th className="px-3 py-2.5 text-center font-semibold text-gray-700 bg-gray-100">Total</th>
+            <th className="px-3 py-2.5 text-center font-semibold text-gray-700 dark:text-slate-200 bg-gray-100 dark:bg-slate-600">Total</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100 bg-white">
+        <tbody className="divide-y divide-gray-100 dark:divide-slate-600 bg-white dark:bg-slate-700">
           {regions.map(region => {
             const dist = distribution[region.id] || {};
             const rowTotal = AUDIT_TYPES.reduce((sum, a) => sum + (dist[a.id] || 0), 0);
             return (
-              <tr key={region.id} className="hover:bg-gray-50">
-                <td className="px-3 py-2.5 font-medium text-gray-700 sticky left-0 bg-white whitespace-nowrap">{region.name}</td>
+              <tr key={region.id} className="hover:bg-gray-50 dark:hover:bg-slate-600 dark:bg-slate-700">
+                <td className="px-3 py-2.5 font-medium text-gray-700 dark:text-slate-200 sticky left-0 bg-white dark:bg-slate-700 whitespace-nowrap">{region.name}</td>
                 {AUDIT_TYPES.map(a => (
-                  <td key={a.id} className="px-3 py-2.5 text-center text-gray-600">
+                  <td key={a.id} className="px-3 py-2.5 text-center text-gray-600 dark:text-slate-300">
                     {dist[a.id] || 0}
                   </td>
                 ))}
-                <td className="px-3 py-2.5 text-center font-bold text-gray-800 bg-gray-50">{rowTotal}</td>
+                <td className="px-3 py-2.5 text-center font-bold text-gray-800 dark:text-slate-200 bg-gray-50 dark:bg-slate-600 dark:bg-slate-700">{rowTotal}</td>
               </tr>
             );
           })}
         </tbody>
-        <tfoot className="bg-gray-100">
+        <tfoot className="bg-gray-100 dark:bg-slate-600">
           <tr>
-            <td className="px-3 py-2.5 font-bold text-gray-700">Total</td>
+            <td className="px-3 py-2.5 font-bold text-gray-700 dark:text-slate-200">Total</td>
             {AUDIT_TYPES.map(a => (
-              <td key={a.id} className="px-3 py-2.5 text-center font-bold text-gray-700">{totals[a.id]}</td>
+              <td key={a.id} className="px-3 py-2.5 text-center font-bold text-gray-700 dark:text-slate-200">{totals[a.id]}</td>
             ))}
-            <td className="px-3 py-2.5 text-center font-bold text-blue-700 text-sm">{grandTotal}</td>
+            <td className="px-3 py-2.5 text-center font-bold text-blue-700 dark:text-blue-400 text-sm">{grandTotal}</td>
           </tr>
         </tfoot>
       </table>
@@ -80,24 +80,24 @@ export function EditableDistributionTable({ distribution, onChange, regions = RE
   const grandTotal = Object.values(totals).reduce((s, v) => s + v, 0);
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-gray-200">
+    <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-slate-600">
       <table className="min-w-full text-xs">
-        <thead className="bg-gray-50">
+        <thead className="bg-gray-50 dark:bg-slate-700">
           <tr>
-            <th className="px-3 py-2.5 text-left font-semibold text-gray-600 min-w-[120px]">Region</th>
+            <th className="px-3 py-2.5 text-left font-semibold text-gray-600 dark:text-slate-300 min-w-[120px]">Region</th>
             {AUDIT_TYPES.map(a => (
-              <th key={a.id} className="px-2 py-2.5 text-center font-semibold text-gray-600 min-w-[70px] whitespace-nowrap">{a.shortName}</th>
+              <th key={a.id} className="px-2 py-2.5 text-center font-semibold text-gray-600 dark:text-slate-300 min-w-[70px] whitespace-nowrap">{a.shortName}</th>
             ))}
-            <th className="px-3 py-2.5 text-center font-semibold text-gray-700 bg-gray-100">Total</th>
+            <th className="px-3 py-2.5 text-center font-semibold text-gray-700 dark:text-slate-200 bg-gray-100 dark:bg-slate-600">Total</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100 bg-white">
+        <tbody className="divide-y divide-gray-100 dark:divide-slate-600 bg-white dark:bg-slate-700">
           {regions.map(region => {
             const dist = distribution[region.id] || {};
             const rowTotal = AUDIT_TYPES.reduce((sum, a) => sum + (dist[a.id] || 0), 0);
             return (
-              <tr key={region.id} className="hover:bg-gray-50/60">
-                <td className="px-3 py-2 font-medium text-gray-700 whitespace-nowrap">{region.name}</td>
+              <tr key={region.id} className="hover:bg-blue-50 dark:hover:bg-slate-600">
+                <td className="px-3 py-2 font-medium text-gray-700 dark:text-slate-200 whitespace-nowrap">{region.name}</td>
                 {AUDIT_TYPES.map(a => (
                   <td key={a.id} className="px-1.5 py-1.5">
                     <input
@@ -106,22 +106,22 @@ export function EditableDistributionTable({ distribution, onChange, regions = RE
                       value={dist[a.id] || ''}
                       onChange={e => handleChange(region.id, a.id, e.target.value)}
                       placeholder="0"
-                      className="w-16 text-center border border-gray-200 rounded-lg py-1.5 text-xs bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                      className="w-16 text-center border border-gray-200 dark:border-slate-500 rounded-lg py-1.5 text-xs bg-white dark:bg-slate-600 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
                     />
                   </td>
                 ))}
-                <td className="px-3 py-2 text-center font-bold text-gray-800 bg-gray-50 tabular-nums">{rowTotal}</td>
+                <td className="px-3 py-2 text-center font-bold text-gray-800 dark:text-slate-200 bg-gray-50 dark:bg-slate-600 tabular-nums">{rowTotal}</td>
               </tr>
             );
           })}
         </tbody>
-        <tfoot className="bg-gray-100">
+        <tfoot className="bg-gray-100 dark:bg-slate-600">
           <tr>
-            <td className="px-3 py-2.5 font-bold text-gray-700">Total</td>
+            <td className="px-3 py-2.5 font-bold text-gray-700 dark:text-slate-200">Total</td>
             {AUDIT_TYPES.map(a => (
-              <td key={a.id} className="px-2 py-2.5 text-center font-bold text-gray-700 tabular-nums">{totals[a.id]}</td>
+              <td key={a.id} className="px-2 py-2.5 text-center font-bold text-gray-700 dark:text-slate-200 tabular-nums">{totals[a.id]}</td>
             ))}
-            <td className="px-3 py-2.5 text-center font-bold text-blue-700 text-sm tabular-nums">{grandTotal}</td>
+            <td className="px-3 py-2.5 text-center font-bold text-blue-700 dark:text-blue-400 text-sm tabular-nums">{grandTotal}</td>
           </tr>
         </tfoot>
       </table>
@@ -164,34 +164,34 @@ export function TaxCenterDistributionTable({ regionId, regionDist, tcAllocations
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between text-xs">
-        <span className="text-gray-500">Distribute <strong className="text-gray-800">{regionGrandTotal} cases</strong> across {tcs.length} tax centers</span>
+        <span className="text-gray-500 dark:text-slate-400">Distribute <strong className="text-gray-800 dark:text-gray-200">{regionGrandTotal} cases</strong> across {tcs.length} tax centers</span>
         <span className={`font-semibold ${grandTotal === regionGrandTotal ? 'text-green-600' : 'text-orange-600'}`}>
           Allocated: {grandTotal} / {regionGrandTotal}
         </span>
       </div>
-      <div className="overflow-x-auto rounded-xl border border-gray-200">
+      <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-slate-600">
         <table className="min-w-full text-xs">
-          <thead className="bg-gray-50">
+          <thead className="bg-gray-50 dark:bg-gray-800 dark:bg-slate-700">
             <tr>
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-600">Tax Center</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-gray-600 dark:text-slate-400">Tax Center</th>
               {auditTypes.map(a => {
                 const colMatch = columnTotals[a.id] === (regionDist[a.id] || 0);
                 return (
                   <th key={a.id} className={`px-2 py-2.5 text-center font-semibold min-w-[70px] whitespace-nowrap ${colMatch ? 'text-green-600' : 'text-gray-600'}`}>
                     {a.shortName}
-                    <span className="block text-[9px] font-normal text-gray-400">/ {regionDist[a.id] || 0}</span>
+                    <span className="block text-[9px] font-normal text-gray-400 dark:text-gray-500">/ {regionDist[a.id] || 0}</span>
                   </th>
                 );
               })}
               <th className="px-3 py-2.5 text-center font-semibold text-gray-700 bg-gray-100">Total</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 bg-white">
+          <tbody className="divide-y divide-gray-100 bg-white dark:bg-gray-800">
             {tcs.map(tc => {
               const alloc = tcAllocations[tc.id] || {};
               const rowTotal = auditTypes.reduce((sum, a) => sum + (alloc[a.id] || 0), 0);
               return (
-                <tr key={tc.id} className="hover:bg-gray-50/60">
+                <tr key={tc.id} className="hover:bg-blue-50 dark:hover:bg-slate-600">
                   <td className="px-3 py-2 font-medium text-gray-700 whitespace-nowrap">{tc.name}</td>
                   {auditTypes.map(a => (
                     <td key={a.id} className="px-1.5 py-1.5">
@@ -204,14 +204,14 @@ export function TaxCenterDistributionTable({ regionId, regionDist, tcAllocations
                       />
                     </td>
                   ))}
-                  <td className="px-3 py-2 text-center font-bold text-gray-800 bg-gray-50 tabular-nums">{rowTotal}</td>
+                  <td className="px-3 py-2 text-center font-bold text-gray-800 bg-gray-50 tabular-nums dark:bg-slate-700">{rowTotal}</td>
                 </tr>
               );
             })}
           </tbody>
           <tfoot className="bg-gray-100">
             <tr>
-              <td className="px-3 py-2.5 font-bold text-gray-700">Total</td>
+              <td className="px-3 py-2.5 font-bold text-gray-700 dark:text-slate-200">Total</td>
               {auditTypes.map(a => {
                 const colMatch = columnTotals[a.id] === (regionDist[a.id] || 0);
                 return (

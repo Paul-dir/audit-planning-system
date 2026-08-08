@@ -99,7 +99,7 @@ export default function CreatePlanModal({ open, onClose }) {
       size="xl"
       footer={
         <div className="flex items-center justify-between w-full">
-          <div className="flex items-center gap-2 text-xs text-gray-400">
+          <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
             <span className="inline-flex gap-1">
               {[1,2,3].map(s => (
                 <span key={s} className={`w-2 h-2 rounded-full ${step === s ? 'bg-blue-600' : s < step ? 'bg-blue-300' : 'bg-gray-200'}`} />
@@ -185,11 +185,11 @@ export default function CreatePlanModal({ open, onClose }) {
             rows={4}
           />
           {!usedDefaults && (
-            <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-xl border border-blue-200">
-              <Activity size={18} className="text-blue-600 flex-shrink-0" />
+            <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-900">
+              <Activity size={18} className="text-blue-600 dark:text-blue-400 flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-blue-900">Pre-fill from Risk Engine?</p>
-                <p className="text-xs text-blue-600 mt-0.5">
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-300">Pre-fill from Risk Engine?</p>
+                <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">
                   Go back to Step 1 to view the risk analysis and use those numbers as your distribution baseline.
                 </p>
               </div>
@@ -215,18 +215,18 @@ export default function CreatePlanModal({ open, onClose }) {
             is shown automatically.
           </Alert>
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-gray-700">Case Distribution Table</p>
+            <p className="text-sm font-medium text-gray-700 dark:text-slate-200">Case Distribution Table</p>
             <div className="flex items-center gap-2">
               {usedDefaults && (
                 <Badge color="green" dot>Risk-based defaults</Badge>
               )}
-              <div className="text-sm font-bold text-blue-700 bg-blue-50 px-3 py-1.5 rounded-lg">
+              <div className="text-sm font-bold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg border border-blue-100 dark:border-blue-900">
                 Total: {totalCases.toLocaleString()} cases
               </div>
             </div>
           </div>
           <EditableDistributionTable distribution={distribution} onChange={setDistribution} />
-          <div className="flex items-start gap-2 text-xs text-gray-500">
+          <div className="flex items-start gap-2 text-xs text-gray-500 dark:text-slate-400">
             <CheckCircle size={13} className="text-green-500 flex-shrink-0 mt-0.5" />
             <span>
               Effort estimate: ~{Math.round(totalCases * 40 / 2000)} auditor-years at 40 hrs/case.

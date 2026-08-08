@@ -1,0 +1,157 @@
+# Focus Area: Approved Plan → Case Creation → Auditor Assignment
+
+Do not spend significant effort on already-working approval workflows unless gaps are identified.
+
+The primary focus of this analysis should be the workflow that starts AFTER a Plan has received final approval.
+
+## Objective
+
+Verify and enhance the complete lifecycle from:
+
+Approved Plan
+→ Regional Distribution
+→ Tax Center Acceptance
+→ Plan Cascading
+→ Case Generation
+→ Case Prioritization
+→ Case Selection
+→ Team Assignment
+→ Auditor Assignment
+
+---
+
+## Phase 1: Analyze Existing Implementation
+
+First determine whether the following functionality already exists:
+
+### Plan Distribution
+
+* Approved Plan sent from Directorate to Regions.
+* Regions distribute approved Plan to Tax Centers.
+* Tax Centers receive and acknowledge the Plan.
+
+### Plan Cascading
+
+* Approved Plan can be cascaded into executable Cases.
+* Plan targets can be converted into Cases.
+* Traceability exists between:
+
+  * Plan
+  * Plan Item
+  * Generated Case
+
+### Case Management
+
+* Cases can be created from approved Plan items.
+* Cases contain required audit information.
+* Cases maintain lifecycle status.
+
+### Assignment Workflow
+
+* Cases can be assigned to Audit Types.
+* Cases can be assigned to Team Leaders.
+* Team Leaders can assign auditors.
+* Auditors can view assigned Cases.
+
+Document what is already implemented before making changes.
+
+---
+
+## Phase 2: Identify Missing Business Rules
+
+Pay particular attention to the following areas.
+
+### Case Generation Rules
+
+Determine:
+
+* When Cases are generated.
+* Whether generation is automatic or manual.
+* Whether Tax Centers can select which Plan items become Cases.
+* Whether duplicate Cases can be created.
+
+Identify gaps and implement only missing requirements.
+
+---
+
+### Prioritization Rules
+
+Determine whether Cases support:
+
+* Risk score.
+* Priority level.
+* Ranking.
+* Workload balancing.
+
+If missing, propose the smallest enhancement necessary.
+
+---
+
+### Selection Workflow
+
+Before assignment, Tax Centers should be able to:
+
+* Review generated Cases.
+* Prioritize Cases.
+* Select Cases for execution.
+
+Verify whether this process exists.
+
+---
+
+### Team Assignment
+
+Verify:
+
+* Assignment to Audit Type.
+* Assignment to Team Leader.
+* Assignment ownership tracking.
+* Assignment history.
+
+---
+
+### Auditor Assignment
+
+Verify whether Team Leaders can:
+
+* View available auditors.
+* Assign one or more auditors.
+* Reassign auditors.
+* Track assignment history.
+
+---
+
+## Critical Workflow
+
+The desired workflow should be:
+
+Final Approved Plan
+→ Region Receives Plan
+→ Tax Center Receives Plan
+→ Tax Center Accepts Plan
+→ Plan Cascaded Into Cases
+→ Cases Generated
+→ Cases Prioritized
+→ Cases Selected
+→ Cases Assigned To Audit Type
+→ Cases Assigned To Team Leader
+→ Team Leader Assigns Auditors
+→ Audit Execution Begins
+
+---
+
+## Important Rule
+
+Do not redesign the system.
+
+Do not rebuild existing functionality.
+
+Only:
+
+* Analyze existing implementation.
+* Identify gaps.
+* Fix incorrect behavior.
+* Implement missing workflow steps.
+* Reuse existing services, entities, APIs, and UI components whenever possible.
+
+The goal is to complete the Approved Plan → Auditor Assignment workflow with minimal disruption to existing functionality.

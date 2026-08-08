@@ -41,7 +41,7 @@ export default function AuditorDashboard({ view }) {
   const cols = [
     { key: 'tin', label: 'TIN', render: v => <span className="font-mono text-xs">{v}</span> },
     { key: 'taxpayerName', label: 'Taxpayer', render: (v, row) => (
-      <div><p className="text-sm font-medium text-gray-800">{v}</p><p className="text-xs text-gray-400">{row.sector}</p></div>
+      <div><p className="text-sm font-medium text-gray-800 dark:text-gray-200">{v}</p><p className="text-xs text-gray-400 dark:text-gray-500">{row.sector}</p></div>
     )},
     { key: 'auditType', label: 'Audit Type', render: v => {
       const at = AUDIT_TYPES.find(a => a.id === v);
@@ -53,7 +53,7 @@ export default function AuditorDashboard({ view }) {
       const s = CASE_STATUS[v];
       return s ? <Badge color={s.color} dot>{s.label}</Badge> : <Badge>{v}</Badge>;
     }},
-    { key: 'startDate', label: 'Started', render: v => <span className="text-xs text-gray-400">{v ? new Date(v).toLocaleDateString() : '—'}</span> },
+    { key: 'startDate', label: 'Started', render: v => <span className="text-xs text-gray-400 dark:text-gray-500">{v ? new Date(v).toLocaleDateString() : '—'}</span> },
     { key: '_act', label: '', render: (_, row) => (
       <div className="flex gap-1 justify-end" onClick={e => e.stopPropagation()}>
         <Button size="xs" variant="ghost" icon={Eye} onClick={() => setSelectedCase(row)}>View</Button>
@@ -87,9 +87,9 @@ export default function AuditorDashboard({ view }) {
       )}
 
       <Card padding={false}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
           <div>
-            <h3 className="text-base font-semibold text-gray-900">My Audit Cases</h3>
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white">My Audit Cases</h3>
             <p className="text-xs text-gray-500 mt-0.5">Track and update your assigned audit cases</p>
           </div>
           <div className="w-64">
@@ -112,8 +112,8 @@ export default function AuditorDashboard({ view }) {
       >
         {statusModal && (
           <div className="space-y-4">
-            <div className="bg-gray-50 rounded-xl p-3">
-              <p className="text-sm font-medium text-gray-800">{statusModal.taxpayerName}</p>
+            <div className="bg-gray-50 rounded-xl p-3 dark:bg-slate-700">
+              <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{statusModal.taxpayerName}</p>
               <p className="text-xs text-gray-500 mt-0.5">{statusModal.tin}</p>
             </div>
             <Select

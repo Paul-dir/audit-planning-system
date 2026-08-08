@@ -1,8 +1,9 @@
 import {
   LayoutDashboard, ClipboardList, CheckSquare, Map, Building2,
-  Users, Search, Star, LogOut, ChevronRight, Activity,
+  Users, Search, Star, LogOut, ChevronRight, Activity, Target,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { useTheme } from '../../context/ThemeContext.jsx';
 
 const NAV = {
   planning_team: [
@@ -11,9 +12,9 @@ const NAV = {
     { id: 'risk_analysis',label: 'Risk Analysis',  icon: Activity, badge: 'Live' },
   ],
   audit_director: [
-    { id: 'dashboard', label: 'Dashboard',          icon: LayoutDashboard },
-    { id: 'review',    label: 'Plan Review',         icon: CheckSquare    },
-    { id: 'deploy',    label: 'Deploy to Regions',   icon: Map            },
+    { id: 'dashboard',  label: 'Dashboard',          icon: LayoutDashboard },
+    { id: 'review',     label: 'Plan Review',        icon: CheckSquare    },
+    { id: 'deploy',     label: 'Deploy to Regions',  icon: Map            },
   ],
   regional_director: [
     { id: 'dashboard', label: 'Dashboard',      icon: LayoutDashboard },
@@ -21,8 +22,9 @@ const NAV = {
     { id: 'feedback',  label: 'Submit Feedback',icon: Map             },
   ],
   tax_center_manager: [
-    { id: 'dashboard', label: 'Dashboard',       icon: LayoutDashboard },
-    { id: 'cases',     label: 'Case Management', icon: Building2       },
+    { id: 'dashboard',  label: 'Dashboard',       icon: LayoutDashboard },
+    { id: 'cases',      label: 'Case Management', icon: Building2       },
+    { id: 'risk_engine',label: 'Risk Engine',     icon: Target, badge: 'New' },
   ],
   team_leader: [
     { id: 'dashboard', label: 'Dashboard',      icon: LayoutDashboard },
@@ -33,8 +35,8 @@ const NAV = {
     { id: 'cases',     label: 'My Cases',  icon: Search          },
   ],
   senior_management: [
-    { id: 'dashboard', label: 'Dashboard',     icon: LayoutDashboard },
-    { id: 'approval',  label: 'Plan Approval', icon: Star            },
+    { id: 'dashboard',  label: 'Dashboard',     icon: LayoutDashboard },
+    { id: 'approval',   label: 'Plan Approval', icon: Star            },
   ],
 };
 
@@ -50,6 +52,7 @@ const ROLE_LABELS = {
 
 export default function Sidebar({ activeView, onNavigate }) {
   const { user, logout } = useAuth();
+  const { theme } = useTheme();
   if (!user) return null;
 
   const items = NAV[user.role] || [];
@@ -67,11 +70,18 @@ export default function Sidebar({ activeView, onNavigate }) {
       console.error('onNavigate is not defined or not a function!', onNavigate);
     }
   };
+  
+  // Theme-aware colors
+  const isDark = theme === 'dark';
+  const sidebarBg = isDark ? 'bg-slate-900' : 'bg-slate-900';
+  const borderColor = isDark ? 'border-slate-800' : 'border-slate-800';
+  const logoBorder = isDark ? 'border-slate-700/60' : 'border-slate-700/60';
+  const userCardBg = isDark ? 'bg-slate-800' : 'bg-slate-800';
 
   return (
-    <aside className="w-64 bg-slate-900 flex flex-col h-screen fixed left-0 top-0 z-30">
+    <aside className={`w-64 ${sidebarBg} flex flex-col h-screen fixed left-0 top-0 z-30 border-r ${borderColor}`}>
       {/* Logo */}
-      <div className="px-5 py-5 border-b border-slate-700/60">
+      <div className={`px-5 py-5 border-b ${logoBorder}`}>
         <div className="flex items-center gap-3">
           <img
             src="/mor-logo.jpeg"
@@ -93,8 +103,8 @@ export default function Sidebar({ activeView, onNavigate }) {
       </div>
 
       {/* User card */}
-      <div className="px-4 py-3 border-b border-slate-700/60">
-        <div className="bg-slate-800 rounded-lg px-3 py-2.5">
+      <div className={`px-4 py-3 border-b ${logoBorder}`}>
+        <div className={`${userCardBg} rounded-lg px-3 py-2.5`}>
           <p className="text-white text-sm font-medium truncate">{user.name}</p>
           <p className="text-slate-400 text-xs mt-0.5 truncate">{ROLE_LABELS[user.role]}</p>
           {user.email && <p className="text-slate-500 text-[10px] mt-0.5 truncate">{user.email}</p>}
