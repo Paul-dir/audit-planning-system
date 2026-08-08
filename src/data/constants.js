@@ -57,6 +57,8 @@ export const PLAN_STATUS = {
   AMENDMENT_REQUIRED:          { id: 'AMENDMENT_REQUIRED',          label: 'Amendment Required',           color: 'orange' },
   SUBMITTED_TO_SENIOR_MGMT:    { id: 'SUBMITTED_TO_SENIOR_MGMT',    label: 'Pending Senior Approval',      color: 'indigo' },
   SENIOR_MGMT_APPROVED:        { id: 'SENIOR_MGMT_APPROVED',        label: 'Senior Management Approved',   color: 'green'  },
+  SENIOR_MGMT_REJECTED:        { id: 'SENIOR_MGMT_REJECTED',        label: 'Rejected by Senior Mgmt',      color: 'red'    },
+  APPROVED_TO_REGIONS:         { id: 'APPROVED_TO_REGIONS',         label: 'Approved - Deploy to Tax Centers', color: 'purple' },
   FINALIZED:                   { id: 'FINALIZED',                   label: 'Finalized & Deployed',         color: 'green'  },
 };
 

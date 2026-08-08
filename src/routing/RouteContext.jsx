@@ -190,6 +190,7 @@ function getRoutesForRole(role, permissions = []) {
     'create-plan': { name: 'create-plan', label: 'Create Plan', allowedRoles: ['audit_team', 'audit_team_leader'], requiredPermissions: ['create_plans'] },
     'view-metrics': { name: 'view-metrics', label: 'View Metrics', allowedRoles: ['audit_team', 'audit_team_leader'], requiredPermissions: ['view_audit_metrics'] },
     'cascade-plan-to-cases': { name: 'cascade-plan-to-cases', label: 'Cascade Plan', allowedRoles: ['audit_team_leader', 'tax_center_manager'], requiredPermissions: ['cascade_plan_to_cases'] },
+    'risk-engine': { name: 'risk-engine', label: 'Risk Engine', allowedRoles: ['planning_team', 'audit_director', 'senior_management'] },
 
     // Audit Director Routes
     'director-dashboard': { name: 'director-dashboard', label: 'Dashboard', allowedRoles: ['audit_director'] },
@@ -206,6 +207,7 @@ function getRoutesForRole(role, permissions = []) {
     'manage-cases': { name: 'manage-cases', label: 'Manage Cases', allowedRoles: ['tax_center_manager'], requiredPermissions: ['cascade_plan_to_cases'] },
     'view-audit-cases': { name: 'view-audit-cases', label: 'View Cases', allowedRoles: ['tax_center_manager'], requiredPermissions: ['view_audit_cases'] },
     'case-prioritization': { name: 'case-prioritization', label: 'Prioritize Cases', allowedRoles: ['tax_center_manager'], requiredPermissions: ['manage_case_prioritization'] },
+    'risk-engine': { name: 'risk-engine', label: 'Risk Engine', allowedRoles: ['tax_center_manager'] },
 
     // Team Leader Routes
     'team-leader-dashboard': { name: 'team-leader-dashboard', label: 'Dashboard', allowedRoles: ['team_leader'] },
@@ -239,5 +241,4 @@ function getRoutesForRole(role, permissions = []) {
 
   return routes;
 }
-
 export default RouteContext;

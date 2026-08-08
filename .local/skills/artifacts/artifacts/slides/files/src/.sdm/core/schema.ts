@@ -6,6 +6,7 @@ export const SDM_VERSION = 1;
 export const SDM_SLIDE_WIDTH = 1920;
 export const SDM_SLIDE_HEIGHT = 1080;
 export const SDM_POINT_TO_UNIT = 2;
+export const SDM_DEFAULT_TEXT_SIZE_PT = 18;
 
 const strict = { additionalProperties: false } as const;
 const finiteNumber = Type.Number();

@@ -25,8 +25,12 @@ export function AuthProvider({ children }) {
     const found = users.find(u => u.email === emailOrId || u.id === emailOrId);
     
     if (found) {
+      // Demo mode: Accept common password for all users
+      const DEMO_PASSWORD = 'password123';
+      const acceptedPasswords = [found.password, DEMO_PASSWORD];
+      
       // Check password if provided
-      if (password && found.password !== password) {
+      if (password && !acceptedPasswords.includes(password)) {
         throw new Error('Invalid password');
       }
       setUser(found);

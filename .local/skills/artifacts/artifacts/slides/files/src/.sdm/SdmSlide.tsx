@@ -20,6 +20,7 @@ import {
   SdmRenderContext,
 } from './render';
 import { resolveAssetSrc, paintToBackground } from './style';
+import { SdmInteractionLayer } from './SdmInteractionLayer';
 import { SDM_BASE_URL, sdmWidgetModules } from './sdmRuntime';
 import { useSdmRuntimeSession } from './session';
 
@@ -87,11 +88,22 @@ export function SdmSlide({ slideId, initialDocument }: Props) {
     tryParse(initialDocument),
   );
   const rootRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
 
   const document = state.document;
   const size = document?.size ?? { width: 1920, height: 1080 };
   const scale = useStageScale(rootRef, size);
-  const { editing } = useSdmRuntimeSession({ slideId, document });
+  const handleDocumentReplaced = useCallback((next: SlideDocument) => {
+    setState({ document: next, error: null });
+  }, []);
+  const { editing, selectedIds, select, commit, requestHistory } =
+    useSdmRuntimeSession({
+      slideId,
+      document,
+      onDocumentReplaced: handleDocumentReplaced,
+    });
+  const editingRef = useRef(editing);
+  editingRef.current = editing;
 
   useEffect(() => {
     const hot = import.meta.hot;
@@ -99,7 +111,7 @@ export function SdmSlide({ slideId, initialDocument }: Props) {
       return;
     }
     const handler = (data: { slideId?: string; document?: unknown }) => {
-      if (data?.slideId !== slideId || !data.document) {
+      if (data?.slideId !== slideId || !data.document || editingRef.current) {
         return;
       }
       setState(tryParse(data.document));
@@ -138,6 +150,7 @@ export function SdmSlide({ slideId, initialDocument }: Props) {
         data-sdm-editing={editing ? 'true' : undefined}
       >
         <div
+          ref={stageRef}
           style={{
             position: 'absolute',
             left: '50%',
@@ -159,6 +172,17 @@ export function SdmSlide({ slideId, initialDocument }: Props) {
               onAction={handleAction}
             />
           ))}
+          {editing && document ? (
+            <SdmInteractionLayer
+              document={document}
+              selectedIds={selectedIds}
+              scale={scale}
+              stageRef={stageRef}
+              onSelect={select}
+              onCommit={commit}
+              onHistory={requestHistory}
+            />
+          ) : null}
         </div>
 
         {state.error ? (

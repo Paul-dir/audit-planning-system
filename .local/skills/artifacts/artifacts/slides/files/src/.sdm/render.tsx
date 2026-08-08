@@ -248,6 +248,7 @@ export function TextBodyView({
   return (
     <div
       ref={boxRef}
+      data-sdm-text-body=""
       style={{
         width: '100%',
         height: '100%',

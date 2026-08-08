@@ -288,7 +288,7 @@ function DashboardView({ currentRole }) {
                     <p className="text-xs text-text-muted dark:text-text-mid mb-1">
                       {activity.ref}
                     </p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">
+                    <p className="text-xs text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500">
                       {activity.date}
                     </p>
                   </div>

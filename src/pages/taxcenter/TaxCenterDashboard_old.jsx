@@ -49,7 +49,7 @@ export default function TaxCenterDashboard({ view }) {
   const cols = [
     { key: 'tin', label: 'TIN', render: v => <span className="font-mono text-xs">{v}</span> },
     { key: 'taxpayerName', label: 'Taxpayer', render: (v, row) => (
-      <div><p className="text-sm font-medium text-gray-800">{v}</p><p className="text-xs text-gray-400">{row.sector}</p></div>
+      <div><p className="text-sm font-medium text-gray-800 dark:text-gray-200">{v}</p><p className="text-xs text-gray-400 dark:text-gray-500">{row.sector}</p></div>
     )},
     { key: 'auditType', label: 'Audit Type', render: v => {
       const at = AUDIT_TYPES.find(a => a.id === v);
@@ -97,10 +97,10 @@ export default function TaxCenterDashboard({ view }) {
       )}
 
       <Card padding={false}>
-        <div className="px-6 py-4 border-b border-gray-100">
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <h3 className="text-base font-semibold text-gray-900">Case Management</h3>
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white">Case Management</h3>
               <p className="text-xs text-gray-500 mt-0.5">Assign and track audit cases for your tax center</p>
             </div>
           </div>
@@ -155,8 +155,8 @@ export default function TaxCenterDashboard({ view }) {
       >
         {assignModal && (
           <div className="space-y-4">
-            <div className="bg-gray-50 rounded-xl p-3 text-sm">
-              <p className="font-medium text-gray-800">{assignModal.taxpayerName}</p>
+            <div className="bg-gray-50 rounded-xl p-3 text-sm dark:bg-slate-700">
+              <p className="font-medium text-gray-800 dark:text-gray-200">{assignModal.taxpayerName}</p>
               <p className="text-gray-500 text-xs mt-0.5">{assignModal.tin} · {AUDIT_TYPES.find(a => a.id === assignModal.auditType)?.name}</p>
             </div>
             <Select

@@ -1,7 +1,7 @@
 import { createContext, useContext, useReducer, useEffect, useState } from 'react';
 import { storage, STORE_KEYS } from '../services/storage.js';
 import { SEED_USERS, SEED_PLANS, generateCases } from '../data/seed.js';
-import { REGIONS } from '../data/constants.js';
+import { REGIONS, getTaxCentersForRegion } from '../data/constants.js';
 
 const AppContext = createContext({ state: { plans: [], cases: [], users: [] }, actions: {}, selectors: {}, ready: false });
 
@@ -27,7 +27,7 @@ export function AppProvider({ children }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const SEED_VERSION = 'v2-password123'; // Change this to force re-seed
+    const SEED_VERSION = 'v5-auditors-added'; // Change this to force re-seed
     const seeded = storage.get(STORE_KEYS.SEEDED);
     if (seeded !== SEED_VERSION) {
       storage.set(STORE_KEYS.USERS, SEED_USERS);
@@ -144,34 +144,178 @@ export function AppProvider({ children }) {
       });
     },
 
-    // Director: send senior-management-approved plan to regions → generates cases
+    // Director: send senior-management-approved plan to regions (NOT finalized yet!)
     sendApprovedToRegions: (planId, actorId) => {
       const plan = getPlan(planId);
       if (!plan) return;
       dispatch({
         type: 'UPDATE_PLAN',
-        payload: timeline(plan, 'FINALIZED', actorId, 'Approved plan sent to all regions and tax centers'),
+        payload: timeline(plan, 'APPROVED_TO_REGIONS', actorId, 'Approved plan sent to all regions - awaiting regional deployment to tax centers'),
       });
-      dispatch({ type: 'ADD_CASES', payload: generateCases(planId, plan.distribution, plan.regionalFeedback || {}) });
+    },
+
+    // NEW: Regional Director deploys to their tax centers
+    deployToTaxCenters: (planId, regionId, actorId) => {
+      const plan = getPlan(planId);
+      if (!plan) return;
+      
+      // Mark this region as deployed
+      const deployments = plan.regionalDeployments || {};
+      deployments[regionId] = {
+        deployedAt: new Date().toISOString(),
+        deployedBy: actorId,
+        status: 'DEPLOYED'
+      };
+      
+      // Check if all regions have deployed
+      const allRegionsDeployed = REGIONS.every(r => deployments[r.id]);
+      
+      const newStatus = allRegionsDeployed ? 'FINALIZED' : 'APPROVED_TO_REGIONS';
+      const msg = allRegionsDeployed 
+        ? `All regions deployed - Plan finalized` 
+        : `${regionId} deployed to tax centers`;
+      
+      const updated = {
+        ...plan,
+        regionalDeployments: deployments
+      };
+      
+      dispatch({
+        type: 'UPDATE_PLAN',
+        payload: timeline(updated, newStatus, actorId, msg)
+      });
+      
+      // If all regions deployed, generate cases
+      if (allRegionsDeployed) {
+        dispatch({ type: 'ADD_CASES', payload: generateCases(planId, plan.distribution, plan.regionalFeedback || {}) });
+      }
     },
 
     // ── Regional actions ───────────────────────────────────────────────────
+
+    // Step 1: Regional Director distributes to Tax Centers (persists allocations so TCs can see their plan)
+    distributeToTaxCenters: (planId, regionId, tcAllocations, actorId) => {
+      const plan = getPlan(planId);
+      if (!plan) return;
+      const updated = {
+        ...plan,
+        tcDistributions: {
+          ...(plan.tcDistributions || {}),
+          [regionId]: {
+            allocations: tcAllocations,
+            distributedAt: new Date().toISOString(),
+            distributedBy: actorId,
+          },
+        },
+      };
+      dispatch({ type: 'UPDATE_PLAN', payload: timeline(updated, plan.status, actorId, `${regionId} distributed allocations to tax centers`) });
+    },
+
+    // Step 2: Regional Director submits consolidated feedback
+    // 🎯 DEMO MODE: Auto-fills missing tax centers with defaults
     submitRegionalFeedback: (planId, regionId, feedbackText, taxCenterAllocations, actorId) => {
       const plan = getPlan(planId);
       if (!plan) return;
+
+      // 🚀 DEMO MODE: Auto-fill missing tax centers with default allocations
+      // If TC-1 submits feedback but TC-2 and TC-3 don't, we use their original allocation
+      const taxCenters = getTaxCentersForRegion(regionId);
+      const originalDistribution = plan.distribution?.[regionId] || {};
+      
+      // Build complete tax center allocations (user-submitted + auto-filled defaults)
+      const completeTCAllocations = {};
+      
+      // Use user-provided allocations first, fall back to equal distribution
+      taxCenters.forEach((tc, index) => {
+        if (taxCenterAllocations && taxCenterAllocations[tc.id]) {
+          // User provided allocation for this TC
+          completeTCAllocations[tc.id] = taxCenterAllocations[tc.id];
+        } else {
+          // Auto-fill with default proportional allocation
+          // Default: distribute remaining cases evenly among tax centers
+          const defaultShare = {};
+          Object.keys(originalDistribution).forEach(auditType => {
+            const totalForType = originalDistribution[auditType] || 0;
+            const perTC = Math.floor(totalForType / taxCenters.length);
+            const remainder = totalForType % taxCenters.length;
+            // Give remainder to first TCs
+            defaultShare[auditType] = perTC + (index < remainder ? 1 : 0);
+          });
+          completeTCAllocations[tc.id] = defaultShare;
+        }
+      });
+
       const newFeedback = {
         ...plan.regionalFeedback,
         [regionId]: {
           feedback: feedbackText,
-          taxCenterAllocations,
+          taxCenterAllocations: completeTCAllocations,
           submittedAt: new Date().toISOString(),
           submittedBy: actorId,
+          autoFilled: !taxCenterAllocations || Object.keys(taxCenterAllocations).length < taxCenters.length,
         },
       };
-      const allDone = REGIONS.every(r => newFeedback[r.id]);
-      const newStatus = allDone ? 'FEEDBACK_COLLECTED' : 'AWAITING_REGIONAL_FEEDBACK';
-      const msg = allDone ? 'All regional feedback collected' : `${regionId} submitted feedback`;
-      dispatch({ type: 'UPDATE_PLAN', payload: timeline({ ...plan, regionalFeedback: newFeedback }, newStatus, actorId, msg) });
+      
+      // 🚀 DEMO MODE: One regional feedback auto-routes back to Director
+      // Director will review and send to Planning Team for amendments
+      // Also auto-fills other regions with default allocations
+      const hasAtLeastOneFeedback = Object.keys(newFeedback).length > 0;
+      
+      if (hasAtLeastOneFeedback) {
+        // Auto-fill missing regions with their default allocations
+        const allRegions = REGIONS;
+        allRegions.forEach(region => {
+          if (!newFeedback[region.id] && plan.distribution?.[region.id]) {
+            // This region hasn't submitted - auto-fill with defaults
+            const regionTCs = getTaxCentersForRegion(region.id);
+            const regionDist = plan.distribution[region.id];
+            const autoTCAlloc = {};
+            
+            regionTCs.forEach((tc, idx) => {
+              const tcShare = {};
+              Object.keys(regionDist).forEach(auditType => {
+                const total = regionDist[auditType] || 0;
+                const perTC = Math.floor(total / regionTCs.length);
+                const remainder = total % regionTCs.length;
+                tcShare[auditType] = perTC + (idx < remainder ? 1 : 0);
+              });
+              autoTCAlloc[tc.id] = tcShare;
+            });
+            
+            newFeedback[region.id] = {
+              feedback: `Auto-generated: ${region.name} allocation maintained as planned.`,
+              taxCenterAllocations: autoTCAlloc,
+              submittedAt: new Date().toISOString(),
+              submittedBy: 'system',
+              autoFilled: true,
+            };
+          }
+        });
+      }
+      
+      // Route to FEEDBACK_COLLECTED (Director reviews) instead of directly to Planning Team
+      const newStatus = hasAtLeastOneFeedback ? 'FEEDBACK_COLLECTED' : 'AWAITING_REGIONAL_FEEDBACK';
+      const msg = hasAtLeastOneFeedback 
+        ? `Regional feedback from ${regionId} received - All regions auto-filled, ready for Director review` 
+        : `${regionId} submitted feedback`;
+      
+      // Update plan with feedback
+      const updated = {
+        ...plan,
+        regionalFeedback: newFeedback,
+        feedbackNote: `Regional feedback received from ${regionId}. Other regions auto-filled with default allocations.`,
+        revisions: [
+          ...(plan.revisions || []),
+          {
+            comment: `Regional feedback from ${regionId}, other regions auto-filled`,
+            timestamp: new Date().toISOString(),
+            by: actorId,
+            type: 'feedback',
+          }
+        ],
+      };
+      
+      dispatch({ type: 'UPDATE_PLAN', payload: timeline(updated, newStatus, actorId, msg) });
     },
 
 
@@ -219,9 +363,10 @@ export function AppProvider({ children }) {
       const updated = {
         ...plan,
         seniorComment: comment,
-        revisions: [...(plan.revisions || []), { comment, timestamp: new Date().toISOString(), by: actorId }],
+        revisions: [...(plan.revisions || []), { comment, timestamp: new Date().toISOString(), by: actorId, type: 'senior_rejection' }],
       };
-      dispatch({ type: 'UPDATE_PLAN', payload: timeline(updated, 'REVISION_REQUESTED', actorId, comment) });
+      // Use distinct status so Director can distinguish Senior rejection from Director revision
+      dispatch({ type: 'UPDATE_PLAN', payload: timeline(updated, 'SENIOR_MGMT_REJECTED', actorId, comment) });
     },
 
     // Legacy: finalize directly (kept for backward compat)
@@ -271,6 +416,31 @@ export function AppProvider({ children }) {
       const c = getCase(caseId);
       if (c) dispatch({ type: 'UPDATE_CASE', payload: { ...c, priority } });
     },
+
+    // NEW: Add manual cases (not linked to a plan)
+    addManualCases: (cases) => {
+      dispatch({ type: 'ADD_CASES', payload: cases });
+    },
+
+    // NEW: Mark plan as assigned (prevent duplicate TL assignment)
+    markPlanAsAssigned: (planId, taxCenter) => {
+      const plan = getPlan(planId);
+      if (!plan) return;
+      
+      const assignments = plan.teamLeaderAssignments || {};
+      assignments[taxCenter] = {
+        assignedAt: new Date().toISOString(),
+        status: 'ASSIGNED'
+      };
+      
+      dispatch({
+        type: 'UPDATE_PLAN',
+        payload: {
+          ...plan,
+          teamLeaderAssignments: assignments
+        }
+      });
+    },
   };
 
   const selectors = {
@@ -286,11 +456,12 @@ export function AppProvider({ children }) {
     getPlanStats: () => ({
       total: state.plans.length,
       draft: state.plans.filter(p => p.status === 'DRAFT').length,
-      pendingDirector: state.plans.filter(p => p.status === 'SUBMITTED_TO_DIRECTOR').length,
+      pendingDirector: state.plans.filter(p => ['SUBMITTED_TO_DIRECTOR','SENIOR_MGMT_REJECTED'].includes(p.status)).length,
       active: state.plans.filter(p => ['DIRECTOR_APPROVED','AWAITING_REGIONAL_FEEDBACK','FEEDBACK_COLLECTED','AMENDMENT_REQUIRED'].includes(p.status)).length,
       pendingSenior: state.plans.filter(p => p.status === 'SUBMITTED_TO_SENIOR_MGMT').length,
       finalized: state.plans.filter(p => p.status === 'FINALIZED').length,
       amendmentRequired: state.plans.filter(p => p.status === 'AMENDMENT_REQUIRED').length,
+      seniorRejected: state.plans.filter(p => p.status === 'SENIOR_MGMT_REJECTED').length,
     }),
   };
 

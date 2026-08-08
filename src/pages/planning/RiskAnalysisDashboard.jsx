@@ -37,7 +37,7 @@ function fmt(n) { return typeof n === 'number' ? n.toLocaleString() : (n ?? '—
 // ── Horizontal progress bar ────────────────────────────────────────────────
 function Bar({ pct, colorClass = 'bg-blue-500' }) {
   return (
-    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden flex-1 min-w-0">
+    <div className="h-1.5 bg-gray-100 dark:bg-slate-600 rounded-full overflow-hidden flex-1 min-w-0">
       <div className={`h-full ${colorClass} rounded-full transition-all duration-700`} style={{ width: `${Math.min(100, pct)}%` }} />
     </div>
   );
@@ -46,10 +46,10 @@ function Bar({ pct, colorClass = 'bg-blue-500' }) {
 // ── Skeleton loader ────────────────────────────────────────────────────────
 function SkeletonCard() {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5 animate-pulse">
-      <div className="h-3 bg-gray-200 rounded w-1/3 mb-3" />
-      <div className="h-8 bg-gray-200 rounded w-1/2 mb-2" />
-      <div className="h-2 bg-gray-100 rounded w-2/3" />
+    <div className="bg-white dark:bg-slate-700 rounded-2xl border border-gray-100 dark:border-slate-600 p-5 animate-pulse">
+      <div className="h-3 bg-gray-200 dark:bg-slate-600 rounded w-1/3 mb-3" />
+      <div className="h-8 bg-gray-200 dark:bg-slate-600 rounded w-1/2 mb-2" />
+      <div className="h-2 bg-gray-100 dark:bg-slate-600 rounded w-2/3" />
     </div>
   );
 }
@@ -60,43 +60,43 @@ function RegionRow({ region, maxRisky, expanded, onToggle }) {
   return (
     <>
       <tr
-        className="hover:bg-gray-50 cursor-pointer transition-colors"
+        className="hover:bg-blue-50 dark:hover:bg-slate-600 cursor-pointer transition-colors"
         onClick={onToggle}
       >
         <td className="px-4 py-3">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-bold">
+            <div className="w-6 h-6 rounded bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-700 dark:text-blue-400 text-xs font-bold">
               {region.code}
             </div>
-            <span className="font-medium text-gray-900 text-sm">{region.name}</span>
+            <span className="font-medium text-gray-900 dark:text-slate-200 text-sm">{region.name}</span>
           </div>
         </td>
-        <td className="px-4 py-3 text-sm text-gray-600 tabular-nums">{fmt(region.totalTaxpayers)}</td>
-        <td className="px-4 py-3 text-sm font-semibold text-gray-800 tabular-nums">{fmt(region.totalRisky)}</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-slate-300 tabular-nums">{fmt(region.totalTaxpayers)}</td>
+        <td className="px-4 py-3 text-sm font-semibold text-gray-800 dark:text-slate-200 tabular-nums">{fmt(region.totalRisky)}</td>
         <td className="px-4 py-3">
           <div className="flex items-center gap-2">
             <Bar pct={pct} colorClass="bg-red-400" />
-            <span className="text-xs text-gray-500 w-10 text-right">{region.percentRisky}%</span>
+            <span className="text-xs text-gray-500 dark:text-slate-400 w-10 text-right">{region.percentRisky}%</span>
           </div>
         </td>
         <td className="px-4 py-3 text-center">
-          {expanded ? <ChevronUp size={14} className="text-gray-400 mx-auto" /> : <ChevronDown size={14} className="text-gray-400 mx-auto" />}
+          {expanded ? <ChevronUp size={14} className="text-gray-400 dark:text-slate-400 mx-auto" /> : <ChevronDown size={14} className="text-gray-400 dark:text-slate-400 mx-auto" />}
         </td>
       </tr>
       {expanded && (
-        <tr className="bg-blue-50/40">
+        <tr className="bg-blue-50/40 dark:bg-slate-700/50">
           <td colSpan={5} className="px-4 pb-4 pt-2">
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {region.byAuditType.map(at => (
-                <div key={at.id} className="bg-white rounded-lg border border-gray-200 p-2.5">
+                <div key={at.id} className="bg-white dark:bg-slate-600 rounded-lg border border-gray-200 dark:border-slate-500 p-2.5">
                   <div className="flex items-center gap-1.5 mb-1.5">
                     <div className={`w-2 h-2 rounded-full ${AUDIT_COLORS[at.id] || 'bg-gray-400'}`} />
-                    <span className="text-xs font-medium text-gray-700">{at.shortName || at.name}</span>
+                    <span className="text-xs font-medium text-gray-700 dark:text-slate-200">{at.shortName || at.name}</span>
                   </div>
-                  <p className="text-base font-bold text-gray-900 tabular-nums">{fmt(at.count)}</p>
+                  <p className="text-base font-bold text-gray-900 dark:text-white tabular-nums">{fmt(at.count)}</p>
                   <div className="flex items-center gap-1 mt-1">
                     <Bar pct={parseFloat(at.pct)} colorClass={AUDIT_COLORS[at.id]} />
-                    <span className="text-[10px] text-gray-400">{at.pct}%</span>
+                    <span className="text-[10px] text-gray-400 dark:text-slate-400">{at.pct}%</span>
                   </div>
                 </div>
               ))}
@@ -120,10 +120,10 @@ export default function RiskAnalysisDashboard({ onUsePlanDefaults }) {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Risk Engine Analysis</h2>
-            <p className="text-sm text-gray-500 mt-0.5">Fetching live risk data…</p>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Risk Engine Analysis</h2>
+            <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">Fetching live risk data…</p>
           </div>
-          <div className="flex items-center gap-2 text-blue-600">
+          <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
             <RefreshCw size={16} className="animate-spin" />
             <span className="text-sm">Loading</span>
           </div>
@@ -141,13 +141,13 @@ export default function RiskAnalysisDashboard({ onUsePlanDefaults }) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <Activity size={22} className="text-blue-600" />
-            <h2 className="text-xl font-bold text-gray-900">Risk Engine Analysis</h2>
+            <Activity size={22} className="text-blue-600 dark:text-blue-400" />
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Risk Engine Analysis</h2>
             <Badge color={source === 'live' ? 'green' : 'yellow'} dot>
               {source === 'live' ? 'Live Data' : 'Estimated'}
             </Badge>
           </div>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
             {source === 'live'
               ? `Connected to Risk Engine · Updated ${lastUpdated?.toLocaleTimeString()}`
               : 'Estimates based on configured risk parameters (live API unavailable)'}
@@ -211,8 +211,8 @@ export default function RiskAnalysisDashboard({ onUsePlanDefaults }) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <Card>
           <div className="mb-4 flex items-center gap-2">
-            <BarChart2 size={16} className="text-gray-500" />
-            <h3 className="text-sm font-semibold text-gray-900">Risk Level Distribution</h3>
+            <BarChart2 size={16} className="text-gray-500 dark:text-slate-400" />
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Risk Level Distribution</h3>
           </div>
           <div className="space-y-3">
             {Object.entries(national?.byRiskLevel || {}).map(([level, info]) => {
@@ -222,11 +222,11 @@ export default function RiskAnalysisDashboard({ onUsePlanDefaults }) {
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
                       <div className={`w-2.5 h-2.5 rounded-full ${c.bg}`} />
-                      <span className="text-sm font-medium text-gray-700 capitalize">{level}</span>
+                      <span className="text-sm font-medium text-gray-700 dark:text-slate-200 capitalize">{level}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-xs text-gray-400">{info.pct}%</span>
-                      <span className="text-sm font-bold text-gray-800 tabular-nums w-20 text-right">{fmt(info.count)}</span>
+                      <span className="text-xs text-gray-400 dark:text-slate-400">{info.pct}%</span>
+                      <span className="text-sm font-bold text-gray-800 dark:text-slate-200 tabular-nums w-20 text-right">{fmt(info.count)}</span>
                     </div>
                   </div>
                   <Bar pct={parseFloat(info.pct)} colorClass={c.bg} />
@@ -238,8 +238,8 @@ export default function RiskAnalysisDashboard({ onUsePlanDefaults }) {
 
         <Card>
           <div className="mb-4 flex items-center gap-2">
-            <TrendingUp size={16} className="text-gray-500" />
-            <h3 className="text-sm font-semibold text-gray-900">Recommended Audit Type Distribution</h3>
+            <TrendingUp size={16} className="text-gray-500 dark:text-slate-400" />
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Recommended Audit Type Distribution</h3>
           </div>
           <div className="space-y-3">
             {(national?.byAuditType || []).map(at => (
@@ -247,11 +247,11 @@ export default function RiskAnalysisDashboard({ onUsePlanDefaults }) {
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-2">
                     <div className={`w-2.5 h-2.5 rounded-full ${AUDIT_COLORS[at.id] || 'bg-gray-400'}`} />
-                    <span className="text-sm font-medium text-gray-700">{at.name}</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-slate-200">{at.name}</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-xs text-gray-400">{at.pct}%</span>
-                    <span className="text-sm font-bold text-gray-800 tabular-nums w-20 text-right">{fmt(at.count)}</span>
+                    <span className="text-xs text-gray-400 dark:text-slate-400">{at.pct}%</span>
+                    <span className="text-sm font-bold text-gray-800 dark:text-slate-200 tabular-nums w-20 text-right">{fmt(at.count)}</span>
                   </div>
                 </div>
                 <Bar pct={parseFloat(at.pct)} colorClass={AUDIT_COLORS[at.id] || 'bg-gray-400'} />
@@ -263,23 +263,23 @@ export default function RiskAnalysisDashboard({ onUsePlanDefaults }) {
 
       {/* ── Regional Breakdown ── */}
       <Card padding={false}>
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
-          <Globe size={16} className="text-gray-500" />
-          <h3 className="text-sm font-semibold text-gray-900">Regional Risk Breakdown</h3>
-          <span className="text-xs text-gray-400 ml-1">— click a row to see audit type detail</span>
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-600 flex items-center gap-2">
+          <Globe size={16} className="text-gray-500 dark:text-slate-400" />
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Regional Risk Breakdown</h3>
+          <span className="text-xs text-gray-400 dark:text-slate-400 ml-1">— click a row to see audit type detail</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50/60">
-                <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500">Region</th>
-                <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500">Taxpayers</th>
-                <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500">Risky</th>
-                <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 w-48">Risk %</th>
-                <th className="px-4 py-2.5 text-center text-xs font-semibold text-gray-500 w-8"></th>
+              <tr className="border-b border-gray-100 dark:border-slate-600 bg-gray-50/60 dark:bg-slate-700">
+                <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400">Region</th>
+                <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400">Taxpayers</th>
+                <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400">Risky</th>
+                <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 w-48">Risk %</th>
+                <th className="px-4 py-2.5 text-center text-xs font-semibold text-gray-500 dark:text-slate-400 w-8"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-gray-50 dark:divide-slate-600">
               {byRegion.map(region => (
                 <RegionRow
                   key={region.id}
@@ -315,7 +315,7 @@ export default function RiskAnalysisDashboard({ onUsePlanDefaults }) {
       )}
 
       {/* ── Data source note ── */}
-      <p className="text-xs text-gray-400 flex items-center gap-1.5">
+      <p className="text-xs text-gray-400 dark:text-slate-400 flex items-center gap-1.5">
         <Info size={11} />
         Data source: {source === 'live' ? 'MOR Risk Engine API (audit-ally-score.lovable.app) + Taxpayer Registration API' : 'Locally configured risk parameters (auditConfig.js)'}
         {lastUpdated && ` · ${lastUpdated.toLocaleString()}`}

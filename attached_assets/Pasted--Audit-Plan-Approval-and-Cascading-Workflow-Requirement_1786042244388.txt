@@ -1,0 +1,262 @@
+# Audit Plan Approval and Cascading Workflow Requirements
+
+Carefully analyze the existing implementation and ensure the workflow strictly follows the business process below. Do not make assumptions that bypass any approval or feedback stage.
+
+## Core Principle
+
+The system is designed to:
+
+1. Create an Audit Plan.
+2. Route the Plan through multiple approval and feedback levels.
+3. After final approval, cascade the Plan to Regions.
+4. Regions cascade the Plan to Tax Centers.
+5. Tax Centers convert approved Plan items into Cases.
+6. Cases are prioritized, selected, and assigned to Audit Teams.
+
+No stage should be skipped.
+
+---
+
+# Phase 1: Plan Creation
+
+### Step 1: Audit Team Creates Plan
+
+* Audit Team creates an Audit Plan.
+* Audit Team submits the Plan to the Directorate.
+
+**Status:** Submitted to Directorate.
+
+---
+
+# Phase 2: Directorate Initial Review
+
+### Step 2: Directorate Reviews Plan
+
+The Directorate reviews the submitted Plan.
+
+Possible actions:
+
+#### Reject
+
+* Return to Audit Team with comments.
+* Audit Team must amend and resubmit.
+
+#### Approve
+
+* Directorate approves the Plan for regional feedback collection.
+* Plan is routed to all relevant Regions.
+
+**Status:** Awaiting Regional Review.
+
+---
+
+# Phase 3: Regional and Tax Center Feedback Collection
+
+### Step 3: Regional Director Reviews Plan
+
+Each Region receives its own copy/view of the Plan.
+
+The Regional Director must:
+
+* Review the Plan.
+* Accept participation in the feedback process.
+* Distribute the Plan to all Tax Centers under that Region.
+
+### Critical Business Rule
+
+A Region MUST NOT submit Regional Feedback before receiving feedback from its Tax Centers.
+
+The system must enforce this rule.
+
+---
+
+### Step 4: Tax Center Reviews Plan
+
+Each Tax Center:
+
+* Reviews the Plan.
+* Accepts the request.
+* Provides Tax Center Feedback.
+* Submits feedback to its Region.
+
+**Status:** Feedback Submitted to Region.
+
+---
+
+### Step 5: Regional Feedback Consolidation
+
+After receiving Tax Center feedback:
+
+The system should automatically:
+
+* Aggregate all Tax Center feedback.
+* Generate a default Regional Feedback summary.
+
+The Regional Director must be able to:
+
+* Review the automatically generated summary.
+* Modify it if necessary.
+* Add additional Regional comments.
+* Submit final Regional Feedback.
+
+### Critical Requirement
+
+The system should automatically consolidate Tax Center feedback by default while still allowing manual override by the Regional Director.
+
+---
+
+# Phase 4: Directorate Amendment Cycle
+
+### Step 6: Directorate Receives Regional Feedback
+
+After all Regions complete feedback submission:
+
+* Directorate reviews Regional Feedback.
+* Directorate forwards the Plan and feedback to the Audit Team.
+
+**Status:** Amendment Required.
+
+---
+
+### Step 7: Audit Team Amendment
+
+Audit Team:
+
+* Reviews all collected feedback.
+* Updates the Plan.
+* Submits the amended Plan back to the Directorate.
+
+**Status:** Amended Plan Submitted.
+
+---
+
+# Phase 5: Final Approval
+
+### Step 8: Directorate Review of Amended Plan
+
+Directorate reviews the amended version.
+
+Possible actions:
+
+#### Reject
+
+* Return to Audit Team for further amendment.
+
+#### Approve
+
+* Forward to Senior Management.
+
+**Status:** Pending Senior Management Approval.
+
+---
+
+### Step 9: Senior Management Final Approval
+
+Senior Management performs final review.
+
+Possible actions:
+
+#### Reject
+
+* Return to Directorate and Audit Team with comments.
+
+#### Approve
+
+* Plan becomes officially approved.
+
+**Status:** Approved.
+
+---
+
+# Phase 6: Distribution of Approved Plan
+
+### Step 10: Directorate Distributes Approved Plan
+
+After final approval:
+
+* Directorate sends the Approved Plan to each Region.
+
+---
+
+### Step 11: Regions Distribute Approved Plan
+
+Each Region:
+
+* Receives the approved Plan.
+* Sends the approved Plan to all Tax Centers under that Region.
+
+---
+
+# Phase 7: Plan-to-Case Cascading
+
+### Step 12: Tax Center Accepts Approved Plan
+
+After receiving the approved Plan:
+
+* Tax Center accepts the Plan.
+* Plan items become eligible for Case generation.
+
+---
+
+### Step 13: Cascade Plan into Cases
+
+The system must:
+
+* Convert approved Plan targets into Audit Cases.
+* Maintain traceability between:
+
+  * Plan
+  * Plan Item
+  * Generated Case
+
+Each Case must retain its originating Plan reference.
+
+---
+
+# Phase 8: Case Prioritization and Assignment
+
+### Step 14: Case Prioritization
+
+Tax Center:
+
+* Reviews generated Cases.
+* Prioritizes Cases according to risk, score, or business rules.
+
+---
+
+### Step 15: Case Selection
+
+Tax Center:
+
+* Selects Cases for execution.
+
+---
+
+### Step 16: Assignment to Audit Teams
+
+Selected Cases are assigned to:
+
+* Appropriate Audit Type.
+* Responsible Team Leader.
+
+The Team Leader then:
+
+* Reviews assigned Cases.
+* Assigns Cases to Auditors or Team Members.
+
+---
+
+# Mandatory Workflow Rules
+
+1. Directorate approval is required before Regional distribution.
+2. Regional feedback cannot be submitted before Tax Center feedback is received.
+3. Tax Centers must submit feedback first.
+4. System should automatically generate Regional Feedback summaries from Tax Center feedback.
+5. Regional Directors can override or edit the generated summary.
+6. Audit Team amendments are mandatory after feedback collection.
+7. Senior Management approval is mandatory before implementation.
+8. Only approved Plans can be cascaded into Cases.
+9. Cases must maintain a reference to their originating Plan.
+10. Team Leaders are responsible for assigning Cases to auditors.
+11. No workflow stage may be skipped unless explicitly authorized by business rules.
+12. Every submission, approval, rejection, amendment, and assignment must be fully auditable and tracked in workflow history.

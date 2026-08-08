@@ -1,9 +1,10 @@
-import type {
-  Element,
-  Frame,
-  Paragraph,
-  SlideDocument,
-  TextBody,
+import {
+  SDM_DEFAULT_TEXT_SIZE_PT,
+  type Element,
+  type Frame,
+  type Paragraph,
+  type SlideDocument,
+  type TextBody,
 } from './schema';
 
 function mapElementTree(
@@ -161,6 +162,63 @@ export function setText(
 
     return element;
   });
+}
+
+const MIN_TEXT_SIZE_PT = 0.1;
+const TEXT_SCALE_EPSILON = 0.001;
+
+function roundToTenth(value: number): number {
+  const rounded = Math.round(value * 10) / 10;
+
+  return Object.is(rounded, -0) ? 0 : rounded;
+}
+
+export function scaleTextSizePt(
+  document: SlideDocument,
+  elementId: string,
+  factor: number,
+): SlideDocument {
+  if (
+    !Number.isFinite(factor) ||
+    factor <= 0 ||
+    Math.abs(factor - 1) < TEXT_SCALE_EPSILON
+  ) {
+    return document;
+  }
+  const element = findElement(document, elementId);
+  const body = element === undefined ? undefined : textBodyOf(element);
+  if (body === undefined) {
+    return document;
+  }
+  let changed = false;
+  const paragraphs = body.paragraphs.map((paragraph) => ({
+    ...paragraph,
+    runs: paragraph.runs.map((run) => {
+      const currentSizePt = run.sizePt ?? SDM_DEFAULT_TEXT_SIZE_PT;
+      const sizePt = Math.max(
+        MIN_TEXT_SIZE_PT,
+        roundToTenth(currentSizePt * factor),
+      );
+      const letterSpacingPt =
+        run.letterSpacingPt === undefined
+          ? undefined
+          : roundToTenth(run.letterSpacingPt * factor);
+      const sizeChanged = sizePt !== currentSizePt;
+      const letterSpacingChanged = letterSpacingPt !== run.letterSpacingPt;
+      if (!sizeChanged && !letterSpacingChanged) {
+        return run;
+      }
+      changed = true;
+
+      return {
+        ...run,
+        ...(sizeChanged ? { sizePt } : {}),
+        ...(letterSpacingChanged ? { letterSpacingPt } : {}),
+      };
+    }),
+  }));
+
+  return changed ? setText(document, elementId, paragraphs) : document;
 }
 
 export function addElement(

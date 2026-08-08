@@ -1,0 +1,79 @@
+# Enhancement and Gap Analysis Instruction
+
+Before making any code changes, carefully analyze the existing Audit Plan workflow implementation.
+
+## Important Rules
+
+1. Do NOT assume the workflow is completely missing.
+2. Some parts of the workflow are already implemented fully or partially.
+3. First determine:
+
+   * What is already working correctly.
+   * What is partially implemented.
+   * What is missing.
+   * What is implemented incorrectly.
+
+## Required Approach
+
+### Phase 1: Analysis
+
+Review the current implementation and produce a gap analysis showing:
+
+* Existing workflow stages.
+* Existing approval flows.
+* Existing feedback mechanisms.
+* Existing Plan-to-Case cascading logic.
+* Existing assignment logic.
+* Missing business rules.
+* Missing validations.
+* Missing workflow transitions.
+
+### Phase 2: Preservation
+
+Preserve all correctly implemented functionality.
+
+Do not:
+
+* Rewrite working modules.
+* Rename existing entities without necessity.
+* Modify stable APIs.
+* Change database structures unless required.
+* Refactor unrelated code.
+
+### Phase 3: Targeted Enhancements
+
+Only implement the missing or incorrect functionality required by the business process.
+
+Priority areas:
+
+1. Regional feedback dependency on Tax Center feedback.
+2. Automatic Regional feedback aggregation from Tax Center submissions.
+3. Directorate → Audit Team amendment cycle.
+4. Senior Management final approval flow.
+5. Approved Plan distribution back to Regions and Tax Centers.
+6. Controlled Plan-to-Case cascading after final approval.
+7. Case prioritization and assignment workflow.
+8. Workflow status validation and transition enforcement.
+
+### Phase 4: Validation
+
+For every enhancement:
+
+* Verify whether similar functionality already exists.
+* Reuse existing services, repositories, APIs, and UI components whenever possible.
+* Extend existing implementations rather than creating duplicates.
+
+### Expected Output
+
+For each requirement provide:
+
+* Current implementation status.
+* Gap identified.
+* Proposed solution.
+* Files affected.
+* Database changes required (if any).
+* Risk level.
+
+The goal is NOT to rebuild the workflow.
+
+The goal is to preserve existing working functionality and only fill implementation gaps, enforce missing business rules, and correct incorrect workflow behavior.

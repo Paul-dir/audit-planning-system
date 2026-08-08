@@ -10,9 +10,11 @@ import DirectorDashboard from './pages/director/DirectorDashboard.jsx';
 import RegionalDashboard from './pages/regional/RegionalDashboard.jsx';
 import SeniorDashboard from './pages/senior/SeniorDashboard.jsx';
 import TaxCenterDashboard from './pages/taxcenter/TaxCenterDashboard.jsx';
+import CaseManagement from './pages/taxcenter/CaseManagement.jsx';
 import TeamLeaderDashboard from './pages/teamleader/TeamLeaderDashboard.jsx';
 import AuditorDashboard from './pages/auditor/AuditorDashboard.jsx';
 import RiskAnalysisDashboard from './pages/planning/RiskAnalysisDashboard.jsx';
+import RiskEngineDashboard from './pages/riskengine/RiskEngineDashboard.jsx';
 import { Spinner } from './components/ui/index.jsx';
 
 const PAGE_TITLES = {
@@ -20,11 +22,13 @@ const PAGE_TITLES = {
     dashboard:     { title: 'Planning Dashboard',    subtitle: 'Manage and track national audit plans'         },
     plans:         { title: 'Audit Plans',            subtitle: 'All audit plans overview'                      },
     risk_analysis: { title: 'Risk Engine Analysis',   subtitle: 'Live taxpayer risk data from the MOR Risk Engine' },
+    risk_engine:   { title: 'Risk Engine',            subtitle: 'AI-powered risk assessment and taxpayer mapping'  },
   },
   audit_director: {
-    dashboard: { title: 'Director Dashboard',     subtitle: 'Review and approve audit plans'         },
-    review:    { title: 'Plan Review',            subtitle: 'Plans awaiting your decision'           },
-    deploy:    { title: 'Deploy Plans',           subtitle: 'Send approved plans to regions'         },
+    dashboard:   { title: 'Director Dashboard',     subtitle: 'Review and approve audit plans'         },
+    review:      { title: 'Plan Review',            subtitle: 'Plans awaiting your decision'           },
+    deploy:      { title: 'Deploy Plans',           subtitle: 'Send approved plans to regions'         },
+    risk_engine: { title: 'Risk Engine',            subtitle: 'AI-powered risk assessment and taxpayer mapping'  },
   },
   regional_director: {
     dashboard: { title: 'Regional Dashboard',  subtitle: 'Manage your regional allocation'                     },
@@ -32,8 +36,9 @@ const PAGE_TITLES = {
     feedback:  { title: 'Submit Feedback',     subtitle: 'Provide regional feedback and tax center allocations' },
   },
   tax_center_manager: {
-    dashboard: { title: 'Tax Center Dashboard', subtitle: 'Manage and assign audit cases for your tax center' },
-    cases:     { title: 'Case Management',      subtitle: 'Assign and track audit cases'                      },
+    dashboard:   { title: 'Tax Center Dashboard', subtitle: 'Manage and assign audit cases for your tax center' },
+    cases:       { title: 'Case Management',      subtitle: 'Assign and track audit cases'                      },
+    risk_engine: { title: 'Risk Engine',          subtitle: 'Map taxpayers to plans and generate cases'         },
   },
   team_leader: {
     dashboard: { title: 'Team Leader Dashboard', subtitle: 'Assign cases to your audit team' },
@@ -52,6 +57,13 @@ const PAGE_TITLES = {
 function RoleRouter({ user, view }) {
   const role = user.role;
 
+  // Risk Engine page (accessible to tax center managers)
+  if (view === 'risk_engine') {
+    if (['tax_center_manager'].includes(role)) {
+      return <RiskEngineDashboard />;
+    }
+  }
+
   // Standalone risk analysis page (accessible to planning team via sidebar)
   if (view === 'risk_analysis' && role === 'planning_team') {
     return <RiskAnalysisDashboard />;
@@ -61,7 +73,10 @@ function RoleRouter({ user, view }) {
   if (role === 'audit_director')   return <DirectorDashboard view={view} />;
   if (role === 'regional_director') return <RegionalDashboard view={view} />;
   if (role === 'senior_management') return <SeniorDashboard view={view} />;
-  if (role === 'tax_center_manager') return <TaxCenterDashboard view={view} />;
+  if (role === 'tax_center_manager') {
+    if (view === 'cases') return <CaseManagement />;
+    return <TaxCenterDashboard view={view} />;
+  }
   if (role === 'team_leader')      return <TeamLeaderDashboard view={view} />;
   if (role === 'auditor')          return <AuditorDashboard view={view} />;
 
@@ -79,10 +94,10 @@ export default function App() {
 
   if (authLoading || !ready) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <Spinner size={32} />
-          <p className="text-sm text-gray-500">Loading MOR Audit Planning System…</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Loading MOR Audit Planning System…</p>
         </div>
       </div>
     );

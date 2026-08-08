@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import {
+  SDM_DEFAULT_TEXT_SIZE_PT,
   SDM_POINT_TO_UNIT,
   type Asset,
   type Color,
@@ -148,7 +149,7 @@ export function strokeToBorder(
 }
 
 export function textRunStyle(run: TextRun, theme?: Theme): CSSProperties {
-  const sizePt = run.sizePt ?? 18;
+  const sizePt = run.sizePt ?? SDM_DEFAULT_TEXT_SIZE_PT;
 
   return {
     color: run.color ? resolveColor(run.color, theme) : undefined,

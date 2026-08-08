@@ -68,6 +68,13 @@ export const WorkspaceToRuntimeMessageSchema = Type.Union([
     },
     strict,
   ),
+  Type.Object(
+    {
+      ...envelope,
+      type: Type.Literal('sdm:historyReady'),
+    },
+    strict,
+  ),
 ]);
 
 export const RuntimeToWorkspaceMessageSchema = Type.Union([
