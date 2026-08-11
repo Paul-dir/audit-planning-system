@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { X, Edit, Save, RotateCcw, AlertCircle } from 'lucide-react';
-import { Modal, Button, Textarea, Card, Alert, Badge } from '../../components/ui/index.jsx';
+import { Modal, Button, Textarea, Card, Alert, Badge, Input } from '../../components/ui/index.jsx';
 import { DistributionTable } from '../shared/DistributionTable.jsx';
 import { REGIONS, AUDIT_TYPES, getTaxCentersForRegion } from '../../data/constants.js';
 import PlanTimeline from '../shared/PlanTimeline.jsx';
@@ -10,10 +10,31 @@ export default function AmendmentEditModal({ plan, open, onClose, onUpdate }) {
   const [editedPlan, setEditedPlan] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [saving, setSaving] = useState(false);
+  const [editedDistribution, setEditedDistribution] = useState(null);
 
   const handleEdit = () => {
     setEditedPlan({ ...plan });
+    setEditedDistribution({ ...plan.distribution });
     setIsEditing(true);
+  };
+
+  const handleDistributionChange = (regionId, auditTypeId, value) => {
+    setEditedDistribution(prev => ({
+      ...prev,
+      [regionId]: {
+        ...prev[regionId],
+        [auditTypeId]: Math.max(0, parseInt(value) || 0)
+      }
+    }));
+  };
+
+  const calculateNewTotals = () => {
+    const totals = {};
+    AUDIT_TYPES.forEach(at => {
+      totals[at.id] = REGIONS.reduce((sum, r) => sum + (editedDistribution?.[r.id]?.[at.id] || 0), 0);
+    });
+    const grandTotal = Object.values(totals).reduce((sum, v) => sum + v, 0);
+    return { totals, grandTotal };
   };
 
   const handleSave = () => {
@@ -23,19 +44,26 @@ export default function AmendmentEditModal({ plan, open, onClose, onUpdate }) {
     }
     setSaving(true);
     setTimeout(() => {
-      onUpdate(editedPlan);
+      onUpdate({
+        ...editedPlan,
+        distribution: editedDistribution,
+        totalCases: calculateNewTotals().grandTotal
+      });
       setSaving(false);
       setIsEditing(false);
+      setEditedDistribution(null);
     }, 300);
   };
 
   const handleCancel = () => {
     setEditedPlan(null);
+    setEditedDistribution(null);
     setIsEditing(false);
   };
 
   if (!plan) return null;
   const workingPlan = isEditing ? editedPlan : plan;
+  const { totals, grandTotal } = isEditing && editedDistribution ? calculateNewTotals() : { totals: {}, grandTotal: 0 };
 
   return (
     <Modal
@@ -177,9 +205,66 @@ export default function AmendmentEditModal({ plan, open, onClose, onUpdate }) {
         {activeTab === 'distribution' && (
           <div className="space-y-4">
             <Alert type="info" title="Regional Allocation">
-              Review the distribution across regions. {isEditing && 'You can adjust allocations during amendment.'}
+              {isEditing 
+                ? 'Edit regional allocations across all audit types. Update values and click "Save Changes".'
+                : 'Review the distribution across regions.'
+              }
             </Alert>
-            <DistributionTable distribution={workingPlan.distribution} readOnly={!isEditing} />
+            
+            {isEditing && editedDistribution ? (
+              <div className="bg-white rounded-lg border border-gray-200 dark:bg-slate-800 dark:border-gray-700 overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 dark:bg-slate-700 border-b border-gray-200 dark:border-gray-600">
+                    <tr>
+                      <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-slate-300">Region</th>
+                      {AUDIT_TYPES.map(at => (
+                        <th key={at.id} className="px-3 py-3 text-center font-semibold text-gray-700 dark:text-slate-300 text-xs">
+                          {at.shortName}
+                        </th>
+                      ))}
+                      <th className="px-3 py-3 text-center font-semibold text-gray-700 dark:text-slate-300">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
+                    {REGIONS.map(region => {
+                      const regionTotal = AUDIT_TYPES.reduce((sum, at) => sum + (editedDistribution[region.id]?.[at.id] || 0), 0);
+                      return (
+                        <tr key={region.id} className="hover:bg-gray-50 dark:hover:bg-slate-700">
+                          <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{region.name}</td>
+                          {AUDIT_TYPES.map(at => (
+                            <td key={at.id} className="px-3 py-3 text-center">
+                              <input
+                                type="number"
+                                min="0"
+                                value={editedDistribution[region.id]?.[at.id] || 0}
+                                onChange={(e) => handleDistributionChange(region.id, at.id, e.target.value)}
+                                className="w-16 px-2 py-1 text-center border border-gray-300 rounded dark:bg-slate-600 dark:border-gray-500 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-400"
+                              />
+                            </td>
+                          ))}
+                          <td className="px-3 py-3 text-center font-semibold text-gray-900 dark:text-white">
+                            {regionTotal}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    <tr className="bg-gray-100 dark:bg-slate-700 font-bold border-t-2 border-gray-300 dark:border-gray-600">
+                      <td className="px-4 py-3 text-gray-900 dark:text-white">TOTAL</td>
+                      {AUDIT_TYPES.map(at => (
+                        <td key={at.id} className="px-3 py-3 text-center text-gray-900 dark:text-white">
+                          {totals[at.id] || 0}
+                        </td>
+                      ))}
+                      <td className="px-3 py-3 text-center text-gray-900 dark:text-white">
+                        {grandTotal}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <DistributionTable distribution={workingPlan.distribution} readOnly={true} />
+            )}
           </div>
         )}
 
