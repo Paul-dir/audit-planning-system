@@ -24,6 +24,7 @@ export default function RegionalDashboard({ view }) {
   const [viewPlan, setViewPlan] = useState(null);
   const [viewTab, setViewTab] = useState('overview');
   const [tcFeedbackReviewModal, setTcFeedbackReviewModal] = useState(null);
+  const [aggregateOverrides, setAggregateOverrides] = useState({}); // Regional Director can override aggregate
   // Case viewer for finalized plans
   const [casePlanFilter, setCasePlanFilter] = useState(null); // planId to filter cases
   const [caseSearch, setCaseSearch] = useState('');
@@ -594,37 +595,39 @@ export default function RegionalDashboard({ view }) {
                 {/* Regional Aggregate View */}
                 {aggregateView && (
                   <div className="space-y-3">
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                      <p className="text-sm font-semibold text-blue-900 mb-2">📊 Regional Aggregate Summary</p>
-                      <p className="text-xs text-blue-700">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 dark:bg-slate-700 dark:border-blue-900">
+                      <p className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-2">📊 Regional Aggregate Summary</p>
+                      <p className="text-xs text-blue-700 dark:text-blue-300">
                         This is the consolidated view combining all {getTaxCentersForRegion(region).length} tax centers. 
-                        This aggregate will be submitted as your regional feedback.
+                        You can <strong>override individual audit type allocations</strong> before submitting to the Director.
                       </p>
                     </div>
 
-                    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden dark:bg-slate-800 dark:border-gray-700">
                       <table className="w-full">
                         <thead className="bg-gray-50 dark:bg-gray-800 dark:bg-slate-700">
                           <tr>
                             <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-slate-200">Audit Type</th>
                             <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-slate-200">Target</th>
-                            <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-slate-200">Allocated</th>
+                            <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-slate-200">Aggregated</th>
                             <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-slate-200">Status</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
-                          {AUDIT_TYPES.map(auditType => {
-                            const target = regionDist[auditType.id] || 0;
-                            const allocated = getTaxCentersForRegion(region).reduce((sum, tc) => {
-                              return sum + (tcAllocations[tc.id]?.[auditType.id] || 0);
-                            }, 0);
+                        <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                          {AUDIT_TYPES.map(a => {
+                            const target = regionDist[a.id] || 0;
+                            const allocated = Object.values(calculateRegionalAggregate()).length > 0 ? calculateRegionalAggregate()[a.id] || 0 : 0;
                             const matches = target === allocated;
-                            
                             return (
-                              <tr key={auditType.id} className={matches ? 'bg-green-50' : 'bg-white'}>
-                                <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">{auditType.name}</td>
-                                <td className="px-4 py-3 text-center text-sm font-semibold text-gray-600 dark:text-slate-400">{target}</td>
-                                <td className="px-4 py-3 text-center text-sm font-bold text-gray-900 dark:text-white">{allocated}</td>
+                              <tr key={a.id} className="hover:bg-gray-50 dark:hover:bg-slate-700">
+                                <td className="px-4 py-3">
+                                  <div className="flex items-center gap-2">
+                                    <span className={`inline-block w-3 h-3 rounded`} style={{backgroundColor: `var(--color-${a.color}, #999)`}}></span>
+                                    <span className="text-sm font-medium text-gray-900 dark:text-white">{a.name}</span>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3 text-center text-sm font-semibold text-gray-700 dark:text-slate-300">{target}</td>
+                                <td className="px-4 py-3 text-center text-sm font-semibold text-gray-700 dark:text-slate-300">{allocated}</td>
                                 <td className="px-4 py-3 text-center">
                                   {matches ? (
                                     <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700">

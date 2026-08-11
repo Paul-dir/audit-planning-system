@@ -6,6 +6,7 @@ import { Card, CardHeader, StatCard, Button, Badge, Table, Empty, Modal, Alert }
 import PlanStatusBadge from '../shared/PlanStatusBadge.jsx';
 import CreatePlanModal from './CreatePlanModal.jsx';
 import PlanDetailModal from './PlanDetailModal.jsx';
+import AmendmentEditModal from './AmendmentEditModal.jsx';
 import RiskAnalysisDashboard from './RiskAnalysisDashboard.jsx';
 import PlanConfigurationPage from './PlanConfigurationPage.jsx';
 
@@ -15,6 +16,7 @@ export default function PlanningDashboard({ view }) {
   const [showCreate, setShowCreate] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [confirmSubmit, setConfirmSubmit] = useState(null);
+  const [amendmentEditPlan, setAmendmentEditPlan] = useState(null);
   const [activeTab, setActiveTab] = useState('plans');
 
   // Show full configuration page if view is 'plan-configuration'
@@ -120,6 +122,11 @@ export default function PlanningDashboard({ view }) {
     setConfirmSubmit(null);
   };
 
+  const handleAmendmentUpdate = (updatedPlan) => {
+    actions.updatePlanDraft(updatedPlan.id, updatedPlan);
+    setAmendmentEditPlan(null);
+  };
+
   const columns = [
     { key: 'id', label: 'Plan ID', render: (v) => <span className="font-mono text-xs text-gray-500 dark:text-slate-400">{v}</span> },
     { key: 'name', label: 'Plan Name', render: (v, row) => (
@@ -175,29 +182,53 @@ export default function PlanningDashboard({ view }) {
               <StatCard label="Finalized" value={stats.finalized} icon={CheckCircle} color="green" />
             </div>
 
-            {/* Alerts */}
-            {amendmentPlans.map(p => (
-              <Alert
-                key={p.id}
-                type={p.status === 'SENIOR_MGMT_REJECTED' ? 'error' : 'warning'}
-                title={p.status === 'SENIOR_MGMT_REJECTED' ? `Rejected by Senior Management — ${p.name}` : `Amendment Required — ${p.name}`}
-                action={<Button size="xs" variant={p.status === 'SENIOR_MGMT_REJECTED' ? 'danger' : 'warning'} icon={RotateCcw} onClick={() => setConfirmSubmit(p)}>Review & Resubmit</Button>}
-              >
-                <div className="text-xs space-y-1">
-                  {p.status === 'SENIOR_MGMT_REJECTED' ? (
-                    <>
-                      <p>{p.seniorComment || 'Senior Management has rejected this plan.'}</p>
-                      <p className="text-red-600 font-medium">Please address the concerns and resubmit to the Audit Director.</p>
-                    </>
-                  ) : (
-                    <>
-                      <p>{p.amendmentComment || 'Director has requested amendments based on regional feedback.'}</p>
-                      <p className="text-orange-600 font-medium">Please amend the plan and resubmit to the Director.</p>
-                    </>
-                  )}
+            {/* Amendment Plans Alert */}
+            {amendmentPlans.length > 0 && (
+              <Card padding={false}>
+                <div className="px-6 py-4 bg-amber-50 border-b border-amber-200 dark:bg-slate-700 dark:border-amber-900">
+                  <h3 className="text-base font-semibold text-amber-900 dark:text-amber-300 flex items-center gap-2">
+                    <AlertOctagon size={18} />
+                    Amendment Required
+                  </h3>
                 </div>
-              </Alert>
-            ))}
+                <div className="divide-y divide-amber-100 dark:divide-slate-600">
+                  {amendmentPlans.map(plan => (
+                    <div key={plan.id} className="px-6 py-4 hover:bg-amber-50 dark:hover:bg-slate-600">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-900 dark:text-white">{plan.name}</p>
+                          <p className="text-sm text-gray-600 dark:text-slate-400 mt-1">{plan.amendmentComment}</p>
+                          <div className="flex items-center gap-2 mt-2">
+                            <Badge color={plan.status === 'SENIOR_MGMT_REJECTED' ? 'red' : 'amber'}>
+                              {plan.status === 'SENIOR_MGMT_REJECTED' ? 'Rejected by Senior Mgmt' : 'Amendment Requested'}
+                            </Badge>
+                            <span className="text-xs text-gray-500">Last updated {new Date(plan.updatedAt).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                        <div className="flex gap-2 flex-shrink-0">
+                          <Button 
+                            size="sm" 
+                            variant="secondary" 
+                            icon={Eye}
+                            onClick={() => setAmendmentEditPlan(plan)}
+                          >
+                            Review
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="primary" 
+                            icon={Edit2}
+                            onClick={() => setAmendmentEditPlan(plan)}
+                          >
+                            Edit & Resubmit
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            )}
 
             {/* Plans Table */}
             <Card padding={false}>
@@ -357,6 +388,14 @@ export default function PlanningDashboard({ view }) {
           <p className="text-sm text-gray-600 dark:text-slate-400">Submit <strong>{confirmSubmit?.name}</strong> for Audit Director review? You will not be able to edit it while under review.</p>
         )}
       </Modal>
+
+      {/* Amendment Edit Modal */}
+      <AmendmentEditModal
+        plan={amendmentEditPlan}
+        open={!!amendmentEditPlan}
+        onClose={() => setAmendmentEditPlan(null)}
+        onUpdate={handleAmendmentUpdate}
+      />
     </div>
   );
 }
