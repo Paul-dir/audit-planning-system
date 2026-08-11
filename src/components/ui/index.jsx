@@ -160,16 +160,16 @@ export const Textarea = forwardRef(({ label, error, helper, className = '', ...p
 ));
 
 // ──── SELECT ─────────────────────────────────────────────────
-export const Select = forwardRef(({ label, error, options = [], placeholder, className = '', ...props }, ref) => (
+export const Select = forwardRef(({ label, error, options = [], placeholder, className = '', children, ...props }, ref) => (
   <div className="space-y-1">
     {label && <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">{label}</label>}
     <select
       ref={ref}
-      className={`block w-full rounded-lg border ${error ? 'border-red-300' : 'border-gray-300 dark:border-slate-600'} px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 dark:bg-slate-600 dark:text-white dark:focus:ring-blue-400 ${className}`}
+      className={`block w-full rounded-lg border ${error ? 'border-red-300' : 'border-gray-300 dark:border-slate-600'} px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 dark:bg-slate-600 dark:text-white dark:focus:ring-blue-400 appearance-none ${className}`}
       {...props}
     >
       {placeholder && <option value="">{placeholder}</option>}
-      {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+      {children || options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
     </select>
     {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
   </div>

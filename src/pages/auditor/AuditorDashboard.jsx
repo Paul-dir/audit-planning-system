@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Search as SearchIcon, Clock, CheckCircle, PlayCircle, Eye, BarChart3 } from 'lucide-react';
 import { useApp } from '../../context/AppContext.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -14,12 +14,32 @@ export default function AuditorDashboard({ view }) {
   const [notes, setNotes] = useState('');
   const [selectedCase, setSelectedCase] = useState(null);
   const [search, setSearch] = useState('');
+  const [selectedYear, setSelectedYear] = useState('ALL');
 
   const myCases = selectors.getCasesForAuditor(user.id);
-  const inProgress = myCases.filter(c => c.status === 'IN_PROGRESS');
-  const completed = myCases.filter(c => c.status === 'COMPLETED');
+  
+  // Get available years from plans associated with this auditor's cases
+  const availableYears = useMemo(() => {
+    const years = [...new Set(myCases.map(c => {
+      const plan = state.plans.find(p => p.id === c.planId);
+      return plan?.year;
+    }).filter(Boolean))].sort((a, b) => b - a);
+    return years;
+  }, [myCases, state.plans]);
 
-  const filtered = myCases.filter(c =>
+  // Filter by year
+  const yearFilteredCases = useMemo(() => {
+    if (selectedYear === 'ALL') return myCases;
+    return myCases.filter(c => {
+      const plan = state.plans.find(p => p.id === c.planId);
+      return plan?.year === parseInt(selectedYear);
+    });
+  }, [myCases, selectedYear, state.plans]);
+
+  const inProgress = yearFilteredCases.filter(c => c.status === 'IN_PROGRESS');
+  const completed = yearFilteredCases.filter(c => c.status === 'COMPLETED');
+
+  const filtered = yearFilteredCases.filter(c =>
     !search || c.taxpayerName.toLowerCase().includes(search.toLowerCase()) || c.tin.includes(search)
   );
 
@@ -69,12 +89,12 @@ export default function AuditorDashboard({ view }) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-3 gap-4">
-        <StatCard label="My Cases" value={myCases.length} icon={SearchIcon} color="blue" />
+        <StatCard label="My Cases" value={yearFilteredCases.length} icon={SearchIcon} color="blue" />
         <StatCard label="In Progress" value={inProgress.length} icon={PlayCircle} color="yellow" sub="Active audits" />
         <StatCard label="Completed" value={completed.length} icon={CheckCircle} color="green" sub="Audits done" />
       </div>
 
-      {myCases.length === 0 && (
+      {yearFilteredCases.length === 0 && (
         <Alert type="info" title="No cases assigned yet">
           Cases will appear here once your Team Leader assigns them to you.
         </Alert>
@@ -92,7 +112,13 @@ export default function AuditorDashboard({ view }) {
             <h3 className="text-base font-semibold text-gray-900 dark:text-white">My Audit Cases</h3>
             <p className="text-xs text-gray-500 mt-0.5">Track and update your assigned audit cases</p>
           </div>
-          <div className="w-64">
+          <div className="flex gap-3">
+            <Select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)}>
+              <option value="ALL">All Years</option>
+              {availableYears.map(year => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </Select>
             <Input icon={SearchIcon} placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
         </div>

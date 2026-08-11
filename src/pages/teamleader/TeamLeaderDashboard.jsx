@@ -15,24 +15,44 @@ export default function TeamLeaderDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [filterPriority, setFilterPriority] = useState('ALL');
+  const [selectedYear, setSelectedYear] = useState('ALL'); // NEW: Year selection
   const [tab, setTab] = useState('pending');
 
   // Get cases assigned to this team leader
   const myCases = selectors.getCasesForTeamLeader(user.id) || [];
+
+  // Get auditors assigned to THIS team leader only
+  const myAuditors = useMemo(() => {
+    return state.users.filter(u => 
+      u.role === 'auditor' && 
+      u.teamLeader === user.id
+    );
+  }, [state.users, user.id]);
   
-  // Get auditors under this team leader
-  const myAuditors = state.users.filter(u => 
-    u.role === 'auditor' && 
-    u.teamLeader === user.id &&
-    u.taxCenter === user.taxCenter
-  );
+  // Get available years from plans associated with this team leader's cases
+  const availableYears = useMemo(() => {
+    const years = [...new Set(myCases.map(c => {
+      const plan = state.plans.find(p => p.id === c.planId);
+      return plan?.year;
+    }).filter(Boolean))].sort((a, b) => b - a);
+    return years;
+  }, [myCases, state.plans]);
+
+  // Filter by year
+  const yearFilteredCases = useMemo(() => {
+    if (selectedYear === 'ALL') return myCases;
+    return myCases.filter(c => {
+      const plan = state.plans.find(p => p.id === c.planId);
+      return plan?.year === parseInt(selectedYear);
+    });
+  }, [myCases, selectedYear, state.plans]);
 
   // Check if this is a joint committee member
   const isJointCommittee = user.isJointCommittee === true;
 
   // Filter cases
   const filteredCases = useMemo(() => {
-    return myCases.filter(c => {
+    return yearFilteredCases.filter(c => {
       // Tab filter
       if (tab === 'pending' && c.status !== 'ASSIGNED') return false;
       if (tab === 'in_progress' && c.status !== 'IN_PROGRESS') return false;
@@ -56,15 +76,15 @@ export default function TeamLeaderDashboard() {
 
       return true;
     });
-  }, [myCases, tab, filterStatus, filterPriority, searchQuery]);
+  }, [yearFilteredCases, tab, filterStatus, filterPriority, searchQuery]);
 
   // Statistics
   const stats = useMemo(() => ({
-    total: myCases.length,
-    pending: myCases.filter(c => c.status === 'ASSIGNED').length,
-    inProgress: myCases.filter(c => c.status === 'IN_PROGRESS').length,
-    completed: myCases.filter(c => ['COMPLETED', 'CLOSED'].includes(c.status)).length,
-  }), [myCases]);
+    total: yearFilteredCases.length,
+    pending: yearFilteredCases.filter(c => c.status === 'ASSIGNED').length,
+    inProgress: yearFilteredCases.filter(c => c.status === 'IN_PROGRESS').length,
+    completed: yearFilteredCases.filter(c => ['COMPLETED', 'CLOSED'].includes(c.status)).length,
+  }), [yearFilteredCases]);
 
   // Toggle case selection
   const toggleCaseSelection = (caseId) => {
@@ -269,13 +289,20 @@ export default function TeamLeaderDashboard() {
         </div>
 
         <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 dark:bg-gray-800 dark:bg-slate-700">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
             <Input
               icon={Search}
               placeholder="Search taxpayer, TIN..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
+
+            <Select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)}>
+              <option value="ALL">All Years</option>
+              {availableYears.map(year => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </Select>
 
             <Select value={filterPriority} onChange={(e) => setFilterPriority(e.target.value)}>
               <option value="ALL">All Priorities</option>

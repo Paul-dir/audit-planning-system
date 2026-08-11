@@ -224,7 +224,7 @@ export default function CaseManagement() {
                   setSelectedPlanId(e.target.value);
                   setSelectedCases([]); // Clear selections when changing plan
                 }}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-slate-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-500 appearance-none"
               >
                 <option value="ALL">All Plans ({taxCenterCases.length} total cases)</option>
                 {plansWithCases.map(plan => {

@@ -318,6 +318,39 @@ export function AppProvider({ children }) {
       dispatch({ type: 'UPDATE_PLAN', payload: timeline(updated, newStatus, actorId, msg) });
     },
 
+    // NEW: Override regional feedback aggregation (Director can modify collected feedback before sending to amendment)
+    overrideRegionalFeedback: (planId, regionId, overriddenAllocations, overrideComment, actorId) => {
+      const plan = getPlan(planId);
+      if (!plan) return;
+
+      const updatedFeedback = {
+        ...plan.regionalFeedback,
+        [regionId]: {
+          ...plan.regionalFeedback?.[regionId],
+          taxCenterAllocations: overriddenAllocations,
+          overriddenAt: new Date().toISOString(),
+          overriddenBy: actorId,
+          overrideComment: overrideComment,
+          isOverridden: true,
+        }
+      };
+
+      const updated = {
+        ...plan,
+        regionalFeedback: updatedFeedback,
+        revisions: [
+          ...(plan.revisions || []),
+          {
+            comment: `Director overrode ${regionId} feedback allocation: ${overrideComment}`,
+            timestamp: new Date().toISOString(),
+            by: actorId,
+            type: 'regional_override',
+          }
+        ],
+      };
+
+      dispatch({ type: 'UPDATE_PLAN', payload: updated });
+    },
 
     submitTaxCenterFeedback: (planId, regionId, taxCenterId, feedbackText, adjustedAllocation, actorId) => {
       const plan = getPlan(planId);
